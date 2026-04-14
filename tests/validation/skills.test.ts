@@ -6,12 +6,12 @@ const SKILLS_DIR = join(__dirname, '..', '..', 'skills');
 
 const EXPECTED_SKILLS = [
   'setup', 'team', 'ralph', 'ralplan', 'ask', 'autopilot',
-  'deep-interview', 'hud', 'mcp-setup', 'doctor', 'teams',
-  'release', 'create-object', 'analyze-code',
+  'deep-interview', 'mcp-setup', 'sap-doctor', 'sap-option', 'teams',
+  'release', 'create-object', 'analyze-code', 'analyze-symptom', 'program',
 ];
 
 describe('Skills Validation', () => {
-  it('all 14 skill directories exist', () => {
+  it(`all ${EXPECTED_SKILLS.length} skill directories exist`, () => {
     for (const skill of EXPECTED_SKILLS) {
       const dir = join(SKILLS_DIR, skill);
       expect(existsSync(dir), `Missing skill directory: ${skill}`).toBe(true);

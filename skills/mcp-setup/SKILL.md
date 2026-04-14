@@ -1,19 +1,20 @@
 ---
 name: sc4sap:mcp-setup
-description: Guide to install and configure the mcp-abap-adt MCP server for SAP ADT connectivity
+description: Guide to install and configure the abap-mcp-adt-powerup MCP server for SAP ADT connectivity
 level: 2
 ---
 
 # SC4SAP MCP Setup
 
-Guides you through installing and configuring the `mcp-abap-adt` MCP server, which provides Claude Code with direct connectivity to your SAP system via ABAP Development Tools (ADT) REST APIs.
+Guides you through installing and configuring the `abap-mcp-adt-powerup` MCP server, which provides Claude Code with direct connectivity to your SAP system via ABAP Development Tools (ADT) REST APIs. The server exposes 150+ tools covering CRUD for ABAP objects (class, program, CDS, FM, table, etc.) plus runtime, transport, and data-preview operations.
 
 <Purpose>
-The `mcp-abap-adt` MCP server is the bridge between Claude Code and your SAP system. Without it, no SC4SAP skills can read or write ABAP objects. This skill walks you through cloning, configuring, and registering the server so all MCP tools become available.
+`abap-mcp-adt-powerup` is the bridge between Claude Code and your SAP system. Without it, no SC4SAP skills can read or write ABAP objects. This skill walks you through cloning, configuring, and registering the server so all MCP tools become available.
 </Purpose>
 
 <Source>
-MCP server repository: https://github.com/babamba2/abap-mcp-adt.git
+MCP server repository: https://github.com/babamba2/abap-mcp-adt-powerup.git
+Installed at: `${CLAUDE_PLUGIN_ROOT}/vendor/abap-mcp-adt/` (internal directory name kept short for path-length safety on Windows).
 </Source>
 
 <Prerequisites>
@@ -47,6 +48,16 @@ MCP server repository: https://github.com/babamba2/abap-mcp-adt.git
    SAP_LANGUAGE=EN
    SAP_SYSTEM_TYPE=onprem
    TLS_REJECT_UNAUTHORIZED=0
+
+   # --- Blocklist policy (optional) ---
+   # Controls the row-extraction guard in mcp-abap-adt. Defaults to `standard`.
+   #   minimal  — block only PII/credentials/banking
+   #   standard — minimal + Protected Business Data (ACDOCA, BKPF, VBAK, EKKO, ...)  [default]
+   #   strict   — standard + Audit/Security + Communication/Workflow
+   #   off      — disable the guard entirely (NOT recommended)
+   # MCP_BLOCKLIST_PROFILE=standard
+   # MCP_BLOCKLIST_EXTEND=ZHR_SALARY,ZCUSTOMER_PII
+   # MCP_ALLOW_TABLE=ACDOCA
    ```
    - `SAP_URL`: SAP system URL with HTTPS and ICM port (typically 44300 for HTTPS)
    - `SAP_CLIENT`: SAP client number (3 digits, e.g., "100")
@@ -55,6 +66,9 @@ MCP server repository: https://github.com/babamba2/abap-mcp-adt.git
    - `SAP_LANGUAGE`: Logon language (EN, DE, etc.)
    - `SAP_SYSTEM_TYPE`: `onprem` for on-premise S/4HANA, `cloud` for BTP
    - `TLS_REJECT_UNAUTHORIZED`: Set to `0` for self-signed certificates (dev only)
+   - `MCP_BLOCKLIST_PROFILE` *(optional)*: `minimal` | `standard` | `strict` | `off` — risk tier for row-extraction guard. Leave unset for the safe default (`standard`).
+   - `MCP_BLOCKLIST_EXTEND` *(optional)*: comma-separated extra names/patterns (always denied). Use for site-specific Z-tables containing sensitive data.
+   - `MCP_ALLOW_TABLE` *(optional)*: comma-separated whitelist for an audited one-off bypass. Logged to stderr. Remove when not actively needed.
 
    The bridge reads this file automatically on startup. Environment variables take precedence over file values.
 
@@ -73,18 +87,22 @@ MCP server repository: https://github.com/babamba2/abap-mcp-adt.git
 </Installation_Steps>
 
 <Troubleshooting>
-- **401 Unauthorized**: Check username/password and ensure the user is not locked
-- **Connection refused**: Verify the SAP host URL and ICM HTTPS port; check VPN if required
-- **ADT service not found**: Activate `/sap/bc/adt` in transaction SICF and ensure ICF is running
-- **SSL certificate errors**: Add SAP system certificate to Node.js trust store, or set `"rejectUnauthorized": false` in config (dev only)
-- **No tools visible in Claude Code**: Restart Claude Code after editing config; check MCP server logs
+- **401 Unauthorized**: Check `SAP_USERNAME` / `SAP_PASSWORD` in `.sc4sap/sap.env`; confirm the user is not locked (SU01).
+- **Connection refused**: Verify `SAP_URL` host and ICM HTTPS port; check VPN if required.
+- **ADT service not found**: Activate `/sap/bc/adt` in transaction SICF and ensure ICF is running.
+- **SSL certificate errors**: Add the SAP system certificate to Node.js trust store (recommended), or temporarily set `TLS_REJECT_UNAUTHORIZED=0` in `sap.env` (dev only — never in prod).
+- **No tools visible in Claude Code**: Reconnect the MCP server via `/mcp` after editing `sap.env`. `sap.env` changes are NOT hot-reloaded. Check MCP server stderr logs under `%LOCALAPPDATA%\claude-cli-nodejs\Cache\<cwd-slug>\mcp-logs-plugin-sc4sap-sap\`.
+- **Blocklist refusal on a legitimate table**: Run `/sc4sap:sap-option` to adjust `MCP_BLOCKLIST_PROFILE` or add the table to `MCP_ALLOW_TABLE` (audited bypass).
+- **`vendor/abap-mcp-adt` not built**: Re-run `node scripts/build-mcp-server.mjs` (or `--update` to refresh).
 </Troubleshooting>
 
 <Security_Notes>
-- Never commit `config.json` with credentials to version control
-- Use environment variables for credentials in CI/CD environments
-- Prefer read-only SAP user for analysis-only workflows
-- The MCP server communicates only with your configured SAP host
+- Never commit `.sc4sap/sap.env` (the dotenv file with SAP credentials) to version control. It is git-ignored by default.
+- Use process-level environment variables to override `sap.env` values in CI/CD, so secrets never touch disk.
+- Prefer a read-only SAP user for analysis-only workflows.
+- `TLS_REJECT_UNAUTHORIZED=0` is **dev-only** — never set in production. Install the SAP system certificate into Node.js trust store instead.
+- The MCP server communicates only with the SAP host in `SAP_URL`. No outbound calls to third parties.
+- Row-extraction on sensitive tables is gated by the blocklist policy above (`MCP_BLOCKLIST_PROFILE`, `MCP_BLOCKLIST_EXTEND`, `MCP_ALLOW_TABLE`). See `common/data-extraction-policy.md`.
 </Security_Notes>
 
 Task: {{ARGUMENTS}}

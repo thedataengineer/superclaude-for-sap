@@ -267,13 +267,20 @@ async function main() {
     process.exit(0);
   }
 
-  // warn-only: allow but surface to Claude (stderr is relayed to the model).
+  // warn category: require explicit user confirmation via permissionDecision="ask".
   const lines = warnHits.map((h) => `  - ${h.table} — ${h.category}: ${h.why || 'sensitive'}`).join('\n');
-  const warning =
-    `⚠️  sc4sap blocklist WARNING (profile: ${profile}) — sensitive tables accessed:\n${lines}\n` +
-    `This category is set to "warn" rather than "deny". Before sharing results, recommend safer alternatives ` +
-    `(released CDS view, anonymized test data, COUNT/SUM aggregates) and confirm the user's intent.`;
-  process.stderr.write(warning + '\n');
+  const reason =
+    `sc4sap blocklist (profile: ${profile}) — sensitive table access requires confirmation:\n${lines}\n\n` +
+    `These are "Protected Business Data" tables. Default posture is blocked until the user authorizes the request ` +
+    `(scope, anonymization, intended use). Approve only if the user has confirmed scope and party-ID handling. ` +
+    `Safer alternatives: released CDS views, anonymized test data, COUNT/SUM aggregates.`;
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'PreToolUse',
+      permissionDecision: 'ask',
+      permissionDecisionReason: reason,
+    },
+  }));
   process.exit(0);
 }
 

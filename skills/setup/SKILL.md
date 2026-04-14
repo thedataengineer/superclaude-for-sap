@@ -1,6 +1,6 @@
 ---
 name: sc4sap:setup
-description: Plugin setup + MCP connection + SPRO config auto-generation from S/4HANA
+description: Plugin setup — install abap-mcp-adt-powerup, write .sc4sap/{sap.env,config.json}, create ZMCP_ADT_UTILS, install PreToolUse blocklist hook, optional SPRO config auto-generation
 level: 2
 ---
 
@@ -13,7 +13,7 @@ Use `/sc4sap:setup` as the unified setup and configuration entrypoint for SuperC
 ```bash
 /sc4sap:setup                  # full setup wizard
 /sc4sap:setup doctor           # diagnose installation and SAP connection
-/sc4sap:setup mcp              # configure mcp-abap-adt MCP server
+/sc4sap:setup mcp              # configure abap-mcp-adt-powerup MCP server
 /sc4sap:setup spro             # auto-generate SPRO config from S/4HANA system
 ```
 
@@ -25,6 +25,34 @@ Process the request by the **first argument only**:
 - `doctor` -> route to `/sc4sap:sap-doctor` with remaining args
 - `mcp` -> route to `/sc4sap:mcp-setup` with remaining args
 - `spro` -> run SPRO config auto-generation workflow (see below)
+
+## Interaction Style (MANDATORY)
+
+> **한 번에 하나씩만 질문한다.** 여러 질문을 한꺼번에 나열하지 않는다.
+>
+> - 각 스텝을 **순차적으로** 진행하고, 각 스텝에서 필요한 입력을 **하나씩** 묻는다.
+> - 사용자가 답하기 전에 다음 질문으로 넘어가지 않는다.
+> - 사용자가 답하면 즉시 해당 값을 기록/적용하고 다음 스텝으로 이동한다.
+> - 한 스텝 안에 여러 필드가 있어도(예: Step 4의 SAP 연결 정보) **필드별로 한 줄씩** 따로 묻는다.
+>   예: `SAP_URL?` → 답변 → `SAP_CLIENT?` → 답변 → `SAP_AUTH_TYPE?` → ...
+> - 이미 `.sc4sap/sap.env` 또는 `.sc4sap/config.json` 에 값이 있으면 현재 값을 보여주고 "Enter 로 유지 / 새 값 입력" 선택지를 준다.
+> - 설명은 짧게. 긴 안내문을 벽처럼 붙여넣지 않는다.
+>
+> 사용자가 귀찮아할 수 있으므로 **절대로** 모든 질문을 한 메시지에 몰아서 묻지 않는다.
+
+## Interaction Style (MANDATORY)
+
+> **Ask one question at a time. Never batch questions.**
+>
+> - Walk through the steps **sequentially** and collect each input **one by one**.
+> - Do not advance to the next question until the user has answered the current one.
+> - As soon as the user answers, record/apply the value and move to the next step.
+> - Even when a single step has multiple fields (e.g., Step 4 SAP connection info), ask **one field per message**.
+>   Example: ask `SAP_URL?` → wait for answer → ask `SAP_CLIENT?` → wait → ask `SAP_AUTH_TYPE?` → ...
+> - If a value already exists in `.sc4sap/sap.env` or `.sc4sap/config.json`, show the current value and offer "press Enter to keep / type a new value".
+> - Keep prompts short. Do not paste long wall-of-text instructions.
+>
+> Never dump the entire questionnaire in a single message — users find it frustrating.
 
 ## Setup Wizard Steps
 
@@ -44,24 +72,42 @@ Process the request by the **first argument only**:
    - Which ABAP syntax features agents can use in generated code (see ABAP Release Reference below)
    - Store as `SAP_VERSION` (`S4` or `ECC`) and `ABAP_RELEASE` (e.g., `756`) in `.sc4sap/sap.env` and `.sc4sap/config.json`
 
-3. **Install `abap-mcp-adt` MCP server** — run `node scripts/build-mcp-server.mjs` to clone and build the external MCP server into `vendor/abap-mcp-adt/`
+3. **Install `abap-mcp-adt-powerup` MCP server** — run `node scripts/build-mcp-server.mjs` to clone (`github.com/babamba2/abap-mcp-adt-powerup.git`) and build the external MCP server into `vendor/abap-mcp-adt/`
    - If already installed, skip (use `--update` to refresh)
    - On failure, show error and guide user to manual install
 4. **Configure SAP connection** — ask user for SAP credentials and write `.sc4sap/sap.env`:
-   - SAP_URL (e.g., `https://your-sap-host:44300`)
-   - SAP_CLIENT (e.g., `100`)
-   - SAP_AUTH_TYPE (`basic` or `xsuaa`)
-   - SAP_USERNAME / SAP_PASSWORD
-   - SAP_LANGUAGE (default: `EN`)
-   - SAP_SYSTEM_TYPE (`onprem` or `cloud`)
-   - SAP_VERSION (`S4` or `ECC`) — from step 2
+   - `SAP_URL` (e.g., `https://your-sap-host:44300`)
+   - `SAP_CLIENT` (e.g., `100`)
+   - `SAP_AUTH_TYPE` (`basic` or `xsuaa`)
+   - `SAP_USERNAME` / `SAP_PASSWORD`
+   - `SAP_LANGUAGE` (default: `EN`)
+   - `SAP_SYSTEM_TYPE` (`onprem` or `cloud`)
+   - `SAP_VERSION` (`S4` or `ECC`) — from step 2
+   - `ABAP_RELEASE` (e.g., `750`, `756`, `758`) — from step 2; consumed by agents to gate ABAP syntax features
+   - `TLS_REJECT_UNAUTHORIZED=0` (dev only, self-signed certs) — omit or unset in production
+   - **Blocklist policy (optional, defaults to `standard`)** — this is the **MCP server-side guard (L4)** in `abap-mcp-adt-powerup`, read from env vars in `sap.env`. It is distinct from the **PreToolUse hook (L3)** configured in Step 12. Write these as commented examples so the user can uncomment as needed:
+     ```
+     # Blocklist profile: minimal | standard | strict | off
+     #   minimal  — block only PII/credentials/banking
+     #   standard — minimal + Protected Business Data (ACDOCA, BKPF, VBAK, EKKO, ...)   [default]
+     #   strict   — standard + Audit/Security + Communication/Workflow
+     #   off      — disable the guard entirely (NOT recommended)
+     # MCP_BLOCKLIST_PROFILE=standard
+
+     # Comma-separated table names (or Z-patterns) to ALWAYS block, on top of the profile
+     # MCP_BLOCKLIST_EXTEND=ZHR_SALARY,ZCUSTOMER_PII
+
+     # Comma-separated table names to WHITELIST (audited bypass). Use sparingly.
+     # MCP_ALLOW_TABLE=ACDOCA
+     ```
+   - Do not set `MCP_BLOCKLIST_PROFILE` unless the user explicitly asks to loosen or tighten the default. `standard` is the safe default.
 5. **Reconnect MCP** — prompt user to reconnect via `/mcp` so the newly installed server starts
 6. Test SAP system connection via `GetSession`
 7. Confirm connected system info (system ID, client, user)
 8. Run `GetInactiveObjects` to confirm ADT access rights
 9. **Create ABAP utility function modules** — required by the MCP server for Screen, GUI Status, and Text Element operations:
    1. Check if function group `ZMCP_ADT_UTILS` already exists via `SearchObject` (query=`ZMCP_ADT_UTILS`, objectType=`FUGR`)
-   2. If NOT found, create the objects using MCP tools:
+   2. If NOT found, create the objects using MCP tools (package `$TMP` = **local-only, not transportable** by design — these are developer tooling helpers, not business logic):
       - `CreateFunctionGroup` — name: `ZMCP_ADT_UTILS`, package: `$TMP`, description: `MCP ADT Utility Functions`
       - `CreateFunctionModule` — name: `ZMCP_ADT_DISPATCH`, group: `ZMCP_ADT_UTILS`, description: `MCP ADT Dispatcher for Screen/GUI Status`
       - `CreateFunctionModule` — name: `ZMCP_ADT_TEXTPOOL`, group: `ZMCP_ADT_UTILS`, description: `MCP ADT Text Pool Read/Write`
@@ -70,7 +116,8 @@ Process the request by the **first argument only**:
       - Activate all objects
    3. If already found, skip creation and report "ZMCP_ADT_UTILS already exists"
    4. Test by calling `SearchObject` for `ZMCP_ADT_DISPATCH` to verify
-10. Write plugin config to `.sc4sap/config.json` — include `sapVersion` and `abapRelease` fields
+10. Write plugin config to `.sc4sap/config.json` — include `sapVersion` and `abapRelease` fields.
+    - Note: these are **duplicated** in `sap.env` (step 4) on purpose. `sap.env` is consumed by the MCP server process; `config.json` is consumed by plugin-side components (PreToolUse hook, agents, SPRO cache). Keep both in sync when the user changes them via `/sc4sap:sap-option`.
 11. **Ask user about SPRO config extraction (선택 사항)** — prompt whether to run SPRO extraction now:
 
     ```
@@ -94,7 +141,13 @@ Process the request by the **first argument only**:
     - If user answers yes: proceed to run SPRO extraction (see `/sc4sap:setup spro` workflow below)
     - If user answers no or skips: confirm with "SPRO 추출을 건너뛰었습니다. 필요시 `/sc4sap:setup spro`로 실행하세요." and complete setup
 
-12. **🔒 Data Extraction Blocklist (MANDATORY — not skippable)** — install the `PreToolUse` hook that blocks row extraction from sensitive tables.
+12. **🔒 Data Extraction Blocklist — PreToolUse hook (L3, MANDATORY — not skippable)** — install the Claude Code `PreToolUse` hook that blocks row extraction from sensitive tables *before* the MCP call is even made.
+
+    > **Two-layer model — do not conflate:**
+    > - **L3 (this step)** = Claude Code PreToolUse hook, config in `.sc4sap/config.json` → `blocklistProfile`. Values: `strict` | `standard` | `minimal` | `custom`. Fires for any Claude Code session regardless of which MCP server is in use.
+    > - **L4 (step 4, optional)** = MCP server internal guard, config in `sap.env` → `MCP_BLOCKLIST_PROFILE`. Values: `minimal` | `standard` | `strict` | `off`. Applies only to `abap-mcp-adt-powerup`.
+    >
+    > They enforce similar intent but are **independent**. Typical setups run L3 on `strict` (the default) and leave L4 on `standard`. A user can change L3 here (or by editing `config.json`); L4 is changed via `/sc4sap:sap-option`.
 
     **Step A — Profile selection**: ask the user to choose a blocklist scope:
 
@@ -133,60 +186,24 @@ Process the request by the **first argument only**:
 
     Pipe a BNKA test payload to the hook script and confirm it returns a `deny` decision. Example (bash):
     ```bash
-    echo '{"tool_name":"mcp__abap__GetTableContents","tool_input":{"table":"BNKA"}}' \
+    echo '{"tool_name":"mcp__plugin_sc4sap_sap__GetTableContents","tool_input":{"table_name":"BNKA"}}' \
       | node scripts/hooks/block-forbidden-tables.mjs
     ```
-    Expected: JSON with `"permissionDecision":"deny"`. If not, halt setup and surface the error.
+    Expected: JSON containing `"permissionDecision":"deny"` in `hookSpecificOutput`. If not, halt setup and surface the error. (The hook matches tool names by substring — any name containing `GetTableContents` or `GetSqlQuery` works.)
 
     **Step D — Final confirmation**:
     - Print profile, extend file path (exists? yes/no), custom file path (for custom mode), and the full settings.json hook entry.
-    - Remind the user they can change the profile anytime by re-running `/sc4sap:setup` or editing `.sc4sap/config.json`.
+    - Remind the user they can change the **L3 hook profile** anytime by re-running `/sc4sap:setup` or editing `.sc4sap/config.json` → `blocklistProfile`.
+    - For the **L4 MCP-server profile** (`MCP_BLOCKLIST_PROFILE` in `sap.env`), direct them to `/sc4sap:sap-option`.
 
     Setup cannot complete without Step 12 succeeding. If the hook install fails (no node, permission error, etc.), stop and report — do not mark setup as done.
 
 <SAP_Version_Reference>
-Key differences between ECC and S/4HANA that affect agent behavior:
-
-| Area | ECC 6.0 | S/4HANA |
-|------|---------|---------|
-| Business Partner | Customer (KNA1, XD01) + Vendor (LFA1, XK01) 분리 | BP 통합 (BUT000, BP) |
-| Material Document | MKPF (header) + MSEG (item) | MATDOC (통합) |
-| Accounting Document | BKPF + BSEG | ACDOCA (Universal Journal) |
-| G/L Accounts | SKA1 + SKB1 (classic GL) | SKA1 + SKB1 + FINSC (new GL default) |
-| Asset Accounting | ANLA + ANLP (classic) | ACDOCA 통합 (new asset accounting) |
-| Output Management | NACE (condition-based) | BRF+ / Output Management (S4 1809+) |
-| Credit Management | VKM1/F.28 (classic) | UKM (SAP Credit Management) |
-| MRP | MD01/MD02 | MD01N / ppMRP (embedded) |
-| Purchasing | ME21N (classic PO) | ME21N + Fiori apps |
-| Sales | VA01 (classic) | VA01 + Fiori apps (Manage Sales Orders) |
-
-Agents MUST check `SAP_VERSION` from config before recommending TCodes, tables, BAPIs, or development patterns.
-Agents MUST check `ABAP_RELEASE` from config before generating ABAP code — using unsupported syntax causes activation errors.
+When you need to explain ECC vs S/4HANA differences (tables, TCodes, BAPIs, development patterns) during setup or when routing follow-up questions, **read `common/sap-version-reference.md`** and apply the rules there. Do not duplicate the comparison table inline — the file is the single source of truth.
 </SAP_Version_Reference>
 
 <ABAP_Release_Reference>
-Key ABAP syntax features by release — agents MUST NOT use features above the configured release:
-
-| Release | Key Syntax Features |
-|---------|-------------------|
-| 740 | Inline declarations (`DATA(lv_x)`), constructor expressions (`NEW`, `VALUE`, `CORRESPONDING`, `CONV`, `CAST`, `REF`, `EXACT`, `COND`, `SWITCH`), table expressions (`itab[ key ]`), string templates (`\|{ var }\|`) |
-| 741 | `FOR` expressions in VALUE/REDUCE, `FILTER`, meshes, `MOVE-CORRESPONDING` for deep structures |
-| 750 | Open SQL expressions (CASE, CAST, COALESCE in SELECT), CDS view annotations, ABAP Channels (AMC/APC) |
-| 751 | CDS view extensions, virtual elements in CDS, `ENUM` types, `GROUP BY` in internal tables |
-| 752 | CDS access control, CDS metadata extensions, `CORRESPONDING` with mapping, virtual sorting of itab |
-| 753 | ABAP CDS table functions, released APIs (whitelist), `AMDP` enhancements, `READ ENTITIES` (RAP preview) |
-| 754 | ABAP RESTful Application Programming (RAP) model, behavior definitions, EML (`MODIFY ENTITIES`), `FINAL` classes |
-| 755 | RAP managed/unmanaged scenarios, draft handling, ABAP SQL `LITERAL`, `@Environment.systemField` in CDS |
-| 756 | ABAP Cloud Development Model, tier-1/tier-2 APIs, local ABAP types in ABAP SQL, `ABAP_BOOL`→`ABAP_BOOLEAN`, stricter CDS syntax |
-| 757 | RAP side effects, ABAP SQL `CROSS JOIN`, `INNER/LEFT OUTER MANY TO MANY`, privileged mode in RAP |
-| 758 | ABAP SQL `REPLACE`, `INITCAP`, new aggregate functions, RAP late numbering, background processing in RAP |
-
-**Rules for code generation:**
-- `ABAP_RELEASE < 740`: No inline declarations, no constructor expressions — use `DATA`, `CREATE OBJECT`, `MOVE-CORRESPONDING`
-- `ABAP_RELEASE < 750`: No Open SQL expressions — use `SELECT` with simple fields only
-- `ABAP_RELEASE < 754`: No RAP/EML — use classic BAPI/FM/class patterns
-- `ABAP_RELEASE < 756`: No ABAP Cloud restrictions — all classic APIs available
-- Always prefer modern syntax within the allowed release range
+When you need to reason about ABAP syntax availability for a given `ABAP_RELEASE` (e.g., whether inline declarations, RAP, or Open SQL expressions are allowed), **read `common/abap-release-reference.md`** and follow the rules there. Do not duplicate the feature matrix inline.
 </ABAP_Release_Reference>
 
 ## SPRO Config Auto-Generation (`/sc4sap:setup spro`)
@@ -253,8 +270,7 @@ After all modules complete:
 
 ## Notes
 
-- `/sc4sap:sap-doctor`, `/sc4sap:mcp-setup` remain valid direct entrypoints
-- Prefer `/sc4sap:setup` in documentation and user guidance
-- Config is stored in `.sc4sap/` in the project root
-
-Task: {{ARGUMENTS}}
+- `/sc4sap:sap-doctor`, `/sc4sap:mcp-setup`, `/sc4sap:sap-option` remain valid direct entrypoints.
+- Prefer `/sc4sap:setup` in documentation and user guidance.
+- Config is stored in `.sc4sap/` in the project root (`sap.env` for MCP-server env, `config.json` for plugin-side settings, optional `blocklist-extend.txt` / `blocklist-custom.txt`).
+- After setup: to change SAP credentials or the L4 MCP blocklist profile, use `/sc4sap:sap-option`. To change the L3 hook profile, re-run `/sc4sap:setup` or edit `.sc4sap/config.json`.

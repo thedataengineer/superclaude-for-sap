@@ -26,7 +26,7 @@ Run all checks in order. Report PASS / FAIL / WARN for each.
 **Layer 1 - Plugin Health**
 - [ ] SC4SAP plugin directory exists and is readable
 - [ ] `package.json` version is current
-- [ ] Skill files present (14 skills in `skills/` directory)
+- [ ] Skill files present (16 skills in `skills/` directory)
 - [ ] Config file exists at `.sc4sap/config.json`
 
 **Layer 2 - MCP Server**

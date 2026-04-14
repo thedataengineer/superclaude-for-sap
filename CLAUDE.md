@@ -69,6 +69,7 @@ All skills are invoked with the `sc4sap:` prefix:
 - `/sc4sap:ralph` — Persistent loop with SAP verification
 - `/sc4sap:release` — CTS transport release workflow
 - `/sc4sap:mcp-setup` — MCP ABAP ADT server configuration guide
+- `/sc4sap:sap-option` — View and edit `.sc4sap/sap.env` (credentials, blocklist profile, whitelists)
 
 ### Agents
 SAP-specialized agents are available for delegation:

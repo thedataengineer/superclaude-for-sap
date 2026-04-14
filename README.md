@@ -1,4 +1,4 @@
-English | [한국어](README.ko.md)
+English | [한국어](README.ko.md) | [日本語](README.ja.md)
 
 # SuperClaude for SAP (sc4sap)
 
@@ -17,14 +17,40 @@ SuperClaude for SAP transforms Claude Code into a full-stack SAP development ass
 ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D%2020.0.0-339933?logo=node.js&logoColor=white)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-CLI-6B4FBB?logo=anthropic&logoColor=white)
 ![SAP S/4HANA](https://img.shields.io/badge/SAP-S%2F4HANA_On--Premise-0FAAFF?logo=sap&logoColor=white)
-![MCP ABAP ADT](https://img.shields.io/badge/MCP_ABAP_ADT-Server_Required-FF6600)
+![MCP ABAP ADT](https://img.shields.io/badge/MCP_ABAP_ADT-Auto--Installed-FF6600)
 
 | Requirement | Details |
 |-------------|---------|
 | **Node.js** | >= 20.0.0 |
 | **Claude Code** | CLI installed (Max/Pro subscription or API key) |
 | **SAP System** | On-Premise S/4HANA with ADT enabled |
-| **MCP Server** | [abap-mcp-adt-powerup](https://github.com/babamba2/abap-mcp-adt-powerup) configured |
+
+> **MCP Server** ([abap-mcp-adt-powerup](https://github.com/babamba2/abap-mcp-adt-powerup)) is **automatically installed and configured** during `/sc4sap:setup` — no manual pre-install required.
+
+## Installation
+
+```bash
+# Install from marketplace
+claude plugin install sc4sap
+
+# Or install from source
+git clone https://github.com/babamba2/superclaude-for-sap.git
+cd superclaude-for-sap
+npm install && npm run build
+```
+
+## Setup
+
+```bash
+# Run the setup skill to configure MCP connection and generate SPRO configs
+/sc4sap:setup
+```
+
+This will:
+1. **Auto-install the MCP ABAP ADT server** (`abap-mcp-adt-powerup`) and verify connection
+2. Auto-generate SPRO config files from your S/4HANA system
+3. Configure hooks and agents
+4. **Install the Data Extraction Blocklist hook** (mandatory) — prompts for profile (`strict` / `standard` / `minimal` / `custom`) and registers the `PreToolUse` hook in your Claude Code settings
 
 ## Features
 
@@ -48,14 +74,36 @@ SuperClaude for SAP transforms Claude Code into a full-stack SAP development ass
 | `sc4sap:teams` | CLI team runtime (tmux-based) |
 | `sc4sap:ask` | Question routing to appropriate agent |
 | `sc4sap:deep-interview` | Socratic requirements gathering |
-| `sc4sap:hud` | HUD display with SAP system status |
 | `sc4sap:mcp-setup` | MCP ABAP ADT server setup guide |
+| `sc4sap:sap-option` | View / edit `.sc4sap/sap.env` (credentials, blocklist profile, whitelists) |
 | `sc4sap:sap-doctor` | Plugin + MCP + SAP connection diagnostics |
 | `sc4sap:release` | CTS transport release workflow |
 | `sc4sap:create-object` | ABAP object creation (hybrid mode) |
 | `sc4sap:program` | Full ABAP program pipeline — Main+Include, OOP/Procedural, ALV, test, 4-layer agent pipeline |
 | `sc4sap:analyze-code` | ABAP code analysis & improvement |
 | `sc4sap:analyze-symptom` | Step-by-step SAP operational error/symptom analysis (dumps, logs, SAP Note candidates) |
+
+### MCP ABAP ADT Server — Unique Capabilities
+
+sc4sap is backed by **[abap-mcp-adt-powerup](https://github.com/babamba2/abap-mcp-adt-powerup)**, an extended ADT MCP server (150+ tools). Beyond the usual Class / Program / Table / CDS / Function Module CRUD found in standard ADT MCPs, it adds **full Read / Update / Create coverage for classic Dynpro artifacts** that most MCP servers don't touch:
+
+| Artifact | Read | Create | Update | Delete | Notes |
+|----------|------|--------|--------|--------|-------|
+| **Screen (Dynpro)** | `GetScreen`, `ReadScreen`, `GetScreensList` | `CreateScreen` | `UpdateScreen` | `DeleteScreen` | Full Dynpro header + flow logic round-trip in MCP JSON (uppercase `HEADER` / `FLOW_LOGIC` / `LINE` keys) |
+| **GUI Status** | `GetGuiStatus`, `ReadGuiStatus`, `GetGuiStatusList` | `CreateGuiStatus` | `UpdateGuiStatus` | `DeleteGuiStatus` | Menu bar, function keys, application toolbar — programmatically created and edited |
+| **Text Element** | `GetTextElement` | `CreateTextElement` | `UpdateTextElement` | `DeleteTextElement` | Text symbols, selection texts, list headings — required for Text Element enforcement rule |
+| **Includes** | `GetInclude`, `GetIncludesList` | `CreateInclude` | `UpdateInclude` | `DeleteInclude` | Used by Main+Include convention |
+| **Local defs/macros/tests/types** | `GetLocalDefinitions`, `GetLocalMacros`, `GetLocalTestClass`, `GetLocalTypes` | — | `UpdateLocalDefinitions`, `UpdateLocalMacros`, `UpdateLocalTestClass`, `UpdateLocalTypes` | `DeleteLocal*` | In-program local sections edited independently |
+| **Metadata Extension (CDS)** | `GetMetadataExtension` | `CreateMetadataExtension` | `UpdateMetadataExtension` | `DeleteMetadataExtension` | Fiori/UI annotation layering on CDS |
+| **Behavior Definition / Implementation (RAP)** | `Get/Read BehaviorDefinition`, `Get/Read BehaviorImplementation` | `Create*` | `Update*` | `Delete*` | Full RAP BDEF + BHV cycle |
+| **Service Definition / Binding** | `Get/Read ServiceDefinition`, `Get/Read ServiceBinding`, `ListServiceBindingTypes`, `ValidateServiceBinding` | `Create*` | `Update*` | `Delete*` | OData V2/V4 exposure and validation |
+| **Enhancements / BAdI** | `GetEnhancements`, `GetEnhancementSpot`, `GetEnhancementImpl` | — | — | — | Discovery of extension points |
+| **Runtime & Profiling** | `RuntimeListDumps`, `RuntimeAnalyzeDump`, `RuntimeGetDumpById`, `RuntimeListProfilerTraceFiles`, `RuntimeGetProfilerTraceData`, `RuntimeAnalyzeProfilerTrace`, `RuntimeCreateProfilerTraceParameters`, `RuntimeRunProgramWithProfiling`, `RuntimeRunClassWithProfiling` | — | — | — | ST22 dump analysis + SAT-style profiling entirely from Claude |
+| **Semantic / AST** | `GetAbapAST`, `GetAbapSemanticAnalysis`, `GetAbapSystemSymbols`, `GetAdtTypes`, `GetTypeInfo`, `GetWhereUsed` | — | — | — | Richer analysis than plain syntax check |
+| **Unit Tests (ABAP + CDS)** | `GetUnitTest`, `GetUnitTestResult`, `GetUnitTestStatus`, `GetCdsUnitTest`, `GetCdsUnitTestResult`, `GetCdsUnitTestStatus` | `CreateUnitTest`, `CreateCdsUnitTest` | `UpdateUnitTest`, `UpdateCdsUnitTest` | `DeleteUnitTest`, `DeleteCdsUnitTest` | Both ABAP Unit and CDS test framework |
+| **Transport** | `GetTransport`, `ListTransports` | `CreateTransport` | — | — | Full transport lifecycle in MCP |
+
+The Dynpro / GUI Status / Text Element CRUD in particular enable sc4sap's classical-UI pipeline (`sc4sap:program` with ALV + Docking + selection screen) to be fully AI-driven end-to-end — a scenario most ADT MCP servers cannot support.
 
 ### Shared Conventions (`common/`)
 
@@ -180,69 +228,220 @@ export SC4SAP_ALLOW_TABLE=TAB1,TAB2        # session-scoped emergency exemption 
 
 When a blocked table is accessed, the MCP server responds with `isError: true` and the categorized reason — no SAP round-trip occurs.
 
-## Installation
+## Skills — Examples & Workflow
 
-```bash
-# Install from marketplace
-claude plugin install sc4sap
+Each skill below shows a one-line invocation, a typical prompt, and what happens under the hood. Screenshots will be added in a future update.
 
-# Or install from source
-git clone https://github.com/babamba2/superclaude-for-sap.git
-cd superclaude-for-sap
-npm install && npm run build
+### `/sc4sap:setup`
+
+One-time onboarding: installs the MCP ABAP ADT server, extracts SPRO cache, installs the data-extraction blocklist hook.
+
 ```
-
-## Setup
-
-```bash
-# Run the setup skill to configure MCP connection and generate SPRO configs
 /sc4sap:setup
 ```
 
-This will:
-1. Verify MCP ABAP ADT server connection
-2. Auto-generate SPRO config files from your S/4HANA system
-3. Configure hooks and agents
-4. **Install the Data Extraction Blocklist hook** (mandatory) — prompts for profile (`strict` / `standard` / `minimal` / `custom`) and registers the `PreToolUse` hook in your Claude Code settings
+**Flow** — connection test → SAP version detect (ECC / S4 On-Prem / Cloud) → SPRO extraction per module → blocklist profile prompt (`strict` / `standard` / `minimal` / `custom`) → hook registration in `settings.json`.
 
-## Quick Start
+> _Screenshot placeholder — setup wizard_
 
-```bash
-# Create an ABAP class
+---
+
+### `/sc4sap:create-object`
+
+Hybrid-mode single-object creation: confirms transport + package interactively, then creates, scaffolds, and activates.
+
+```
 /sc4sap:create-object
+→ "Create a class ZCL_SD_ORDER_VALIDATOR in package ZSD_ORDER"
+```
 
-# Analyze existing code
+**Flow** — type inference (Class / Interface / Program / FM / Table / Structure / Data Element / Domain / CDS / Service Def / Service Binding) → package + transport confirm → MCP `Create*` → initial implementation written → `GetAbapSemanticAnalysis` → activate.
+
+> _Screenshot placeholder — create-object confirmation + activation_
+
+---
+
+### `/sc4sap:program`
+
+Flagship program creation pipeline with Main + Include wrapping, OOP or Procedural, full ALV + Dynpro support.
+
+```
+/sc4sap:program
+→ "Make an ALV report for open sales orders, selection screen by sales org + date range"
+```
+
+**Flow** — SAP version preflight (`.sc4sap/config.json`) → Socratic interview → planner spec → user confirm → executor writes Main program + conditional Includes (t/s/c/a/o/i/e/f/_tst) + Screen + GUI Status + Text Elements → qa-tester writes ABAP Unit → code-reviewer gate → activate. Branches by platform (ECC / S4 On-Prem / Cloud Public forbids classical Dynpro → auto-redirect to `if_oo_adt_classrun` / SALV / RAP).
+
+> _Screenshot placeholder — program pipeline with ALV output_
+
+---
+
+### `/sc4sap:analyze-code`
+
+Reads an existing ABAP object via MCP, runs `sap-code-reviewer` against Clean ABAP + performance + security, returns categorized findings with suggested fixes.
+
+```
 /sc4sap:analyze-code
+→ "Review ZCL_SD_ORDER_VALIDATOR for Clean ABAP violations and SELECT * usage"
+```
 
-# Release a transport
-/sc4sap:release
+**Flow** — `ReadClass` / `GetProgFullCode` → `GetAbapSemanticAnalysis` + `GetWhereUsed` → sap-code-reviewer analysis → categorized report (Clean ABAP / Performance / Security / SAP Standard) → optional apply-fix loop.
 
-# Full autonomous development
+> _Screenshot placeholder — review findings table_
+
+---
+
+### `/sc4sap:analyze-symptom`
+
+Step-by-step runtime / operational error investigation: dumps, logs, SAP Note candidates.
+
+```
+/sc4sap:analyze-symptom
+→ "Dump MESSAGE_TYPE_X in ZFI_POSTING at line 234 during F110"
+```
+
+**Flow** — `RuntimeListDumps` / `RuntimeGetDumpById` / `RuntimeAnalyzeDump` → stack trace parse → SAP Note candidate search → root cause hypothesis → remediation options (config / code / user action).
+
+> _Screenshot placeholder — dump analysis and Note candidates_
+
+---
+
+### `/sc4sap:autopilot`
+
+Full autonomous pipeline from vague idea to activated, tested ABAP objects — runs `deep-interview` → `ralplan` → agent pipeline → `ralph` loop until clean.
+
+```
 /sc4sap:autopilot
+→ "Build a custom Vendor Payment approval workflow"
 ```
 
-## Example Use Cases
+**Flow** — deep-interview crystallizes scope → ralplan consensus plan → sap-planner WRICEF breakdown → sap-executor creates objects → sap-qa-tester runs unit tests → sap-code-reviewer gates → ralph loop retries until green.
 
-**ABAP Class Creation & Unit Testing**
+> _Screenshot placeholder — autopilot progress stream_
+
+---
+
+### `/sc4sap:ralph`
+
+Persistent self-correcting loop: runs until syntax is clean, activation succeeds, and unit tests pass. Drop-in for any "make it work" task.
+
 ```
-Create a custom sales order validation class ZCL_SD_ORDER_VALIDATOR
-with methods for credit check, delivery date validation, and pricing
-verification. Include ABAP Unit tests for each method.
+/sc4sap:ralph
+→ "Fix all activation errors in ZMM_GR_POSTING and its includes"
 ```
 
-**Cross-Module Integration Analysis**
+**Flow** — iterate: `GetAbapSemanticAnalysis` → identify error → edit via `UpdateProgram` / `UpdateClass` / `UpdateInclude` → activate → re-run unit test → stop when all three pass. Cancels on manual intervention or max iterations.
+
+> _Screenshot placeholder — ralph iteration log_
+
+---
+
+### `/sc4sap:ralplan`
+
+Consensus planning gate — multiple agent perspectives (analyst / architect / critic) converge on one plan before coding starts. Prevents autopilot from building the wrong thing.
+
 ```
-Analyze the integration points between SD billing (VF01) and FI
-accounting document posting. Show me which BAPIs and user exits
-are involved in the billing-to-accounting flow.
+/sc4sap:ralplan
+→ "Plan the rewrite of legacy ZSD_ORDER_RELEASE to RAP-based workflow"
 ```
 
-**Module Consultant Workflow**
+**Flow** — sap-analyst extracts requirements → sap-architect proposes technical design → sap-critic challenges design → convergence iterations → approved plan handed to autopilot / team.
+
+> _Screenshot placeholder — ralplan convergence diff_
+
+---
+
+### `/sc4sap:deep-interview`
+
+Socratic requirements gathering before any code is written. Surfaces hidden assumptions, edge cases, and module-cross-cutting effects.
+
 ```
-As an FI consultant, help me configure automatic payment program
-(F110) for vendor payments via bank transfer. What master data,
-SPRO settings, and custom development are needed?
+/sc4sap:deep-interview
+→ "I need a custom credit-limit check"
 ```
+
+**Flow** — initial user intent → layered questions (what modules, what master data, what timing, what error UX, who approves) → specification summary → user confirm.
+
+> _Screenshot placeholder — interview Q&A_
+
+---
+
+### `/sc4sap:team` / `/sc4sap:teams`
+
+Coordinated parallel agent execution. `team` uses native Claude Code teams (in-process); `teams` uses tmux CLI panes (process-level parallelism).
+
+```
+/sc4sap:team
+→ "Split this WRICEF list into 4 workers and build in parallel"
+```
+
+**Flow** — shared task list → N workers pick tasks → each runs create-object / program / ralph → merge-back via transport.
+
+> _Screenshot placeholder — tmux pane view / team dashboard_
+
+---
+
+### `/sc4sap:release`
+
+CTS transport release workflow — list, validate (no inactive objects, no syntax errors), release, and confirm import to next system.
+
+```
+/sc4sap:release
+→ "Release transport DEVK900123"
+```
+
+**Flow** — `GetTransport` → validation checklist → release via STMS → monitor import status → post-import smoke check.
+
+> _Screenshot placeholder — release checklist_
+
+---
+
+### `/sc4sap:ask`
+
+Question routing to the right expert agent without committing to a full skill pipeline.
+
+```
+/sc4sap:ask
+→ "Which BAdI fires on VA01 save after pricing?"
+```
+
+**Flow** — classify question (module / technical / config / error) → route to matching consultant agent (e.g. `sap-sd-consultant`) → answer with SPRO cache + MCP `GetEnhancementSpot` lookups.
+
+> _Screenshot placeholder — routed answer_
+
+---
+
+### `/sc4sap:doctor` (alias: `sap-doctor`)
+
+Plugin + MCP + SAP system diagnostics. First thing to run when something's off.
+
+```
+/sc4sap:doctor
+```
+
+**Flow** — plugin install check → MCP server handshake → SAP RFC/ADT connectivity → SPRO cache freshness → hook registration → blocklist active → report with actionable fixes.
+
+> _Screenshot placeholder — doctor report_
+
+---
+
+### `/sc4sap:mcp-setup`
+
+Standalone guide to install / reconfigure `abap-mcp-adt-powerup` if `/sc4sap:setup` didn't run it (e.g., existing global MCP config).
+
+```
+/sc4sap:mcp-setup
+```
+
+### `/sc4sap:sap-option`
+
+Interactively view and edit `.sc4sap/sap.env` — SAP connection credentials, TLS settings, and blocklist policy for row-extraction safety. Secrets are masked in the display; writes are preceded by a diff preview and create a `sap.env.bak` backup.
+
+```
+/sc4sap:sap-option
+```
+
+Common uses: rotate `SAP_PASSWORD`, switch `SAP_CLIENT`, change `MCP_BLOCKLIST_PROFILE` (`minimal` / `standard` / `strict` / `off`), add an audited `MCP_ALLOW_TABLE` entry, or append to `MCP_BLOCKLIST_EXTEND`. Reconnect MCP (`/mcp`) after saving.
 
 ## Tech Stack
 
@@ -253,7 +452,7 @@ SPRO settings, and custom development are needed?
 
 ## Roadmap
 
-- **v0.1.x** (current) — 24 agents, 15 skills, 13 module configs, shared `common/` conventions, SPRO local cache, Data Extraction Blocklist (**L1–L4 all shipped**; L4 is opt-in via `SC4SAP_POLICY=on` in `abap-mcp-adt-powerup`), Cloud ABAP awareness, RAP skill
+- **v0.1.x** (current) — 24 agents, 16 skills, 13 module configs, shared `common/` conventions, SPRO local cache, Data Extraction Blocklist (**L1–L4 all shipped**; L4 is opt-in via `SC4SAP_POLICY=on` in `abap-mcp-adt-powerup`), Cloud ABAP awareness, RAP skill
 - **v0.2.0** (planned) — richer `sc4sap:program` OOP templates, upstream PR to make L4 the default-on shipping behavior
 
 ## Acknowledgments

@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const VENDOR_DIR = resolve(ROOT, 'vendor', 'abap-mcp-adt');
-const REPO_URL = 'https://github.com/babamba2/abap-mcp-adt.git';
+const REPO_URL = 'https://github.com/babamba2/abap-mcp-adt-powerup.git';
 const LAUNCHER = resolve(VENDOR_DIR, 'dist', 'server', 'launcher.js');
 
 const args = process.argv.slice(2);
