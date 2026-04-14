@@ -540,11 +540,11 @@ CTS トランスポートリリースワークフロー — リスト、検証 (
 
 ## 作者
 
-백승현 (Paek Seunghyun)
+- [백승현 (Paek Seunghyun)](https://www.linkedin.com/in/seunghyun-paek-5b83b7183/)
 
 ## コントリビューター
 
-- 김시훈 (Kim Sihoon)
+- [김시훈 (Kim Sihun)](https://www.linkedin.com/in/sihun-kim-27737132b/)
 
 ## ライセンス
 
