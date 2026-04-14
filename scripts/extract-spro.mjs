@@ -24,7 +24,9 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const CONFIGS_DIR = resolve(ROOT, 'configs');
-const OUTPUT_DIR = resolve(ROOT, '.sc4sap');
+// Output to project-root .sc4sap/ (cwd), matching the convention used by
+// bridge/mcp-server.cjs and the block-forbidden-tables hook.
+const OUTPUT_DIR = resolve(process.cwd(), '.sc4sap');
 // Single module → per-module file; multiple/all → merged file
 const isSingleModule = () => selectedModules.length === 1;
 const getOutputFile = () => isSingleModule()

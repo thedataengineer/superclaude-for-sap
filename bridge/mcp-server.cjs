@@ -17,14 +17,21 @@ const fs = require('fs');
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
 const VENDOR_DIR = path.join(PLUGIN_ROOT, 'vendor', 'abap-mcp-adt');
 const LAUNCHER = path.join(VENDOR_DIR, 'dist', 'server', 'launcher.js');
-const ENV_FILE = path.join(PLUGIN_ROOT, '.sc4sap', 'sap.env');
+
+// Prefer project-local .sc4sap/sap.env (project root = process.cwd()),
+// fall back to the plugin's own .sc4sap/sap.env for legacy installs.
+const CWD_ENV = path.join(process.cwd(), '.sc4sap', 'sap.env');
+const PLUGIN_ENV = path.join(PLUGIN_ROOT, '.sc4sap', 'sap.env');
+const ENV_FILE = fs.existsSync(CWD_ENV) ? CWD_ENV : PLUGIN_ENV;
 
 // Point abap-mcp-adt's config system to the user's sap.env
 if (fs.existsSync(ENV_FILE)) {
   process.env.MCP_ENV_PATH = ENV_FILE;
 } else {
-  console.error(`[sc4sap] Config not found: ${ENV_FILE}`);
-  console.error('[sc4sap] Run "/sc4sap:setup" to configure SAP connection.');
+  console.error(`[sc4sap] Config not found. Looked in:`);
+  console.error(`  - ${CWD_ENV}`);
+  console.error(`  - ${PLUGIN_ENV}`);
+  console.error('[sc4sap] Run "/sc4sap:setup" in your project directory to configure SAP connection.');
   process.exit(1);
 }
 
