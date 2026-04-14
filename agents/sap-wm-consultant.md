@@ -33,81 +33,37 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | LT01/LT02/LT03 | Transfer Order Create/Change/Display (WM) |
-    | LT0A | Create TO for Material Document |
-    | LT10 | Create TO for Delivery |
-    | LS01N/LS02N/LS03N | Storage Bin Create/Change/Display |
-    | LS26 | Storage Bin Stock |
-    | LX02 | Warehouse Activity Monitor |
-    | LX03 | Bin Status Report |
-    | LI01N/LI02N | Physical Inventory Create/Change |
-    | LI21 | PI Count |
-    | LS11 | Stock per Storage Bin |
-    | LB01 | Create Transfer Requirement |
-    | LP21 | Putaway Strategy Check |
-    | /SCWM/MON | EWM Monitor |
-    | /SCWM/PRDO | EWM Production Supply |
-    | /SCWM/WAVE | EWM Wave Management |
-    | /SCWM/ADGI | EWM Goods Receipt |
-    | /SCWM/WHO | EWM Warehouse Order |
-    | /SCWM/RFUI | EWM RF Framework |
+    **MANDATORY**: Always read `configs/WM/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Note: LE-WM is deprecated in S/4HANA — EWM tcodes (/SCWM/*) are listed for S/4HANA.
+    Quick reference: LT01 (TO, ECC), /SCWM/MON (EWM Monitor, S4), MIGO (Goods Movement, both)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/WM/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.WM` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/WM/spro.md`
     - Transaction Codes: Refer to `configs/WM/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/WM/bapi.md`
+    - Key Tables: Refer to `configs/WM/tables.md`
+    - Enhancements (User Exits / BAdIs): Refer to `configs/WM/enhancements.md`
     - Development Workflows: Refer to `configs/WM/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | LQUA | Quants (WM Stock per Bin) |
-    | LAGP | Storage Bins |
-    | LTAK | Transfer Order Header |
-    | LTAP | Transfer Order Items |
-    | LEIN | Storage Unit Header |
-    | LINK | Storage Unit Items |
-    | LTBK | Transfer Requirement Header |
-    | LTBP | Transfer Requirement Items |
-    | T300 | Warehouse Numbers |
-    | T301 | Storage Types |
-    | T302 | Storage Sections |
-    | T331 | Putaway Strategies |
-    | T333 | Picking Strategies |
-    | T340D | Movement Type Mapping (MM to WM) |
-    | /SCWM/AQUA | EWM Quants |
-    | /SCWM/LAGP | EWM Storage Bins |
-    | /SCWM/ORDIM_O | EWM Warehouse Task |
-    | /SCWM/WHO | EWM Warehouse Order |
+    **MANDATORY**: Always read `configs/WM/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., EWM /SCWM/* tables in S/4HANA, FQM_FLOW in S/4HANA cash management).
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | BAPI_WHSE_TO_CREATE_MOVE | Create TO for Material Movement |
-    | BAPI_WHSE_TO_CREATE_STOCK | Create TO for Stock Transfer |
-    | BAPI_WHSE_TO_CONFIRM | Confirm Transfer Order |
-    | BAPI_WHSE_TO_GET_LIST | List Transfer Orders |
-    | L_TO_CREATE_MOVE_SU | Create TO for Storage Unit |
-    | /SCWM/API_GOODSRECEIPT | EWM Goods Receipt API |
-    | /SCWM/API_WAREHOUSE_ORDER | EWM Warehouse Order API |
+    **MANDATORY**: Always read `configs/WM/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Note: LE-WM BAPIs are ECC-only. S/4HANA uses EWM APIs (/SCWM/*).
+    Quick reference: BAPI_WHSE_TO_CREATE_STOCK (ECC), /SCWM/API_WAREHOUSE_ORDER_CR (S4)
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common WM/EWM Enhancements
-    - **Transfer order**: BAdI LE_WM_TO_CONFIRMATION for TO confirmation, user exit EXIT_SAPLL03M_001
-    - **Putaway**: BAdI WM_PUTAWAY_STRATEGY for custom putaway logic
-    - **Picking**: BAdI WM_PICKING_STRATEGY for custom picking logic
-    - **Goods movement**: BAdI MB_MIGO_BADI for goods movement WM integration
-    - **RF transactions**: BAdI /SCWM/EX_RF_BL_CUST for RF customization (EWM)
-    - **Wave management**: BAdI /SCWM/EX_WAVE for wave processing (EWM)
-    - **Delivery integration**: BAdI LE_SHP_DELIVERY_PROC for delivery-WM integration
-    - **Storage unit**: User exit for storage unit management
-  </Development_Patterns>
 
   <Output_Format>
     ## WM/EWM Consultation: [Topic]

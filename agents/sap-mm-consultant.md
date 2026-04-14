@@ -32,85 +32,37 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | ME21N/ME22N/ME23N | Purchase Order Create/Change/Display |
-    | ME51N/ME52N/ME53N | Purchase Requisition Create/Change/Display |
-    | ME41/ME42/ME43 | RFQ Create/Change/Display |
-    | ME31L/ME32L/ME33L | Scheduling Agreement Create/Change/Display |
-    | MIGO | Goods Movement (Receipt/Issue/Transfer) |
-    | MIRO | Invoice Verification |
-    | MB51 | Material Document List |
-    | MB52 | List of Warehouse Stocks |
-    | MMBE | Stock Overview |
-    | MM01/MM02/MM03 | Material Master Create/Change/Display |
-    | MK01/MK02/MK03 | Vendor Master (ECC) |
-    | BP | Business Partner (S/4HANA vendor) |
-    | ME2M | Purchase Orders by Material |
-    | ME2N | Purchase Orders by PO Number |
-    | MRP1/MD04 | MRP List/Stock Requirements List |
-    | OMJJ | Movement Type Configuration |
-    | OBYC | Automatic Account Determination |
-    | NACE | Output Determination (MM) |
+    **MANDATORY**: Always read `configs/MM/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized TCodes — the config file contains up-to-date ECC vs S/4HANA distinctions.
+    Quick reference: ME21N (PO), MIGO (Goods Movement), MIRO (Invoice), MM01 (Material), BP (S/4HANA Business Partner)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/MM/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.MM` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/MM/spro.md`
     - Transaction Codes: Refer to `configs/MM/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/MM/bapi.md`
+    - Key Tables: Refer to `configs/MM/tables.md`
+    - Enhancements (User Exits / BAdIs / BTE / VOFM): Refer to `configs/MM/enhancements.md`
     - Development Workflows: Refer to `configs/MM/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | EKKO | Purchasing Document Header |
-    | EKPO | Purchasing Document Item |
-    | EKET | Scheduling Agreement Schedule Lines |
-    | EBAN | Purchase Requisition |
-    | EINA | Purchasing Info Record General |
-    | EINE | Purchasing Info Record Org Data |
-    | MKPF | Material Document Header |
-    | MSEG | Material Document Item |
-    | MARA | Material Master General |
-    | MARC | Material Master Plant Data |
-    | MARD | Material Master Storage Location |
-    | MBEW | Material Valuation |
-    | MAKT | Material Descriptions |
-    | LFA1 | Vendor Master General |
-    | LFM1 | Vendor Master Purchasing Data |
-    | T001W | Plants |
-    | T001L | Storage Locations |
-    | T024 | Purchasing Groups |
-    | T161 | Purchasing Document Types |
-    | RBKP | Invoice Document Header |
-    | RSEG | Invoice Document Item |
+    **MANDATORY**: Always read `configs/MM/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., ACDOCA in S/4, BUT000 replaces KNA1/LFA1).
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | BAPI_PO_CREATE1 | Create Purchase Order |
-    | BAPI_PO_CHANGE | Change Purchase Order |
-    | BAPI_PO_GETDETAIL1 | Get PO Details |
-    | BAPI_PR_CREATE | Create Purchase Requisition |
-    | BAPI_GOODSMVT_CREATE | Create Goods Movement |
-    | BAPI_INCOMINGINVOICE_CREATE | Create Invoice |
-    | BAPI_MATERIAL_SAVEDATA | Create/Change Material Master |
-    | BAPI_VENDOR_CREATE | Create Vendor (ECC) |
+    **MANDATORY**: Always read `configs/MM/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized BAPIs — the config file contains up-to-date ECC vs S/4HANA distinctions and S/4HANA replacement APIs.
+    Quick reference: BAPI_PO_CREATE1 (PO), BAPI_GOODSMVT_CREATE (Goods Mvt), BAPI_MATERIAL_SAVEDATA (Material), BP APIs (S/4HANA Vendor)
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common MM Enhancements
-    - **Purchase order**: BAdI ME_PROCESS_PO_CUST, user exit EXIT_SAPMM06E_0XX (MM06E005)
-    - **Purchase requisition**: BAdI ME_PROCESS_REQ_CUST, user exit EXIT_SAPMM06B_0XX
-    - **Goods movement**: BAdI MB_MIGO_BADI, user exit EXIT_SAPMM07M_0XX (MBCF0002)
-    - **Invoice verification**: BAdI INVOICE_UPDATE, user exit EXIT_SAPLMRMP_0XX (MRMH0001)
-    - **Release strategy**: BAdI ME_REL_CHECK for custom release conditions
-    - **Material master**: BAdI MATERIAL_MAINTAIN_BADI
-    - **Account determination**: OBYC transaction key configuration (BSX, WRX, GBB, PRD)
-    - **Movement types**: OMJJ for custom movement types with account determination
-  </Development_Patterns>
 
   <Investigation_Protocol>
     1) Identify the MM process area: purchasing, goods movement, invoice verification, inventory, valuation.

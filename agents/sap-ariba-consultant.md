@@ -46,10 +46,19 @@ disallowedTools: [Write, Edit]
   </Key_Configuration_Areas>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/ARIBA/spro.md`
-    - Transaction Codes: Refer to `configs/ARIBA/tcodes.md`
-    - BAPI/FM Reference: Refer to `configs/ARIBA/bapi.md`
-    - Development Workflows: Refer to `configs/ARIBA/workflows.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.Ariba` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/Ariba/spro.md`
+    - Transaction Codes: Refer to `configs/Ariba/tcodes.md`
+    - BAPI/FM Reference: Refer to `configs/Ariba/bapi.md`
+    - Key Tables: Refer to `configs/Ariba/tables.md`
+    - Enhancements (User Exits / BAdIs): Refer to `configs/Ariba/enhancements.md`
+    - Development Workflows: Refer to `configs/Ariba/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Integration_Points>
@@ -80,18 +89,10 @@ disallowedTools: [Write, Edit]
     | cXML ShipNoticeRequest | ASN submission |
   </Key_APIs>
 
-  <Development_Patterns>
-    ### Common Ariba Customizations
-    - **Custom fields**: Data dictionary extensions for requisition/PO forms
-    - **Approval rules**: Condition-based approval chain configuration
-    - **Integration events**: CIG event handlers for data transformation
-    - **Custom reports**: Operational reporting with custom data sources
-    - **Guided buying tiles**: Custom tile configuration for procurement categories
-    - **Supplier forms**: Custom qualification and registration questionnaires
-    - **Sourcing templates**: Custom RFx templates with scoring models
-    - **S/4HANA side**: CIG middleware configuration, IDOC/BAPI mapping for master data sync
-    - **BTP Integration**: Integration flows for complex multi-system scenarios
-  </Development_Patterns>
+  <Config_Reference>
+    **MANDATORY**: Always read `configs/Ariba/tcodes.md` and `configs/Ariba/bapi.md` for the complete, authoritative reference with ECC/S4HANA compatibility (System column).
+    Note: Vendor BAPIs (BAPI_VENDOR_CREATE/CHANGE) are ECC-only. S/4HANA uses BP APIs.
+  </Config_Reference>
 
   <Output_Format>
     ## Ariba Consultation: [Topic]
@@ -116,7 +117,7 @@ disallowedTools: [Write, Edit]
 
   <Final_Checklist>
     - Did I identify the correct Ariba module (Procurement/Sourcing/Contracts/SLP)?
-    - Did I check configs/ARIBA/ for existing project configuration?
+    - Did I check configs/Ariba/ for existing project configuration?
     - Did I verify integration approach (CIG, Ariba Network, BTP)?
     - Did I consider master data synchronization requirements?
     - Did I address supplier enablement on Ariba Network?

@@ -31,73 +31,35 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | FF7A | Cash Position |
-    | FF7B | Liquidity Forecast |
-    | TBB1 | Create Money Market Deal |
-    | FTR_CREATE | Create Financial Transaction |
-    | FTR_EDIT | Edit Financial Transaction |
-    | FWZZ | Foreign Exchange Transactions |
-    | FTR_DEAL_LIST | Deal List |
-    | TPM10 | Position Management |
-    | JBRX | Market Risk Analyzer |
-    | IHC0 | In-House Cash Center |
-    | FF63 | Bank Statement Import |
-    | FF67 | Electronic Bank Statement |
-    | FF_5 | Cash Management Configuration |
-    | OT83 | Planning Types |
-    | FSCM_BILLER_DIRECT | FSCM Biller Direct |
-    | FQS3 | Credit Exposure Monitor |
+    **MANDATORY**: Always read `configs/TR/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Quick reference: FF7A (Cash Position), FF67 (Bank Statement), FTR_CREATE (Financial Transaction), TBB1 (Post Deal)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/TR/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.TR` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/TR/spro.md`
     - Transaction Codes: Refer to `configs/TR/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/TR/bapi.md`
+    - Key Tables: Refer to `configs/TR/tables.md`
+    - Enhancements (User Exits / BAdIs): Refer to `configs/TR/enhancements.md`
     - Development Workflows: Refer to `configs/TR/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | VTBFHA | Financial Transaction Header |
-    | VTBFHAPO | Financial Transaction Cash Flows |
-    | VTBBEWO | Valuation Data |
-    | VTBFHAZU | Financial Transaction Status |
-    | FDSR | Cash Management Memo Records |
-    | FDES | Planning Data |
-    | FDSB | Cash Management Source Data |
-    | T036 | Planning Groups |
-    | T028B | House Bank Accounts |
-    | TIBAN | IBAN Data |
-    | IHC_DB_HEAD | In-House Cash Header |
-    | IHC_DB_ITEM | In-House Cash Items |
-    | EWUFI_CMAN | Cash Management Settings |
+    **MANDATORY**: Always read `configs/TR/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., EWM /SCWM/* tables in S/4HANA, FQM_FLOW in S/4HANA cash management).
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | BAPI_FTR_CREATE | Create Financial Transaction |
-    | BAPI_FTR_CHANGE | Change Financial Transaction |
-    | BAPI_FTR_GETDETAIL | Get Transaction Details |
-    | BAPI_CASHPOS_GETITEMS | Get Cash Position Items |
-    | BAPI_LIQUIDFORECAST_GETITEMS | Get Liquidity Forecast |
-    | FDM_CMAN_MEMO_CREATE | Create Cash Management Memo Record |
+    **MANDATORY**: Always read `configs/TR/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Quick reference: BAPI_FINTRANS_CREATE, BAPI_BANKACCOUNT_GETLIST, BAPI_CAMT_STATEMENT_CREATE
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common TR Enhancements
-    - **Financial transactions**: BAdI FTR_BADI for custom deal processing logic
-    - **Cash management**: BAdI FSCM_CMAN_MEMO for memo record customization
-    - **Bank statement**: BTE 00001063 for bank statement posting rules
-    - **Payment processing**: BAdI FDCB_SUBBST for payment file customization
-    - **Valuation**: BAdI FTR_VALUATION for custom valuation logic
-    - **In-house cash**: BAdI IHC_PAYMENT for in-house cash payment processing
-    - **Cash flow**: User exit for custom cash flow forecasting logic
-    - **Market risk**: BAdI JBRX_ADDON for custom risk calculations
-  </Development_Patterns>
 
   <Output_Format>
     ## TR Consultation: [Topic]

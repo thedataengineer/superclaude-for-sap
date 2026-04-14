@@ -39,6 +39,8 @@ sc4sap:create-object handles the full lifecycle of creating a new ABAP object: d
 | Service Definition | `CreateServiceDefinition` | OData service definition |
 | Service Binding | `CreateServiceBinding` | OData service binding (UI5/API) |
 | Behavior Definition | `CreateBehaviorDefinition` | RAP behavior definition |
+| Screen | `CreateScreen` | Dynpro screen (selection screen or dialog) |
+| GUI Status | `CreateGuiStatus` | PF-Status (menu bar, toolbar, function keys) |
 </Supported_Object_Types>
 
 <Hybrid_Mode>
@@ -79,6 +81,7 @@ sc4sap:create-object handles the full lifecycle of creating a new ABAP object: d
 - Call appropriate Create* MCP tool with confirmed metadata
 - For Function Module: create Function Group first if it doesn't exist (`CreateFunctionGroup`)
 - For Service Binding: ensure Service Definition exists first
+- For Screen / GUI Status: parent program must exist first; create program if needed
 
 **Step 5 - Generate Initial Implementation** (auto)
 - Write skeleton code appropriate to object type:
@@ -87,6 +90,8 @@ sc4sap:create-object handles the full lifecycle of creating a new ABAP object: d
   - Function Module: parameter documentation, basic error handling
   - Table: key fields, client field for client-dependent tables
   - Interface: method signatures based on described purpose
+  - Screen: PROCESS BEFORE OUTPUT / PROCESS AFTER INPUT flow logic, basic module stubs
+  - GUI Status: standard function key layout (Back/Exit/Cancel), application toolbar
 - Write code via appropriate Update* MCP tool
 
 **Step 6 - Activate** (auto)
@@ -103,24 +108,32 @@ sc4sap:create-object handles the full lifecycle of creating a new ABAP object: d
 </Workflow_Steps>
 
 <Naming_Convention_Enforcement>
-Object names are validated before creation:
-- Must start with Z or Y (customer namespace)
-- Uppercase letters, digits, underscores only
-- No longer than 30 characters
-- Descriptive: avoid generic names like ZTEST or ZTEMP
-- Class naming: ZCL_ prefix (local: LCL_)
-- Interface naming: ZIF_ prefix
-- Program/Report: ZR_ or Z_ prefix
-- Function Group: ZFG_ prefix
-- Table: ZT_ or ZDB_ prefix (data elements: ZDE_, domains: ZD_)
+**MANDATORY**: Always read `configs/common/naming-conventions.md` for the complete, authoritative ABAP naming conventions reference before creating any object.
+
+The reference file covers:
+- General rules (prefix, case, character set, length limits)
+- Module codes (SD/MM/FI/CO/...) for the `Z{MODULE}_...` pattern
+- Object-specific patterns — Classes (ZCL_/ZIF_/ZCX_), Programs (ZR_), Function Groups/Modules, Data Dictionary (ZT_/ZDE_/ZDO_), UI (Dynpro/GUI Status), OData/RAP (Z_I_/Z_C_/Z_BP_/Z_SB_), Enhancements, IDoc/ALE
+- Code-level naming (variables: LV_/LS_/LT_/IV_/EV_/MV_; constants GC_/LC_; types TY_; methods)
+- Validation rules (uppercase, Z/Y prefix, character set, max length, non-generic)
+
+**Quick validation checklist (applied before every create):**
+1. Starts with `Z` or `Y` (customer namespace)
+2. UPPERCASE only, characters in `[A-Z0-9_]`
+3. Within max length (30 chars for most objects)
+4. Not generic (ZTEST/ZTEMP/ZDUMMY forbidden)
+5. Object-type prefix follows the reference (e.g., `ZCL_` for classes, `ZIF_` for interfaces)
+6. Screen = 4-digit number (e.g., 0100); GUI Status = uppercase identifier (e.g., STATUS_0100) — both require a parent program
+
+If the user-provided name violates any rule, suggest a compliant alternative based on `configs/common/naming-conventions.md` before proceeding.
 </Naming_Convention_Enforcement>
 
 <MCP_Tools_Used>
 - `SearchObject` — check for existing objects
 - `ListTransports` — list available transports
 - `GetPackage` — verify package existence
-- `CreateClass` / `CreateInterface` / `CreateProgram` / `CreateFunctionGroup` / `CreateFunctionModule` / `CreateTable` / `CreateStructure` / `CreateDataElement` / `CreateDomain` / `CreateView` / `CreateServiceDefinition` / `CreateServiceBinding` / `CreateBehaviorDefinition`
-- `UpdateClass` / `UpdateProgram` / etc. — write initial implementation
+- `CreateClass` / `CreateInterface` / `CreateProgram` / `CreateFunctionGroup` / `CreateFunctionModule` / `CreateTable` / `CreateStructure` / `CreateDataElement` / `CreateDomain` / `CreateView` / `CreateServiceDefinition` / `CreateServiceBinding` / `CreateBehaviorDefinition` / `CreateScreen` / `CreateGuiStatus`
+- `UpdateClass` / `UpdateProgram` / `UpdateScreen` / `UpdateGuiStatus` / etc. — write initial implementation
 - `GetInactiveObjects` — verify activation
 </MCP_Tools_Used>
 

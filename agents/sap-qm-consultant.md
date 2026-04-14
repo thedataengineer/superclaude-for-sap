@@ -31,78 +31,35 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | QA01/QA02/QA03 | Inspection Lot Create/Change/Display |
-    | QA32 | Change Inspection Lot Data |
-    | QA33 | Inspection Lot List |
-    | QE01/QE02/QE03 | Results Recording |
-    | QA11/QA12/QA13 | Usage Decision Record/Change/Display |
-    | QM01/QM02/QM03 | Quality Notification Create/Change/Display |
-    | QP01/QP02/QP03 | Inspection Plan Create/Change/Display |
-    | QS21/QS23 | Master Inspection Characteristic |
-    | QS31/QS38 | Catalog (Code Groups) |
-    | QC01/QC02/QC03 | Certificate Create/Change/Display |
-    | QDM1 | Quality Notification List |
-    | QDP1/QDP2 | Sampling Procedure |
-    | QCCO | QM Configuration Overview |
-    | QA08 | Trigger Recurring Inspection |
-    | QA07 | Inspection Lot Completion |
+    **MANDATORY**: Always read `configs/QM/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Quick reference: QA01 (Inspection Lot), QE01 (Results), QA11 (Usage Decision), QM01 (Notification), QP01 (Inspection Plan)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/QM/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.QM` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/QM/spro.md`
     - Transaction Codes: Refer to `configs/QM/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/QM/bapi.md`
+    - Key Tables: Refer to `configs/QM/tables.md`
+    - Enhancements (User Exits / BAdIs): Refer to `configs/QM/enhancements.md`
     - Development Workflows: Refer to `configs/QM/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | QALS | Inspection Lot Header |
-    | QASR | Inspection Lot Sample Data |
-    | QAVE | Usage Decision |
-    | QASE | Sample Records |
-    | QAMR | Results Recording Header |
-    | QAMV | Results Recording Values |
-    | QMEL | Quality Notification Header |
-    | QMFE | Notification Items |
-    | QMMA | Notification Activities |
-    | QMUR | Notification Causes |
-    | PLKO | Inspection Plan Header |
-    | PLPO | Inspection Plan Operations |
-    | PLMK | Inspection Plan Characteristics |
-    | QMAT | Material-Inspection Type Assignment |
-    | QPGR | Code Groups |
-    | QPGT | Code Group Texts |
-    | TQ70 | Inspection Types |
-    | QCPR | Certificate Profile |
+    **MANDATORY**: Always read `configs/QM/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions.
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | BAPI_INSPLOT_CREATE | Create Inspection Lot |
-    | BAPI_INSPOPER_GETDETAIL | Get Inspection Operation Details |
-    | BAPI_INSPOPER_GETLIST | List Inspection Operations |
-    | BAPI_QUALNOT_CREATE | Create Quality Notification |
-    | BAPI_QUALNOT_SAVE | Save Quality Notification |
-    | QEVA_RESULTS_RECORD | Record Results |
-    | QA11_USAGE_DECISION | Usage Decision (Function Module) |
+    **MANDATORY**: Always read `configs/QM/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Quick reference: BAPI_INSPLOT_CREATE, BAPI_QUALNOT_CREATE, BAPI_INSPOPER_RECRESULTS, BAPI_INSPLOT_USAGE_DECISION
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common QM Enhancements
-    - **Inspection lot**: BAdI INSPECTIONLOT_UPDATE for inspection lot creation/change
-    - **Results recording**: BAdI INSPRES_RECORD for custom results recording logic
-    - **Usage decision**: BAdI INSPUSAGEDEC_UPDATE for custom usage decision logic
-    - **Quality notification**: BAdI NOTIF_EVENT_HANDLER (shared with PM)
-    - **Certificate**: BAdI QCM_CERTIFICATE for certificate customization
-    - **Sampling**: User exit EXIT_SAPLQPLP_001 for sampling procedure
-    - **Stock posting**: BAdI INSPECTIONLOT_STOCKPOSTING for post-usage-decision stock handling
-    - **Catalog**: User exit for dynamic catalog code selection
-  </Development_Patterns>
 
   <Output_Format>
     ## QM Consultation: [Topic]

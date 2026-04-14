@@ -32,75 +32,37 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | /SCMTMS/FWO | Freight Order |
-    | /SCMTMS/FWB | Freight Booking |
-    | /SCMTMS/TRQ | Transportation Request |
-    | /SCMTMS/FCALC | Freight Cost Calculation |
-    | /SCMTMS/FSETTL | Freight Settlement |
-    | /SCMTMS/CARRIER | Carrier Management |
-    | /SCMTMS/SCHED | Scheduling |
-    | /SCMTMS/TRACK | Shipment Tracking |
-    | /SCMTMS/NETWORK | Transportation Network |
-    | /SCMTMS/LOC | Location Management |
-    | /SCMTMS/CHRG_MAINT | Charge Maintenance |
-    | /SCMTMS/FA | Freight Agreement |
-    | /SCMTMS/TEND | Tendering |
-    | /SCMTMS/VSR | Vehicle Space Reservation |
-    | VT01N/VT02N/VT03N | Shipment (classic SD-TRA) |
-    | VI01/VI02/VI03 | Shipment Cost (classic SD-TRA) |
+    **MANDATORY**: Always read `configs/TM/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Note: /SCMTMS/* tcodes are S/4HANA TM. VT01N/VT02N are ECC LE-TRA.
+    Quick reference: /SCMTMS/FO_MAINT (Freight Order, S4), VT01N (Shipment, ECC), /SCMTMS/TEND (Tendering, S4)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/TM/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.TM` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/TM/spro.md`
     - Transaction Codes: Refer to `configs/TM/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/TM/bapi.md`
+    - Key Tables: Refer to `configs/TM/tables.md`
+    - Enhancements (User Exits / BAdIs): Refer to `configs/TM/enhancements.md`
     - Development Workflows: Refer to `configs/TM/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | /SCMTMS/D_TORROT | Freight Order Data |
-    | /SCMTMS/D_TORREQ | Transportation Request |
-    | /SCMTMS/D_TORFU | Freight Unit |
-    | /SCMTMS/D_TORFB | Freight Booking |
-    | /SCMTMS/D_TCOND | Transportation Charges |
-    | /SCMTMS/D_SETTL | Settlement Data |
-    | /SCMTMS/D_LOC | Location Master |
-    | /SCMTMS/D_LANE | Transportation Lane |
-    | /SCMTMS/D_ZONE | Transportation Zone |
-    | /SCMTMS/D_CARRR | Carrier Master |
-    | /SCMTMS/D_FAGR | Freight Agreement |
-    | VTTK | Shipment Header (classic) |
-    | VTTP | Shipment Item (classic) |
-    | VTTS | Shipment Stages (classic) |
-    | VFKP | Shipment Cost Header (classic) |
+    **MANDATORY**: Always read `configs/TM/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., EWM /SCWM/* tables in S/4HANA, FQM_FLOW in S/4HANA cash management).
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | /SCMTMS/CL_FO_API | Freight Order API Class |
-    | /SCMTMS/IF_FO_CREATE | Freight Order Create Interface |
-    | /SCMTMS/CL_CHARGE_CALC | Charge Calculation API |
-    | BAPI_SHIPMENT_CREATE | Create Shipment (classic) |
-    | BAPI_SHIPMENT_CHANGE | Change Shipment (classic) |
-    | BAPI_SHIPMENTCOST_CREATE | Create Shipment Costs (classic) |
+    **MANDATORY**: Always read `configs/TM/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Note: /SCMTMS/ APIs are S/4HANA. BAPI_SHIPMENT_* are ECC LE-TRA.
+    Quick reference: /SCMTMS/CL_FO_BAPI=>CREATE (S4), BAPI_SHIPMENT_CREATE (ECC)
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common TM Enhancements
-    - **Freight order**: BAdI /SCMTMS/BADI_FO_PROCESS for freight order processing
-    - **Charge calculation**: BAdI /SCMTMS/BADI_CHRG_CALC for custom charge calculation
-    - **Carrier selection**: BAdI /SCMTMS/BADI_CARRIER_SEL for carrier selection logic
-    - **Planning**: BAdI /SCMTMS/BADI_PLANNING for custom planning logic
-    - **Settlement**: BAdI /SCMTMS/BADI_SETTLE for settlement customization
-    - **Event management**: BAdI /SCMTMS/BADI_EVENT for event processing
-    - **Classic shipment**: BAdI LE_SHIPMENT for shipment processing (VT01N)
-    - **Integration**: BAdI /SCMTMS/BADI_EWM_INT for EWM integration
-  </Development_Patterns>
 
   <Output_Format>
     ## TM Consultation: [Topic]

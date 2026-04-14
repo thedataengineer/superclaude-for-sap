@@ -31,84 +31,35 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | MD01/MDBT | MRP Run (single/mass) |
-    | MD04 | Stock/Requirements List |
-    | MD05 | MRP List |
-    | CO01/CO02/CO03 | Production Order Create/Change/Display |
-    | CO11N | Confirm Production Order |
-    | CO15 | Confirm and Goods Receipt |
-    | CS01/CS02/CS03 | BOM Create/Change/Display |
-    | CA01/CA02/CA03 | Routing Create/Change/Display |
-    | CR01/CR02/CR03 | Work Center Create/Change/Display |
-    | CM01/CM02 | Capacity Planning (work center view) |
-    | MD61/MD62/MD63 | Planned Independent Requirements Create/Change/Display |
-    | MF50 | Repetitive Manufacturing Planning Table |
-    | MFBF | Repetitive Manufacturing Backflush |
-    | COR1/COR2 | Process Order Create/Change |
-    | COOIS | Production Order Information System |
-    | OPJK | Order Type Configuration |
-    | OPMR | MRP Group Configuration |
-    | MRP1 | MRP View Material Master |
+    **MANDATORY**: Always read `configs/PP/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Quick reference: MD01 (MRP), CO01 (Prod Order), CO11N (Confirmation), CS01 (BOM), CA01 (Routing), CR01 (Work Center)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/PP/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.PP` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/PP/spro.md`
     - Transaction Codes: Refer to `configs/PP/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/PP/bapi.md`
+    - Key Tables: Refer to `configs/PP/tables.md`
+    - Enhancements (User Exits / BAdIs): Refer to `configs/PP/enhancements.md`
     - Development Workflows: Refer to `configs/PP/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | AUFK | Order Master Data |
-    | AFKO | Production Order Header |
-    | AFPO | Production Order Item |
-    | AFVC | Order Operations |
-    | AFVV | Order Operation Quantities |
-    | STKO | BOM Header |
-    | STPO | BOM Items |
-    | MAST | Material-BOM Assignment |
-    | PLKO | Routing Header |
-    | PLPO | Routing Operations |
-    | MAPL | Material-Routing Assignment |
-    | CRHD | Work Center Header |
-    | RESB | Reservation/Dependent Requirements |
-    | MDKP | MRP Header Data |
-    | MDTB | MRP Table |
-    | PBIM | Independent Requirements by Material |
-    | MARC | Material Master Plant Data (MRP views) |
-    | T399D | MRP Controller |
-    | T460A | Checking Group/Checking Rule |
+    **MANDATORY**: Always read `configs/PP/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions.
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | BAPI_PRODORD_CREATE | Create Production Order |
-    | BAPI_PRODORD_CHANGE | Change Production Order |
-    | BAPI_PRODORD_RELEASE | Release Production Order |
-    | BAPI_PRODORDCONF_CREATE_ACT | Create Order Confirmation |
-    | BAPI_BOM_CREATE | Create BOM |
-    | BAPI_ROUTING_CREATE | Create Routing |
-    | BAPI_PLANNEDORDER_CREATE | Create Planned Order |
-    | BAPI_MATERIAL_AVAILABILITY | Check Material Availability |
-    | MD_SET_ACTION_PLORDER | Convert Planned to Production Order |
+    **MANDATORY**: Always read `configs/PP/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Quick reference: BAPI_PRODORD_CREATE, BAPI_PRODORDCONF_CREATE_HDR, BAPI_BOM_GETDETAIL, BAPI_MATERIAL_AVAILABILITY
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common PP Enhancements
-    - **MRP**: BAdI MD_CHANGE_MRP_DATA for MRP result modification, user exit EXIT_SAPLMD01_001
-    - **Production order**: BAdI WORKORDER_UPDATE for order processing, user exit EXIT_SAPLCOBT_001
-    - **BOM**: BAdI CS_BOM_EXPLOSION for BOM explosion customization
-    - **Routing**: BAdI ROUTING_MAINTAIN for routing changes
-    - **Confirmation**: BAdI CO_CONF_UPDATE for confirmation enhancements, user exit CONFPP01-06
-    - **Availability check**: BAdI ATP_ADAPTER for custom ATP logic
-    - **Backflush**: BAdI BACKFLUSH_BADI for backflush customization
-    - **Scheduling**: User exit EXIT_SAPLCOZV_001 for custom scheduling
-  </Development_Patterns>
 
   <Output_Format>
     ## PP Consultation: [Topic]

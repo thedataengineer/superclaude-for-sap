@@ -21,7 +21,7 @@ sc4sap:ask is a process-first advisor that classifies your SAP question and rout
 
 <Do_Not_Use_When>
 - User wants to execute a task (create/modify ABAP objects) -- use ralph or executor
-- Question is about plugin configuration -- use `/sc4sap:setup` or `/sc4sap:doctor`
+- Question is about plugin configuration -- use `/sc4sap:setup` or `/sc4sap:sap-doctor`
 </Do_Not_Use_When>
 
 <Routing_Logic>

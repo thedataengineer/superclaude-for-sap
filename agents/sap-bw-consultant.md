@@ -31,81 +31,37 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | RSA1 | Data Warehousing Workbench |
-    | RSDCUBE | InfoProvider Maintenance |
-    | RSDODS | DataStore Object Maintenance |
-    | RSRT | Query Monitor |
-    | RSRQ | Query Repair |
-    | RSPC/RSPC1 | Process Chain Maintenance/Monitor |
-    | RSA13 | DataSource Maintenance (Source System) |
-    | RSBBS | BEx Broadcasting |
-    | RSECADMIN | Analysis Authorizations |
-    | SM58 | tRFC Monitor (for data loading) |
-    | RSMON | BW Monitor |
-    | RSA3 | Extractor Checker |
-    | RSDS | DataSource Overview |
-    | RSDIOBC | InfoObject Maintenance |
-    | RSLIMO | Open ODS View |
-    | RSBM | BW Monitoring (Overview) |
-    | SE11 | ABAP Dictionary (for extractor tables) |
-    | CMOD/SMOD | Enhancement for custom extractors |
+    **MANDATORY**: Always read `configs/BW/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA (BW/4HANA) compatibility (System column).
+    Note: Some BW objects (InfoCubes, MultiProvider, BEx, Aggregates) are deprecated in BW/4HANA.
+    Quick reference: RSA1 (DWH Workbench), RSPC (Process Chain), RSRT (Query Monitor), RSD1 (InfoObjects)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/BW/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.BW` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/BW/spro.md`
     - Transaction Codes: Refer to `configs/BW/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/BW/bapi.md`
+    - Key Tables: Refer to `configs/BW/tables.md`
+    - Enhancements (User Exits / BAdIs): Refer to `configs/BW/enhancements.md`
     - Development Workflows: Refer to `configs/BW/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | RSDIOBJ | InfoObject Directory |
-    | RSDCUBE | InfoProvider Directory |
-    | RSDODSO | DataStore Object Directory |
-    | RSTRAN | Transformation Directory |
-    | RSDTP | DTP Directory |
-    | RSDS | DataSource Directory |
-    | RSPCCHAIN | Process Chain Directory |
-    | RSPCPROCESSLOG | Process Chain Log |
-    | RSMONICDP | Monitor: InfoProvider Data |
-    | RSSELDONE | Request Status |
-    | RSREQDONE | Request Status (Completed) |
-    | RSSTATMANPART | Statistics: Query Performance |
-    | /BIC/* | Custom InfoObject Master/Transaction Data |
-    | RSBKDTP | DTP Filter Settings |
-    | RSADMINA | BW Admin Settings |
+    **MANDATORY**: Always read `configs/BW/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., EWM /SCWM/* tables in S/4HANA, FQM_FLOW in S/4HANA cash management).
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | RSDRI_INFOPROV_READ | Read InfoProvider Data |
-    | RSDRI_INFOPROV_READ_RFC | Read InfoProvider Data (RFC) |
-    | RSZ_X_COMPONENT_GET | Get Query Components |
-    | RSPC_API_CHAIN_START | Start Process Chain |
-    | RSPC_API_CHAIN_GET_STATUS | Get Process Chain Status |
-    | RSSM_GET_AUTHORIZATION | Read Analysis Authorizations |
-    | RSB_API_OHS_DEST_GETLIST | Open Hub Destinations List |
-    | BAPI_IOBJ_CREATE | Create InfoObject (Limited) |
+    **MANDATORY**: Always read `configs/BW/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA (BW/4HANA) compatibility (System column).
+    Note: InfoCube BAPIs and BPS are deprecated in BW/4HANA. Use ADSO and BPC/SAC instead.
+    Quick reference: RSDRI_INFOPROV_READ, RSPC_API_CHAIN_START, BICS_PROV_OPEN
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common BW Development Patterns
-    - **Custom extractors**: Generic extractors (RSO2) with function module or view-based extraction
-    - **Transformation routines**: ABAP routines in transformations (start, end, expert, field-level)
-    - **Customer exit variables**: I_STEP processing in CMOD exit RSR00001 (ZXRSRU01)
-    - **BAdI for BEx**: BAdI RSR_OLAP_BADI for query runtime manipulation
-    - **Process chain events**: Custom process types for process chain orchestration
-    - **HANA calculation views**: Mixed scenarios combining BW models with HANA views
-    - **Open ODS views**: Virtual access to non-BW data (CDS views, HANA tables)
-    - **AMDP transformations**: ABAP Managed Database Procedures in BW/4HANA transformations
-    - **Custom DataSources**: SBIW/RSA6 for registering custom ABAP extractors
-    - **Delta handling**: LUW-based, timestamp-based, and calday-based delta patterns
-  </Development_Patterns>
 
   <Investigation_Protocol>
     1) Identify the BW area: data modeling, ETL, query, process chain, authorization, reporting.

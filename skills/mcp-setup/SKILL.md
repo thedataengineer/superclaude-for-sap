@@ -61,7 +61,7 @@ MCP server repository: https://github.com/babamba2/abap-mcp-adt.git
 3. **Verify the connection**
    After restarting Claude Code (or reconnecting MCP via `/mcp`), run:
    ```
-   /sc4sap:doctor
+   /sc4sap:sap-doctor
    ```
    Or manually test by calling `GetSession` — it should return your SAP system ID, client, and username.
 

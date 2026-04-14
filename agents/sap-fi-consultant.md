@@ -31,86 +31,37 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | FB01/FB02/FB03 | Post/Change/Display Document |
-    | F-02 | General Posting |
-    | FB50 | G/L Account Posting |
-    | FB60 | Vendor Invoice |
-    | FB70 | Customer Invoice |
-    | F110 | Automatic Payment Program |
-    | F150 | Dunning Program |
-    | F-28 | Incoming Payment |
-    | F-53 | Vendor Payment |
-    | FS00 | G/L Account Master |
-    | AS01/AS02/AS03 | Asset Create/Change/Display |
-    | AFAB | Depreciation Run |
-    | FI12 | House Banks |
-    | FF67 | Electronic Bank Statement |
-    | FAGL_FC_VALUATION | Foreign Currency Valuation |
-    | F.01 | ABAP Report: Financial Statements |
-    | S_ALR_87012284 | Balance Sheet/P&L |
-    | OB52 | Open/Close Posting Periods |
-    | OBD4 | Document Types |
-    | OB41 | Posting Keys |
-    | FTXP | Tax Codes |
-    | OBCL | Account Determination (FI) |
-    | GR55 | Report Painter Execute |
+    **MANDATORY**: Always read `configs/FI/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized TCodes — the config file contains up-to-date ECC vs S/4HANA distinctions.
+    Quick reference: FB50 (G/L Posting), F110 (Payment), FS00 (G/L Master), AS01 (Asset), BP (S/4HANA), FAGLL03H (S/4HANA Line Items)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/FI/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.FI` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/FI/spro.md`
     - Transaction Codes: Refer to `configs/FI/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/FI/bapi.md`
+    - Key Tables: Refer to `configs/FI/tables.md`
+    - Enhancements (User Exits / BAdIs / BTE / VOFM): Refer to `configs/FI/enhancements.md`
     - Development Workflows: Refer to `configs/FI/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | BKPF | Accounting Document Header |
-    | BSEG | Accounting Document Segment |
-    | ACDOCA | Universal Journal (S/4HANA) |
-    | BSID/BSAD | Customer Line Items (Open/Cleared) |
-    | BSIK/BSAK | Vendor Line Items (Open/Cleared) |
-    | BSIS/BSAS | G/L Line Items (Open/Cleared) |
-    | SKA1/SKAT | G/L Account Master |
-    | T001 | Company Codes |
-    | T003 | Document Types |
-    | T004 | Chart of Accounts |
-    | ANLA | Asset Master Record |
-    | ANLP | Asset Periodic Values |
-    | ANKA | Asset Classes |
-    | T012 | House Banks |
-    | T030 | GL Account Determination |
-    | REGUH | Payment Data (Settlement) |
-    | REGUP | Payment Data (Processed Items) |
+    **MANDATORY**: Always read `configs/FI/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., ACDOCA in S/4, BUT000 replaces KNA1/LFA1).
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | BAPI_ACC_DOCUMENT_POST | Post Accounting Document |
-    | BAPI_ACC_DOCUMENT_REV_POST | Reverse Accounting Document |
-    | BAPI_GL_ACC_EXISTENCECHECK | Check G/L Account Exists |
-    | BAPI_AP_ACC_GETKEYDATEBAL | Get Vendor Balance |
-    | BAPI_AR_ACC_GETKEYDATEBAL | Get Customer Balance |
-    | BAPI_FIXEDASSET_CREATE | Create Fixed Asset |
-    | BAPI_FIXEDASSET_CHANGE | Change Fixed Asset |
-    | BAPI_INCOMINGINVOICE_CREATE | Post Vendor Invoice |
+    **MANDATORY**: Always read `configs/FI/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized BAPIs — the config file contains up-to-date ECC vs S/4HANA distinctions and S/4HANA Finance APIs (ACDOCA).
+    Quick reference: BAPI_ACC_DOCUMENT_POST (FI Doc), BAPI_FIXEDASSET_OVRTAKE_CREATE (Asset), FINS_ACDOCA_READ (S/4HANA Universal Journal)
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common FI Enhancements
-    - **Document posting**: BTE 00001120 (document check before posting), BTE 00001025 (substitution)
-    - **Validation/Substitution**: GGB1/GGB4 for FI validation and substitution rules
-    - **Payment program**: BTE 00001680 (payment medium), BAdI BADI_FDCB_SUBBST
-    - **Dunning**: BTE 00001650 (dunning letter), user exit FI_DUNNING_CUST
-    - **Asset accounting**: BAdI FAA_DC_CUSTOMER, user exit EXIT_SAPLFAR1_001
-    - **Account determination**: Substitution via OBBH for automatic account assignment
-    - **Electronic bank statement**: BTE 00001063 (posting rules), BAI2/MT940 format processing
-    - **Period-end**: BAdI ACC_PERIOD_CLOSE for custom closing validations
-  </Development_Patterns>
 
   <Investigation_Protocol>
     1) Identify the FI process area: GL, AP, AR, AA, bank, tax, closing.

@@ -31,79 +31,35 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | IW21/IW22/IW23 | Notification Create/Change/Display |
-    | IW31/IW32/IW33 | Maintenance Order Create/Change/Display |
-    | IW38 | Maintenance Order List |
-    | IW28 | Notification List |
-    | IW41 | Confirm Order Operation |
-    | IL01/IL02/IL03 | Functional Location Create/Change/Display |
-    | IE01/IE02/IE03 | Equipment Create/Change/Display |
-    | IA01/IA02/IA03 | Task List Create/Change/Display |
-    | IP10 | Schedule Maintenance Plan |
-    | IP30 | Deadline Monitoring |
-    | IP01/IP02/IP03 | Maintenance Plan Create/Change/Display |
-    | IK01/IK11 | Measurement Point/Document |
-    | IW39 | Order Operations List |
-    | MCI5 | PM Information System |
-    | IW29 | Notification Analysis |
+    **MANDATORY**: Always read `configs/PM/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Quick reference: IW21 (Notification), IW31 (PM Order), IW41 (Confirmation), IL01 (Func Location), IE01 (Equipment), IP01 (Maint Plan)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/PM/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.PM` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/PM/spro.md`
     - Transaction Codes: Refer to `configs/PM/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/PM/bapi.md`
+    - Key Tables: Refer to `configs/PM/tables.md`
+    - Enhancements (User Exits / BAdIs): Refer to `configs/PM/enhancements.md`
     - Development Workflows: Refer to `configs/PM/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | AUFK | Order Master Data |
-    | AFIH | Maintenance Order Header |
-    | AFVC | Order Operations |
-    | QMEL | Notification Header |
-    | QMIH | Notification Maintenance Data |
-    | QMFE | Notification Items |
-    | QMMA | Notification Activities |
-    | IFLO | Functional Location |
-    | IFLOT | Functional Location Text |
-    | EQUI | Equipment Master |
-    | EQKT | Equipment Short Text |
-    | MPOS | Maintenance Plan Items |
-    | MPLA | Maintenance Plan Header |
-    | MHIS | Maintenance Plan Call History |
-    | PLKO | Task List Header |
-    | PLPO | Task List Operations |
-    | JEST | Object Status |
-    | ILOA | PM Object Location/Account Assignment |
+    **MANDATORY**: Always read `configs/PM/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions.
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | BAPI_ALM_ORDER_MAINTAIN | Create/Change Maintenance Order |
-    | BAPI_ALM_NOTIF_CREATE | Create Notification |
-    | BAPI_ALM_NOTIF_SAVE | Save Notification |
-    | BAPI_ALM_ORDER_GET_DETAIL | Get Order Details |
-    | BAPI_EQUI_CREATE | Create Equipment |
-    | BAPI_EQUI_CHANGE | Change Equipment |
-    | BAPI_FUNCLOC_CREATE | Create Functional Location |
-    | BAPI_ALM_ORDEROPER_GET_LIST | Get Order Operations |
+    **MANDATORY**: Always read `configs/PM/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Quick reference: BAPI_ALM_ORDER_MAINTAIN, BAPI_ALM_NOTIF_CREATE, BAPI_EQUI_CREATE, BAPI_FUNCLOC_CREATE
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common PM Enhancements
-    - **Maintenance order**: BAdI WORKORDER_UPDATE, user exit EXIT_SAPLCOBT_001 (order processing)
-    - **Notification**: BAdI NOTIF_EVENT_HANDLER, user exit EXIT_SAPLQQMA_0XX (QQMA0001)
-    - **Equipment/FL**: BAdI EQUIPMENT_MODIFY for equipment master changes
-    - **Maintenance plan**: BAdI PM_SCHED_MPLAN for scheduling customization
-    - **Confirmation**: BAdI CO_CONF_UPDATE for confirmation enhancements
-    - **Status management**: BAdI STATUS_CHECK for custom status handling
-    - **Partner determination**: BAdI PARTNER_DETERMINATION_PM
-    - **Refurbishment**: User exit for refurbishment order processing
-  </Development_Patterns>
 
   <Output_Format>
     ## PM Consultation: [Topic]

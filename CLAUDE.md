@@ -51,6 +51,15 @@
 - Check for syntax errors before activation using `GetAbapSemanticAnalysis`
 - Verify no inactive objects remain using `GetInactiveObjects`
 
+### 🔒 Data Extraction Policy (MANDATORY)
+Before **any** call to `GetTableContents`, `GetSqlQuery`, or other row-returning MCP tools:
+1. **Check `exceptions/table_exception.md`** at the plugin root for the table (and every table inside a join/view).
+2. If a match is found (exact name, family pattern like `PA*`/`USR*`, Z-pattern): **refuse the call**, explain the category, and offer the allowed alternatives listed in `common/data-extraction-policy.md`.
+3. Never bypass silently. Never argue the policy with the user — surface it and let them decide.
+4. Schema/DDIC (`GetTable`, `GetStructure`, `GetView`, `GetDataElement`, `GetDomain`) is always permitted.
+
+This applies to **every session** — sc4sap agents, direct user requests, pipelines, and ad-hoc analysis. Backed by a `PreToolUse` hook (`scripts/hooks/block-forbidden-tables.mjs`) when installed. See `common/data-extraction-policy.md` for the full protocol.
+
 ## Plugin Usage
 
 ### Skills (sc4sap: prefix)

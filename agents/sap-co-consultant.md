@@ -31,81 +31,37 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | KS01/KS02/KS03 | Cost Center Create/Change/Display |
-    | KSH1/KSH2/KSH3 | Cost Center Group Create/Change/Display |
-    | KA01/KA02/KA03 | Cost Element Create/Change/Display |
-    | KO01/KO04 | Internal Order Create/Change |
-    | KOB1 | Internal Order Actual Line Items |
-    | KSB1 | Cost Centers Actual Line Items |
-    | CK11N/CK40N | Cost Estimate Create/Costing Run |
-    | KE21N/KE24 | CO-PA Create Actual / Actual Line Items |
-    | KE30 | CO-PA Report |
-    | KEA0 | Maintain Operating Concern |
-    | KSPI | Cost Center Planning (Excel) |
-    | KP06 | Cost Center Planning (Activity Dependent) |
-    | KSU5 | Assessment Cycle Execute |
-    | KSV5 | Distribution Cycle Execute |
-    | KO88 | Settle Order |
-    | OKKP | Controlling Area Settings |
-    | OKB9 | Default Account Assignment |
-    | S_ALR_87013611 | Cost Centers: Actual/Plan/Variance |
-    | 1KEJ | CO-PA: Characteristics |
-    | 4KEA | CO-PA: Value Fields |
+    **MANDATORY**: Always read `configs/CO/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized TCodes — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., KA01 is ECC-only, use FS00 in S/4HANA).
+    Quick reference: KS01 (Cost Center), KO01 (Internal Order), CK11N (Cost Estimate), KE21N (CO-PA), CO88 (Settlement)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/CO/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.CO` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/CO/spro.md`
     - Transaction Codes: Refer to `configs/CO/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/CO/bapi.md`
+    - Key Tables: Refer to `configs/CO/tables.md`
+    - Enhancements (User Exits / BAdIs / BTE / VOFM): Refer to `configs/CO/enhancements.md`
     - Development Workflows: Refer to `configs/CO/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | CSKS | Cost Center Master |
-    | CSKA/CSKB | Cost Element Master |
-    | AUFK | Internal Order Master |
-    | COBK | CO Document Header |
-    | COEP | CO Line Items (actual) |
-    | COSP/COSS | CO Totals (stat/actual) |
-    | KEKO | Product Cost Estimate Header |
-    | KEPH | Product Cost Estimate Items |
-    | CE1xxxx | CO-PA Actual Line Items (operating concern specific) |
-    | CE2xxxx | CO-PA Plan Line Items |
-    | CE3xxxx | CO-PA Segment Level |
-    | CE4xxxx | CO-PA Segment Table |
-    | TKA01 | Controlling Areas |
-    | CEPC | Profit Center Master |
-    | GLPCA | Profit Center Actuals (ECC) |
-    | ACDOCA | Universal Journal (S/4HANA, replaces COEP/GLPCA) |
+    **MANDATORY**: Always read `configs/CO/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., ACDOCA in S/4, BUT000 replaces KNA1/LFA1).
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | BAPI_COSTCENTER_CREATEMULTIPLE | Create Cost Centers |
-    | BAPI_COSTCENTER_GETLIST | List Cost Centers |
-    | BAPI_INTERNALORDER_CREATE | Create Internal Order |
-    | BAPI_ACC_ACTIVITY_ALLOC_POST | Post Activity Allocation |
-    | BAPI_ACC_STAT_KEY_FIG_POST | Post Statistical Key Figures |
-    | BAPI_PROFITCENTER_CREATE | Create Profit Center |
-    | K_COPA_ACTUAL_DATA_TRANSFER | CO-PA Actual Data Transfer |
+    **MANDATORY**: Always read `configs/CO/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized BAPIs — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., cost element BAPIs are ECC-only).
+    Quick reference: BAPI_COSTCENTER_CREATEMULTIPLE, BAPI_INTERNALORDER_CREATE, BAPI_ACC_ACTIVITY_ALLOC_POST
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common CO Enhancements
-    - **CO-PA derivation**: User exit COPA0001-0006 for CO-PA characteristic derivation
-    - **Cost allocation**: BAdI ACC_CO_ALLOC for custom allocation logic
-    - **Settlement**: BAdI CO_SETTLEMENT for custom settlement rules
-    - **Product costing**: BAdI COST_ESTIMATE for custom costing logic, user exit COPCP001
-    - **Profit center determination**: Substitution via 1KE4/3KEH
-    - **Internal orders**: BAdI ORDER_INFOSYSTEM for custom order reporting
-    - **Validation/Substitution**: OKC7 for CO-specific validations
-    - **CO-PA planning**: BAdI COPA_PLANNING for custom planning functions
-  </Development_Patterns>
 
   <Investigation_Protocol>
     1) Identify the CO process area: cost centers, internal orders, product costing, CO-PA, profit centers.

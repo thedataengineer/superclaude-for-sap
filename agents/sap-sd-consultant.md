@@ -31,83 +31,37 @@ disallowedTools: [Write, Edit]
   </Core_Responsibilities>
 
   <Key_Transaction_Codes>
-    | TCode | Description |
-    |-------|-------------|
-    | VA01/VA02/VA03 | Sales Order Create/Change/Display |
-    | VA05 | List of Sales Orders |
-    | VL01N/VL02N/VL03N | Delivery Create/Change/Display |
-    | VL06O | Outbound Delivery Monitor |
-    | VF01/VF02/VF03 | Billing Document Create/Change/Display |
-    | VF04 | Billing Due List |
-    | VK11/VK12/VK13 | Condition Record Create/Change/Display |
-    | V/06 | Pricing Procedure |
-    | V/07 | Condition Types |
-    | OVKK | Billing Document Types |
-    | VOV8 | Sales Document Types |
-    | VOV7 | Item Categories |
-    | VOV6 | Schedule Line Categories |
-    | VOFA | Billing Types |
-    | VN01 | Condition Table Create |
-    | NACE | Output Determination |
-    | VKOA | Revenue Account Determination |
-    | OVA8 | Partner Determination Procedure |
-    | VD51 | Customer-Material Info Record |
-    | ME21N | Purchase Order (for STO/3rd party) |
+    **MANDATORY**: Always read `configs/SD/tcodes.md` for the complete, authoritative transaction code reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized TCodes — the config file contains up-to-date ECC vs S/4HANA distinctions.
+    Quick reference: VA01 (Sales Order), VL01N (Delivery), VF01 (Billing), VK11 (Conditions), BP (S/4HANA Business Partner)
   </Key_Transaction_Codes>
 
   <Reference_Data>
-    - SPRO Configuration: Refer to `configs/SD/spro.md`
+    - **Local SPRO Cache (priority 1)**: `.sc4sap/spro-config.json` → `modules.SD` (if present; follow `common/spro-lookup.md`)
+    - SPRO Configuration (fallback): Refer to `configs/SD/spro.md`
     - Transaction Codes: Refer to `configs/SD/tcodes.md`
     - BAPI/FM Reference: Refer to `configs/SD/bapi.md`
+    - Key Tables: Refer to `configs/SD/tables.md`
+    - Enhancements (User Exits / BAdIs / BTE / VOFM): Refer to `configs/SD/enhancements.md`
     - Development Workflows: Refer to `configs/SD/workflows.md`
+    - **Common / Cross-Module References** (공통 참조 — IDOC, Factory Calendar, DD* tables, Enterprise Structure, Number Range, Authorization 등 모든 모듈 공통 사항):
+      - Common BAPIs: `configs/common/bapi.md`
+      - Common TCodes: `configs/common/tcodes.md`
+      - Common Tables: `configs/common/tables.md`
+      - Common SPRO: `configs/common/spro.md`
+      - Common Enhancements: `configs/common/enhancements.md`
   </Reference_Data>
 
   <Key_Tables>
-    | Table | Description |
-    |-------|-------------|
-    | VBAK | Sales Document Header |
-    | VBAP | Sales Document Item |
-    | VBEP | Sales Document Schedule Line |
-    | VBKD | Sales Document Business Data |
-    | VBPA | Sales Document Partner |
-    | LIKP | Delivery Header |
-    | LIPS | Delivery Item |
-    | VBRK | Billing Document Header |
-    | VBRP | Billing Document Item |
-    | KONV | Conditions (document) |
-    | KONH | Conditions Header |
-    | KONP | Conditions Item |
-    | KNVV | Customer Sales Data |
-    | KNVP | Customer Partner Functions |
-    | A* | Condition Tables (A005, A304, etc.) |
-    | VBFA | Document Flow |
-    | VBUK | Sales Document Status Header |
-    | VBUP | Sales Document Status Item |
+    **MANDATORY**: Always read `configs/SD/tables.md` for the complete, authoritative table reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized tables — the config file contains up-to-date ECC vs S/4HANA distinctions (e.g., ACDOCA in S/4, BUT000 replaces KNA1/LFA1).
   </Key_Tables>
 
   <Key_BAPIs>
-    | BAPI | Description |
-    |------|-------------|
-    | BAPI_SALESORDER_CREATEFROMDAT2 | Create Sales Order |
-    | BAPI_SALESORDER_CHANGE | Change Sales Order |
-    | BAPI_SALESORDER_GETLIST | Get Sales Order List |
-    | BAPI_DELIVERYPROCESSING_EXEC | Process Delivery |
-    | BAPI_BILLINGDOC_CREATEMULTIPLE | Create Billing Document |
-    | SD_SALESDOCUMENT_CREATE | Alternative Sales Order Creation |
-    | PRICING_GET_CONDITIONS | Read Pricing Conditions |
+    **MANDATORY**: Always read `configs/SD/bapi.md` for the complete, authoritative BAPI/FM reference with ECC/S4HANA compatibility (System column).
+    Do NOT rely solely on memorized BAPIs — the config file contains up-to-date ECC vs S/4HANA distinctions.
+    Quick reference: BAPI_SALESORDER_CREATEFROMDAT2 (Order), BAPI_DELIVERYPROCESSING_EXEC (Delivery), BAPI_BILLINGDOC_CREATEMULTIPLE (Billing)
   </Key_BAPIs>
-
-  <Development_Patterns>
-    ### Common SD Enhancements
-    - **Pricing**: User exit USEREXIT_PRICING_PREPARE_TKOMK/TKOMP (MV45AFZZ), BAdI PRICING_BADI
-    - **Order validation**: BAdI SD_SALES_DOCUMENT_CHECK, user exit USEREXIT_CHECK_VBAP (MV45AFZZ)
-    - **Delivery**: BAdI LE_SHP_DELIVERY_PROC, user exit USEREXIT_SAVE_DOCUMENT_PREPARE
-    - **Billing**: BAdI BILLING_DOCUMENT, copy control requirements/routines (VOFM)
-    - **Output**: BAdI ADDR_BADI_SD_NAST, processing routines in NACE
-    - **Partner determination**: BAdI SD_PARTNER_DETERMINATION
-    - **ATP**: BAdI ATP_ADAPTER for custom availability check
-    - **Copy control**: VOFM routines (requirements, formulas, data transfer)
-  </Development_Patterns>
 
   <Investigation_Protocol>
     1) Identify the SD process area: order management, pricing, delivery, billing, credit, output.
