@@ -90,7 +90,7 @@ Score ambiguity after each round. Do NOT proceed to spec generation until ≤ 5%
 - Dimensions pre-filtered by resolved platform
 - Loop question → ambiguity score → until ≤ 5%
 - **Consultant co-interview (mandatory when the request touches an SAP business module)**:
-  - As soon as the user's initial request reveals the target module (SD / MM / FI / CO / PP / QM / PM / WM / HCM / TM / TR / Ariba / BW / BC), summon the matching consultant agent (`sap-sd-consultant`, `sap-mm-consultant`, `sap-fi-consultant`, `sap-co-consultant`, `sap-pp-consultant`, `sap-qm-consultant`, `sap-pm-consultant`, `sap-wm-consultant`, `sap-hcm-consultant`, `sap-tm-consultant`, `sap-tr-consultant`, `sap-ariba-consultant`, `sap-bw-consultant`, `sap-bc-consultant`) **before the first question**.
+  - As soon as the user's initial request reveals the target module (SD / MM / FI / CO / PP / PS / QM / PM / WM / HCM / TM / TR / Ariba / BW / BC), summon the matching consultant agent (`sap-sd-consultant`, `sap-mm-consultant`, `sap-fi-consultant`, `sap-co-consultant`, `sap-pp-consultant`, `sap-ps-consultant`, `sap-qm-consultant`, `sap-pm-consultant`, `sap-wm-consultant`, `sap-hcm-consultant`, `sap-tm-consultant`, `sap-tr-consultant`, `sap-ariba-consultant`, `sap-bw-consultant`, `sap-bc-consultant`) **before the first question**.
   - The consultant participates in question authoring: it contributes module-specific dimensions (master data, customizing views, standard BAPIs/FMs, authorization objects, common pitfalls) that the generic interview would miss.
   - Questions are still delivered one dimension per turn (see `feedback_one_question_at_a_time`), but the consultant decides *which* business dimension to probe next when the module is business-heavy.
   - If the module is ambiguous in the initial request, ask the user which module this concerns **first**, then summon the consultant — do not proceed with generic questions without a consultant present.
@@ -101,8 +101,8 @@ Score ambiguity after each round. Do NOT proceed to spec generation until ≤ 5%
 **Phase 2 — Planning**: `sap-planner` (+ module consultant when needed)
 - Apply shared conventions: `include-structure.md`, `naming-conventions.md`
 - **Consultant consultation (mandatory when requirements touch SAP business configuration)**:
-  - Identify the affected SAP module(s) from the interview output (SD / MM / FI / CO / PP / QM / PM / WM / HCM / TM / TR / Ariba / BW / BC)
-  - Delegate to the corresponding consultant agent: `sap-sd-consultant`, `sap-mm-consultant`, `sap-fi-consultant`, `sap-co-consultant`, `sap-pp-consultant`, `sap-qm-consultant`, `sap-pm-consultant`, `sap-wm-consultant`, `sap-hcm-consultant`, `sap-tm-consultant`, `sap-tr-consultant`, `sap-ariba-consultant`, `sap-bw-consultant`, `sap-bc-consultant`
+  - Identify the affected SAP module(s) from the interview output (SD / MM / FI / CO / PP / PS / QM / PM / WM / HCM / TM / TR / Ariba / BW / BC)
+  - Delegate to the corresponding consultant agent: `sap-sd-consultant`, `sap-mm-consultant`, `sap-fi-consultant`, `sap-co-consultant`, `sap-pp-consultant`, `sap-ps-consultant`, `sap-qm-consultant`, `sap-pm-consultant`, `sap-wm-consultant`, `sap-hcm-consultant`, `sap-tm-consultant`, `sap-tr-consultant`, `sap-ariba-consultant`, `sap-bw-consultant`, `sap-bc-consultant`
   - Before dispatch, check for local SPRO cache at `.sc4sap/spro-config.json` and pass a `local_cache_available: true/false` flag in the handoff context
   - The consultant **MUST resolve SPRO data per `common/spro-lookup.md`** (priority: local cache → `configs/{MODULE}/*.md` static docs → live MCP query with user confirmation)
   - Consultant output: business-aligned recommendations — relevant IMG customizing tables/views, master data dependencies, standard BAPIs/FMs to leverage, authorization objects, integration touchpoints with neighboring modules

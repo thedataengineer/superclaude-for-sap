@@ -9,7 +9,7 @@ const EXPECTED_AGENTS = [
   'sap-debugger', 'sap-doc-specialist', 'sap-executor', 'sap-planner',
   'sap-qa-tester', 'sap-writer', 'sap-bc-consultant',
   'sap-sd-consultant', 'sap-mm-consultant', 'sap-fi-consultant',
-  'sap-co-consultant', 'sap-pp-consultant', 'sap-pm-consultant',
+  'sap-co-consultant', 'sap-pp-consultant', 'sap-ps-consultant', 'sap-pm-consultant',
   'sap-qm-consultant', 'sap-tr-consultant', 'sap-hcm-consultant',
   'sap-wm-consultant', 'sap-tm-consultant', 'sap-ariba-consultant',
   'sap-bw-consultant',
@@ -44,7 +44,7 @@ describe('Agents Validation', () => {
   }
 
   describe('Module consultants reference configs/', () => {
-    const modules = ['sd', 'mm', 'fi', 'co', 'pp', 'pm', 'qm', 'tr', 'hcm', 'wm', 'tm', 'ariba', 'bw'];
+    const modules = ['sd', 'mm', 'fi', 'co', 'pp', 'ps', 'pm', 'qm', 'tr', 'hcm', 'wm', 'tm', 'ariba', 'bw'];
 
     for (const mod of modules) {
       it(`sap-${mod}-consultant references configs/${mod.toUpperCase()}/`, () => {

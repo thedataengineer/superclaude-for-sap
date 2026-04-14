@@ -69,7 +69,7 @@ describe('Directory Structure', () => {
     });
   }
 
-  const modules = ['SD', 'MM', 'FI', 'CO', 'PP', 'PM', 'QM', 'TR', 'HCM', 'WM', 'TM', 'Ariba', 'BW'];
+  const modules = ['SD', 'MM', 'FI', 'CO', 'PP', 'PS', 'PM', 'QM', 'TR', 'HCM', 'WM', 'TM', 'Ariba', 'BW'];
 
   for (const mod of modules) {
     it(`configs/${mod}/ directory exists`, () => {

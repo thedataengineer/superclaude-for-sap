@@ -1,14 +1,14 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "sc4sap",
-  "description": "SuperClaude for SAP (sc4sap) transforms Claude Code into a full-stack SAP development assistant. It connects to your SAP system via the MCP ABAP ADT server (150+ tools) to create, read, update, and delete ABAP objects directly — classes, function modules, reports, CDS views, and more. The plugin includes 24 SAP-specialized agents (core dev agents + BC consultant + 13 module consultants for SD, MM, FI, CO, PP, PM, QM, TR, HCM, WM, TM, Ariba, BW), 14 workflow skills (autopilot, ralph, team orchestration, deep-interview, etc.), and built-in SPRO configuration reference with BAPI lists, transaction codes, and representative workflows for every module. Designed for SAP consultants, ABAP developers, and Basis administrators working with On-Premise S/4HANA systems.",
+  "description": "SuperClaude for SAP (sc4sap) transforms Claude Code into a full-stack SAP development assistant. It connects to your SAP system via the MCP ABAP ADT server (150+ tools) to create, read, update, and delete ABAP objects directly — classes, function modules, reports, CDS views, and more. The plugin includes 25 SAP-specialized agents (core dev agents + BC consultant + 14 module consultants for SD, MM, FI, CO, PP, PS, PM, QM, TR, HCM, WM, TM, Ariba, BW), 14 workflow skills (autopilot, ralph, team orchestration, deep-interview, etc.), and built-in SPRO configuration reference with BAPI lists, transaction codes, and representative workflows for every module. Designed for SAP consultants, ABAP developers, and Basis administrators working with On-Premise S/4HANA systems.",
   "owner": {
     "name": "paek seunghyun"
   },
   "plugins": [
     {
       "name": "sc4sap",
-      "description": "Claude Code plugin for SAP ABAP development on On-Premise S/4HANA — 24 specialized agents, 16 skills, and SPRO config reference for 13 modules.",
+      "description": "Claude Code plugin for SAP ABAP development on On-Premise S/4HANA — 25 specialized agents, 16 skills, and SPRO config reference for 14 modules.",
       "version": "0.1.0",
       "author": {
         "name": "paek seunghyun"

@@ -16,5 +16,10 @@
     "abap-development"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json"
+  "mcpServers": "./.mcp.json",
+  "statusLine": {
+    "type": "command",
+    "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hud/statusline.mjs\"",
+    "padding": 0
+  }
 }

@@ -4,7 +4,7 @@ import { join } from 'path';
 
 const CONFIGS_DIR = join(__dirname, '..', '..', 'configs');
 
-const MODULES = ['SD', 'MM', 'FI', 'CO', 'PP', 'PM', 'QM', 'TR', 'HCM', 'WM', 'TM', 'Ariba', 'BW'];
+const MODULES = ['SD', 'MM', 'FI', 'CO', 'PP', 'PS', 'PM', 'QM', 'TR', 'HCM', 'WM', 'TM', 'Ariba', 'BW'];
 const CONFIG_FILES = ['spro.md', 'tcodes.md', 'bapi.md', 'workflows.md'];
 
 describe('SPRO Config MD Files Validation', () => {

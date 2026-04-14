@@ -1,6 +1,6 @@
 ---
 name: sc4sap:sap-option
-description: View SAP system status snapshot and edit values in `.sc4sap/sap.env` — connection credentials, blocklist policy, and live system info for the sc4sap plugin
+description: View SAP system status snapshot and edit values in `.sc4sap/sap.env` (connection, blocklist) and HUD usage limits in `~/.claude/settings.json` → `env` — single entrypoint for all sc4sap runtime options
 level: 2
 ---
 
@@ -20,6 +20,7 @@ Users should not edit `sap.env` blindly; this skill surfaces the current values 
 - User wants to change blocklist tier (`MCP_BLOCKLIST_PROFILE`) or manage `MCP_ALLOW_TABLE` / `MCP_BLOCKLIST_EXTEND`.
 - User is rotating credentials, moving to a new SAP system, or flipping language/client.
 - After `/sc4sap:setup` if the user wants to adjust without re-running full setup.
+- User says "hud 한도", "5h limit", "weekly limit", "extra limit", "usage budget", "limit 설정" — route to the **HUD limits** flow (see `<HUD_Limits>`), which edits `~/.claude/settings.json` → `env`, not `sap.env`.
 </Use_When>
 
 <Status_Snapshot>
@@ -107,6 +108,46 @@ Do not manage keys that are not in this list — warn the user and skip.
 11. **Report** — list the keys changed, indicate backup path, and state "Please reconnect MCP (`/mcp`) to apply."
 </Workflow>
 
+<HUD_Limits>
+HUD usage-limit env vars are **not** part of `sap.env` — Claude Code only exposes env vars declared under `~/.claude/settings.json` → `env` to the statusline subprocess. This skill manages them there.
+
+**Managed keys (all optional; unset = HUD shows bare `$`):**
+- `SC4SAP_5H_LIMIT_USD`           — dollar basis for the 5h block percentage (100% at this value).
+- `SC4SAP_WEEKLY_LIMIT_USD`       — dollar basis for the 7d percentage (100% at this value).
+- `SC4SAP_WEEKLY_EXTRA_LIMIT_USD` — dollar basis for the `+extra` overage segment (shown only when weekly > base).
+
+**Plan preset shortcut (preferred):** if the user says "내 플랜은 X" / "apply pro plan" / "max20x로 세팅" etc., run:
+
+```bash
+node "<PLUGIN_ROOT>/scripts/hud/apply-plan.mjs" <plan>
+```
+
+where `<plan>` ∈ `pro` | `max5x` | `max20x` | `team` | `api` (aliases in `plan-presets.json`). This writes all three env vars from the preset table. Remind the user that **plan values are publicly discussed estimates**, not official Anthropic figures — they can override any single value via the manual flow below. Use `--show` to display the table, `--unset` to clear.
+
+**Flow (manual per-key edit):**
+1. Read `~/.claude/settings.json`. If missing, create it with `{}`.
+2. Show the current three values (or `(unset)` each).
+3. Ask which to change. Accept numeric dollar value, `unset`/`remove` to delete the key, or `-`/empty to keep.
+4. Validate: positive number or `unset`. Reject negatives, strings, zero (zero means unset — suggest `unset` instead).
+5. Preview diff (Before/After) for the `env` block only.
+6. Confirm, then write back with:
+   - Atomic write (`settings.json.tmp` → rename).
+   - Preserve all other keys and formatting as much as possible (2-space JSON indent).
+   - Back up the previous file to `settings.json.bak` once (do not spam backups — overwrite).
+7. Remind the user: **restart Claude Code** for new env values to reach the statusline subprocess. `/mcp` reconnect is not enough.
+
+**Example:**
+```
+Current HUD limits (~/.claude/settings.json → env):
+  SC4SAP_5H_LIMIT_USD            = 35
+  SC4SAP_WEEKLY_LIMIT_USD        = 200
+  SC4SAP_WEEKLY_EXTRA_LIMIT_USD  = (unset)
+
+Which to change?
+> weekly extra = 100
+```
+</HUD_Limits>
+
 <Validation>
 - `SAP_URL`: must match `^https?://[^ ]+` and not end with `/`.
 - `SAP_CLIENT`: exactly 3 digits.
@@ -137,6 +178,24 @@ Do not manage keys that are not in this list — warn the user and skip.
 - **Plugin is launched from `marketplaces/` source tree** (dev mode) rather than `cache/` → still look up `.sc4sap/sap.env` relative to the plugin root; if both exist, prefer the one under the currently-running plugin directory and tell the user which path was edited.
 </Edge_Cases>
 
+<Standalone_TUI>
+For users who want to edit `sap.env` **without blocking the Claude Code session**, a zero-dependency terminal editor is bundled:
+
+```bash
+# In a separate terminal window / tab:
+node <PLUGIN_ROOT>/scripts/sap-option-tui.mjs            # defaults to ./.sc4sap/sap.env
+node <PLUGIN_ROOT>/scripts/sap-option-tui.mjs --file /path/to/sap.env
+```
+
+- Menu-loop UI (no `/plugin`-style overlay; CC's TUI modal API isn't public).
+- Preserves comments, ordering, and unmanaged keys on save.
+- Atomic write with automatic `.bak` backup.
+- Masks `SAP_PASSWORD` / `XSUAA_CLIENT_SECRET` both on display and on input.
+- Validates per `<Validation>`; `off` blocklist requires typing `I UNDERSTAND`.
+
+Remind the user to reconnect MCP (`/mcp`) in the Claude Code session after saving — env changes are not hot-reloaded.
+</Standalone_TUI>
+
 <Examples>
 User: "sap.env 보여줘"
 → parse, display masked table, ask what to change.
@@ -149,4 +208,10 @@ User: "ACDOCA 화이트리스트에 추가해줘"
 
 User: "SAP_PASSWORD 바꿔줘"
 → prompt for new password (do not echo), validate non-empty, diff shows `*** → ***`, confirm, write backup, remind to reconnect.
+
+User: "hud 주간 한도 200달러로 바꿔"
+→ route to `<HUD_Limits>` flow, edit `~/.claude/settings.json` → `env.SC4SAP_WEEKLY_LIMIT_USD = 200`, preview diff, confirm, write, remind user to **restart Claude Code** (not just `/mcp`).
+
+User: "5h 한도 35, 주간 200, extra 100"
+→ HUD flow, set all three at once, single diff, single confirmation, single write.
 </Examples>
