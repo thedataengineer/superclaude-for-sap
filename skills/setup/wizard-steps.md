@@ -18,6 +18,34 @@ Referenced by `SKILL.md` — this file holds the full 12-step setup wizard.
    - Which ABAP syntax features agents can use in generated code (see ABAP Release Reference below)
    - Store as `SAP_VERSION` (`S4` or `ECC`) and `ABAP_RELEASE` (e.g., `756`) in `.sc4sap/sap.env` and `.sc4sap/config.json`
 
+   Then ask for **Industry (산업/업종)** — present a numbered selection menu. Ask **one question** and wait; do NOT dump descriptions inline:
+
+   ```
+   Select your industry (산업/업종):
+      1) retail          — 리테일/유통 (Article, Store, POS, Assortment)
+      2) fashion         — 패션/어패럴 (Style × Color × Size, Season, AFS/FMS)
+      3) cosmetics       — 화장품 (Batch, Shelf Life, Channel Pricing)
+      4) tire            — 타이어 (OE/RE, Mixed Mfg, Mold, Recall)
+      5) automotive      — 자동차 (JIT/JIS, Scheduling Agreement, PPAP)
+      6) pharmaceutical  — 제약 (GMP, Serialization, Batch Status)
+      7) food-beverage   — 식음료 (Catch Weight, FEFO, TPM)
+      8) chemical        — 화학 (Process, DG, Formula Pricing)
+      9) electronics     — 전자/하이테크 (VC/AVC, Serial, RMA)
+     10) construction    — 건설 (PS, POC Billing, Subcontracting)
+     11) steel           — 철강/금속 (Characteristic, Coil, Heat)
+     12) utilities       — 전력/가스/수도 (IS-U, FI-CA, Device)
+     13) banking         — 금융 (FS-CD, FS-BP, Parallel Ledger)
+     14) public-sector   — 공공부문 (FM, GM, Budget Control)
+     15) other           — 기타 / 산업 미정 (일반 표준 기준)
+   ```
+
+   This choice determines which `industry/*.md` reference file SAP consultant agents load when doing config analysis, business process design, Fit-Gap, or requirement interpretation. It is **important context**, not just metadata — consultants will ask the user to set it later if it is missing.
+
+   - Accept either the number (1–15) or the canonical key (e.g. `retail`, `fashion`).
+   - Store as `SAP_INDUSTRY=<key>` in `.sc4sap/sap.env` (step 4) **and** as `industry: "<key>"` in `.sc4sap/config.json` (step 10). Keep both in sync when changed via `/sc4sap:sap-option`.
+   - If the user is unsure, accept `other` and tell them they can change it anytime via `/sc4sap:sap-option`.
+   - Validate against the 15 keys listed in `industry/README.md`. If a new industry MD is added later, this list must be updated here and in `sap-option`.
+
 3. **Install `abap-mcp-adt-powerup` MCP server** — clone (`github.com/babamba2/abap-mcp-adt-powerup.git`) and build the external MCP server into the **plugin root's** `vendor/abap-mcp-adt/` folder (typically `~/.claude/plugins/marketplaces/sc4sap/vendor/abap-mcp-adt/`), **NOT** the user's project directory.
    - **⚠️ Path resolution (MANDATORY)**: the install target must be the plugin root, not the current working directory. Resolve the plugin root **dynamically** — never hardcode the path. This skill file lives at `<PLUGIN_ROOT>/skills/setup/SKILL.md`, so:
      - `PLUGIN_ROOT` = absolute path of this `SKILL.md`, then go up two levels (`../..`)
@@ -39,6 +67,7 @@ Referenced by `SKILL.md` — this file holds the full 12-step setup wizard.
    - `SAP_SYSTEM_TYPE` (`onprem` or `cloud`)
    - `SAP_VERSION` (`S4` or `ECC`) — from step 2
    - `ABAP_RELEASE` (e.g., `750`, `756`, `758`) — from step 2; consumed by agents to gate ABAP syntax features
+   - `SAP_INDUSTRY` (e.g., `retail`, `cosmetics`, `automotive`, `other`) — from step 2; consumed by consultant agents to load `industry/<key>.md` for business-context analysis
    - `TLS_REJECT_UNAUTHORIZED=0` (dev only, self-signed certs) — omit or unset in production
    - **Blocklist policy (optional, defaults to `standard`)** — this is the **MCP server-side guard (L4)** in `abap-mcp-adt-powerup`, read from env vars in `sap.env`. It is distinct from the **PreToolUse hook (L3)** configured in Step 12. Write these as commented examples so the user can uncomment as needed:
      ```
@@ -66,6 +95,7 @@ Referenced by `SKILL.md` — this file holds the full 12-step setup wizard.
    {
      "sapVersion": "S4",
      "abapRelease": "758",
+     "industry": "cosmetics",
      "systemInfo": {
        "sid": "S4H",
        "client": "100",
@@ -96,8 +126,8 @@ Referenced by `SKILL.md` — this file holds the full 12-step setup wizard.
    3. If already found, skip creation and report "ZMCP_ADT_UTILS already exists"
    4. Test by calling `SearchObject` for `ZMCP_ADT_DISPATCH` to verify
 
-10. Write plugin config to `.sc4sap/config.json` — include `sapVersion` and `abapRelease` fields, and preserve the `systemInfo` block written in step 7 (merge, don't overwrite).
-    - Note: `sapVersion` / `abapRelease` are **duplicated** in `sap.env` (step 4) on purpose. `sap.env` is consumed by the MCP server process; `config.json` is consumed by plugin-side components (HUD, PreToolUse hook, agents, SPRO cache). Keep both in sync when the user changes them via `/sc4sap:sap-option`.
+10. Write plugin config to `.sc4sap/config.json` — include `sapVersion`, `abapRelease`, and `industry` fields, and preserve the `systemInfo` block written in step 7 (merge, don't overwrite).
+    - Note: `sapVersion` / `abapRelease` / `industry` are **duplicated** in `sap.env` (step 4) on purpose. `sap.env` is consumed by the MCP server process; `config.json` is consumed by plugin-side components (HUD, PreToolUse hook, agents, SPRO cache, consultant agents reading `industry/*.md`). Keep both in sync when the user changes them via `/sc4sap:sap-option`.
     - `systemInfo` is **not** duplicated in `sap.env` — it represents what the system actually reported, not what the user typed, so it only lives in `config.json`.
 
 11. **Ask user about SPRO config extraction (optional)** — prompt whether to run SPRO extraction now:

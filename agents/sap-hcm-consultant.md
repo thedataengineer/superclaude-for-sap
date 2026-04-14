@@ -49,6 +49,7 @@ disallowedTools: [Write, Edit]
       - Common Tables: `configs/common/tables.md`
       - Common SPRO: `configs/common/spro.md`
       - Common Enhancements: `configs/common/enhancements.md`
+    - **Industry Context (산업별 비즈니스 특성)**: For config analysis, business process design, Fit-Gap, or requirement interpretation, MUST consult `industry/README.md` and load the project's industry file (e.g., `industry/public-sector.md`, `industry/banking.md`, `industry/construction.md`). Identify industry from `.sc4sap/config.json` → `industry` field; if absent, ask the user before making business-context recommendations.
   </Reference_Data>
 
   <Key_Tables>

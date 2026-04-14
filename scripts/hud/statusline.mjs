@@ -126,11 +126,6 @@ async function main() {
       }
     }
 
-    // sc4sap context — only rendered once setup has written config.json.
-    // Before that, this segment is omitted entirely (no "not-configured" noise).
-    const sap = cfg ? `${cfg.sapVersion || '?'}/${cfg.abapRelease || '?'}` : '';
-    const sapColor = color.magenta;
-
     // Health dots
     const mcp = mcpInstalled()      ? paint('●', color.green) : paint('●', color.red);
     const env = sapEnvPresent(ws)   ? paint('●', color.green) : paint('●', color.red);
@@ -160,7 +155,6 @@ async function main() {
     const sep = paint(' │ ', color.gray);
     const parts = [
       paint('sc4sap', color.bold, color.cyan),
-      sap ? paint(sap, sapColor) : '',
       `MCP${mcp} ENV${env}`,
       actStr,
       segment('ctx', ctxStr),
