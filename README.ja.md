@@ -51,12 +51,6 @@ Claude Code セッション内で以下を実行します:
 /plugin install sc4sap
 ```
 
-その後 Claude Code を再起動 (または `/plugin` → reload) し、スキル・エージェント・フックを反映させます。確認:
-
-```
-/sc4sap:sap-doctor
-```
-
 後日のアップデート:
 
 ```
@@ -547,6 +541,10 @@ CTS トランスポートリリースワークフロー — リスト、検証 (
 ## 作者
 
 백승현 (Paek Seunghyun)
+
+## コントリビューター
+
+- 김시훈 (Kim Sihoon)
 
 ## ライセンス
 

@@ -51,12 +51,6 @@ Inside a Claude Code session, run:
 /plugin install sc4sap
 ```
 
-Then restart Claude Code (or run `/plugin` → reload) so the skills, agents, and hooks register. Verify with:
-
-```
-/sc4sap:sap-doctor
-```
-
 To update later:
 
 ```
@@ -546,7 +540,11 @@ This project was inspired by [**oh-my-claudecode**](https://github.com/huryechan
 
 ## Author
 
-paek seunghyun
+- [paek seunghyun](https://www.linkedin.com/in/seunghyun-paek-5b83b7183/)
+
+## Contributors
+
+- [김시훈 (Kim Sihun)](https://www.linkedin.com/in/sihun-kim-27737132b/)
 
 ## License
 
