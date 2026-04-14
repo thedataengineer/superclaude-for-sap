@@ -86,9 +86,17 @@ Score ambiguity after each round. Do NOT proceed to spec generation until ≤ 5%
 - Block or redirect incompatible requests (e.g., classical Dynpro on Cloud Public)
 - Output: `.sc4sap/program/{PROG}/platform.md`
 
-**Phase 1 — Socratic Interview** (skill itself)
+**Phase 1 — Socratic Interview** (skill itself + module consultant co-host)
 - Dimensions pre-filtered by resolved platform
 - Loop question → ambiguity score → until ≤ 5%
+- **Consultant co-interview (mandatory when the request touches an SAP business module)**:
+  - As soon as the user's initial request reveals the target module (SD / MM / FI / CO / PP / QM / PM / WM / HCM / TM / TR / Ariba / BW / BC), summon the matching consultant agent (`sap-sd-consultant`, `sap-mm-consultant`, `sap-fi-consultant`, `sap-co-consultant`, `sap-pp-consultant`, `sap-qm-consultant`, `sap-pm-consultant`, `sap-wm-consultant`, `sap-hcm-consultant`, `sap-tm-consultant`, `sap-tr-consultant`, `sap-ariba-consultant`, `sap-bw-consultant`, `sap-bc-consultant`) **before the first question**.
+  - The consultant participates in question authoring: it contributes module-specific dimensions (master data, customizing views, standard BAPIs/FMs, authorization objects, common pitfalls) that the generic interview would miss.
+  - Questions are still delivered one dimension per turn (see `feedback_one_question_at_a_time`), but the consultant decides *which* business dimension to probe next when the module is business-heavy.
+  - If the module is ambiguous in the initial request, ask the user which module this concerns **first**, then summon the consultant — do not proceed with generic questions without a consultant present.
+  - Multi-module request: summon each consultant in parallel and reconcile their question streams through the skill.
+  - Skip consultant only for pure technical utilities with zero business logic (e.g., generic string helper, file converter).
+- Consultant contribution is appended to `.sc4sap/program/{PROG}/interview.md` and carried into Phase 2 so `sap-planner` does not re-interview.
 
 **Phase 2 — Planning**: `sap-planner` (+ module consultant when needed)
 - Apply shared conventions: `include-structure.md`, `naming-conventions.md`

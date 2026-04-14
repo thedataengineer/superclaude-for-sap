@@ -2,7 +2,7 @@ English | [한국어](README.ko.md) | [日本語](README.ja.md)
 
 # SuperClaude for SAP (sc4sap)
 
-> Claude Code plugin for SAP ABAP development on On-Premise S/4HANA
+> Claude Code plugin for SAP ABAP development — SAP ECC / S/4HANA On-Premise / S/4HANA Cloud (Public & Private)
 
 [![npm version](https://img.shields.io/badge/npm-v4.11.5-cb3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/superclaude-for-sap) 
 [![GitHub stars](https://img.shields.io/github/stars/babamba2/superclaude-for-sap?style=flat&color=yellow)](https://github.com/babamba2/superclaude-for-sap)
@@ -16,14 +16,16 @@ SuperClaude for SAP transforms Claude Code into a full-stack SAP development ass
 
 ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D%2020.0.0-339933?logo=node.js&logoColor=white)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-CLI-6B4FBB?logo=anthropic&logoColor=white)
+![SAP ECC](https://img.shields.io/badge/SAP-ECC_6.0-0FAAFF?logo=sap&logoColor=white)
 ![SAP S/4HANA](https://img.shields.io/badge/SAP-S%2F4HANA_On--Premise-0FAAFF?logo=sap&logoColor=white)
+![SAP S/4HANA Cloud](https://img.shields.io/badge/SAP-S%2F4HANA_Cloud-0FAAFF?logo=sap&logoColor=white)
 ![MCP ABAP ADT](https://img.shields.io/badge/MCP_ABAP_ADT-Auto--Installed-FF6600)
 
 | Requirement | Details |
 |-------------|---------|
 | **Node.js** | >= 20.0.0 |
 | **Claude Code** | CLI installed (Max/Pro subscription or API key) |
-| **SAP System** | On-Premise S/4HANA with ADT enabled |
+| **SAP System** | **SAP ECC 6.0** / **S/4HANA On-Premise** / **S/4HANA Cloud (Public & Private)** — ADT enabled |
 
 > **MCP Server** ([abap-mcp-adt-powerup](https://github.com/babamba2/abap-mcp-adt-powerup)) is **automatically installed and configured** during `/sc4sap:setup` — no manual pre-install required.
 
@@ -62,7 +64,7 @@ This will:
 | **Basis (1)** | BC Consultant — system admin, transport management, diagnostics |
 | **Modules (13)** | SD, MM, FI, CO, PP, PM, QM, TR, HCM, WM, TM, Ariba, BW |
 
-### 15 Skills
+### 16 Skills
 
 | Skill | Description |
 |-------|-------------|
@@ -82,6 +84,7 @@ This will:
 | `sc4sap:program` | Full ABAP program pipeline — Main+Include, OOP/Procedural, ALV, test, 4-layer agent pipeline |
 | `sc4sap:analyze-code` | ABAP code analysis & improvement |
 | `sc4sap:analyze-symptom` | Step-by-step SAP operational error/symptom analysis (dumps, logs, SAP Note candidates) |
+| `sc4sap:program-to-spec` | Reverse-engineer an ABAP program into a Functional/Technical Spec (Markdown / Excel), Socratic scope narrowing |
 
 ### MCP ABAP ADT Server — Unique Capabilities
 
