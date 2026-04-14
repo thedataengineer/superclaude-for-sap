@@ -49,8 +49,13 @@ async function main() {
     const cfg = readConfig(ws);
 
     // Try the real Anthropic OAuth usage API first. Cached 60s on success / 15s on error.
+    // On API error (e.g. 429) we preserve the previously fetched `data`; keep using it
+    // instead of falling back to the rough transcript-based estimate, which tends to
+    // over-report (often hitting 100% on long sessions).
     const usage = await getUsage(ws);
-    const apiOk = usage?.ok && usage.data && (usage.data.fiveHour != null || usage.data.sevenDay != null);
+    const hasData = !!usage?.data && (usage.data.fiveHour != null || usage.data.sevenDay != null);
+    const apiOk = hasData;
+    const apiStale = hasData && !usage?.ok; // real numbers, but last fetch failed
 
     // Context %
     const last = transcript ? latestUsage(transcript) : null;
@@ -69,9 +74,12 @@ async function main() {
 
     if (apiOk) {
       const d = usage.data;
+      // When the latest fetch failed but cached data is reused, tag values with a
+      // trailing `~` so the user can tell the reading may be stale.
+      const staleTag = apiStale ? '~' : '';
       if (d.fiveHour != null) {
         const p = Math.min(100, d.fiveHour);
-        costStr = paint(p.toFixed(0) + '%', pctColor(p));
+        costStr = paint(p.toFixed(0) + '%' + staleTag, pctColor(p));
       }
       if (d.fiveHourResetsAt) {
         const remain = Math.max(0, new Date(d.fiveHourResetsAt).getTime() - Date.now());
@@ -80,7 +88,7 @@ async function main() {
       }
       if (d.sevenDay != null) {
         const base = Math.min(100, d.sevenDay);
-        weekStr = paint(base.toFixed(0) + '%', pctColor(base));
+        weekStr = paint(base.toFixed(0) + '%' + staleTag, pctColor(base));
         // Anthropic's `seven_day.utilization` caps at 100 (or reports >100 on overage).
         if (d.sevenDay > 100) {
           const over = d.sevenDay - 100;
@@ -136,9 +144,10 @@ async function main() {
     let actStr;
     if (act.working) {
       const stripNs = (s) => String(s).replace(/^[a-z0-9_-]+:/i, '');
+      const trim = (s, n = 24) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
       const labels = (act.pending || []).map((b) => {
         if (b.name === 'Task' || b.name === 'Agent') {
-          return b.subagent ? stripNs(b.subagent) : 'agent';
+          return b.subagent ? trim(stripNs(b.subagent)) : 'agent';
         }
         return b.name;
       });

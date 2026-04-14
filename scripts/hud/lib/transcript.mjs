@@ -106,10 +106,17 @@ export function activityState(transcriptPath) {
   if (Array.isArray(content)) {
     for (const b of content) {
       if (b?.type === 'tool_use' && b.id) {
+        // Identify the subagent for Agent/Task tool_use blocks. Field precedence:
+        //   1. input.subagent_type — old /agents tool name
+        //   2. input.agent         — alt variant
+        //   3. input.name          — new Agent tool (Claude Code ≥ 1.x passes a freeform
+        //                            name like "agent-mm-ariba" or the subagent slug)
+        // Falling back to input.name matters: without it the HUD just shows "agent"
+        // for every delegation even when the caller passed a specific identifier.
         toolUseBlocks.push({
           id: b.id,
           name: b.name || 'tool',
-          subagent: b.input?.subagent_type || b.input?.agent || null,
+          subagent: b.input?.subagent_type || b.input?.agent || b.input?.name || null,
           description: b.input?.description || null,
         });
       }
