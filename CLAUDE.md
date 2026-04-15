@@ -1,108 +1,64 @@
 # SuperClaude for SAP (sc4sap) — Development Rules
 
-## SAP Development Standards
+This file is the **index** of development rules. Detailed rules live in `common/` and `exceptions/` — consult those files before making judgment calls. Everything referenced below is MANDATORY for every sc4sap session (agents, skills, direct user requests, pipelines).
 
-### Naming Conventions
-- **Custom objects**: Always use `Z` or `Y` prefix (e.g., `ZCL_SALES_ORDER`, `ZTSD_ORDER_HEADER`)
-- **Z prefix**: Standard custom development
-- **Y prefix**: Temporary or prototype objects
-- **Namespace**: Follow `Z{MODULE}_{OBJECT_TYPE}_{NAME}` pattern when possible
-  - Examples: `ZSD_CL_ORDER_PROCESSOR`, `ZMM_IF_MATERIAL_API`, `ZFI_TT_POSTING_ITEMS`
-- **Includes**: `Z{PROGRAM}_TOP`, `Z{PROGRAM}_F01`, `Z{PROGRAM}_SEL`
-- **Function Groups**: `Z{MODULE}_{DESCRIPTION}`
-- **Tables**: `ZT{MODULE}_{DESCRIPTION}` (e.g., `ZTSD_ORDER_LOG`)
-- **Data Elements**: `ZDE_{DESCRIPTION}` or `Z{MODULE}_DE_{DESCRIPTION}`
-- **Domains**: `ZDO_{DESCRIPTION}` or `Z{MODULE}_DO_{DESCRIPTION}`
+## Development Standards — References
 
-### Transport Policy
-- Every change must be assigned to a transport request
-- Use descriptive transport descriptions: `[MODULE] [Action] [Object] - [Brief description]`
-  - Example: `[SD] Create ZCL_SALES_ORDER - Sales order processing class`
-- Never release transports with syntax errors or inactive objects
-- One transport per logical change unit
+| Topic | Reference |
+|---|---|
+| Naming conventions (Z/Y prefixes, module prefix, includes, FGs, tables, DEs, DOs) | [`common/naming-conventions.md`](common/naming-conventions.md) |
+| SAP version awareness (ECC vs S/4HANA — tables, TCodes, BAPIs, patterns) | [`common/sap-version-reference.md`](common/sap-version-reference.md) |
+| ABAP release awareness (syntax availability per release, never emit newer features than `ABAP_RELEASE`) | [`common/abap-release-reference.md`](common/abap-release-reference.md) |
+| Clean ABAP coding standards (naming, control flow, SQL, modularization, testing, performance, security) | [`common/clean-code.md`](common/clean-code.md) (consolidated) — also pulls in `constant-rule.md`, `text-element-rule.md`, `abap-release-reference.md` |
+| Procedural FORM naming (screen-bound suffix) | [`common/procedural-form-naming.md`](common/procedural-form-naming.md) |
+| OOP two-class split pattern | [`common/oop-pattern.md`](common/oop-pattern.md) |
+| Include structure (Main + conditional includes) | [`common/include-structure.md`](common/include-structure.md) |
+| ALV display rules | [`common/alv-rules.md`](common/alv-rules.md) |
+| SPRO lookup protocol (consultant agents, IMG/Customizing) | [`common/spro-lookup.md`](common/spro-lookup.md) |
+| Data extraction policy (blocklist rule, `acknowledge_risk` hard rule, refusal template) | [`common/data-extraction-policy.md`](common/data-extraction-policy.md) |
+| Blocklist (per-category table lists) | [`exceptions/table_exception.md`](exceptions/table_exception.md) (index) + `exceptions/*.md` section files |
+| Industry business-context references (14 industries) | [`industry/README.md`](industry/README.md) + `industry/*.md` |
+| Country / localization references (16 countries + EU common) | [`country/README.md`](country/README.md) + `country/*.md` |
 
-### SAP Version & ABAP Release Awareness
-- **CRITICAL**: Always check `.sc4sap/config.json` for `sapVersion` and `abapRelease` before any work
-- `sapVersion`: `S4` (S/4HANA) or `ECC` (ECC 6.0) — determines tables, BAPIs, TCodes, patterns
-- `abapRelease`: e.g., `750`, `756`, `758` — determines available ABAP syntax features
-- Key version differences:
-  - **S4**: BP (BUT000), MATDOC, ACDOCA (Universal Journal), Fiori, CDS-based
-  - **ECC**: Vendor (LFA1/XK01) + Customer (KNA1/XD01) separate, MKPF/MSEG, BKPF/BSEG
-- ABAP syntax restrictions by release:
-  - **< 740**: No inline declarations, no constructor expressions (`NEW`, `VALUE`, `CORRESPONDING`)
-  - **< 750**: No Open SQL expressions (CASE/CAST/COALESCE in SELECT)
-  - **< 754**: No RAP/EML, no `FINAL` classes
-  - **≥ 740**: Prefer modern syntax within the allowed release range
+Before any work: verify `.sc4sap/config.json` exists and contains `sapVersion`, `abapRelease`, `industry`. Every recommendation, piece of generated code, and tool invocation must respect those fields.
 
-### Coding Standards (ABAP Clean Code)
-- Follow SAP ABAP Clean Code guidelines
-- Use meaningful variable names (no single-letter variables except loop counters)
-- Prefer `NEW` over `CREATE OBJECT` (ABAP 740+)
-- Prefer `VALUE` and `CORRESPONDING` over `MOVE-CORRESPONDING` (ABAP 740+)
-- Use inline declarations where appropriate (ABAP 740+)
-- Always handle exceptions with `TRY...CATCH`
-- Avoid `SELECT *` — always specify required fields
-- Use CDS views over direct table access where possible (ABAP 750+)
-- Write unit tests for all custom classes (when applicable)
-- **Always verify syntax is compatible with the configured `abapRelease`**
+## Critical Rules (summary — full text in referenced files)
 
-### Object Activation
-- Always activate objects after creation or modification
-- Check for syntax errors before activation using `GetAbapSemanticAnalysis`
-- Verify no inactive objects remain using `GetInactiveObjects`
+1. **Custom objects use `Z`/`Y` prefix.** Full rules: `common/naming-conventions.md`.
+2. **Match SAP version and ABAP release.** Never use S/4-only tables on ECC or syntax newer than the configured `abapRelease`. Full rules: `common/sap-version-reference.md`, `common/abap-release-reference.md`.
+3. **Transport discipline.** Every change goes on a transport. Description format: `[MODULE] [Action] [Object] - [brief]`. Never release with syntax errors or inactive objects.
+4. **Activate after every change.** Run `GetAbapSemanticAnalysis` for syntax, then `GetInactiveObjects` to confirm no leftovers. Follow Clean ABAP conventions: `common/clean-code.md`.
+5. **Data extraction is gated.** Before any `GetTableContents` / `GetSqlQuery`: consult `exceptions/table_exception.md` and `common/data-extraction-policy.md`. Schema/DDIC (`GetTable`, `GetStructure`, `GetView`, `GetDataElement`, `GetDomain`) is always allowed.
+6. **`acknowledge_risk` requires explicit user affirmative** (`yes` / `승인` / `authorize` / `approve` / `proceed` / `confirmed`). Ambiguous commands (`뽑아봐`, `try it`, `pull it`, `my mistake`) are NOT authorization. Per-call, per-table, per-session — never carries over. Full protocol: `common/data-extraction-policy.md` → "The `acknowledge_risk` Parameter — HARD RULE".
+7. **Industry context matters.** For config analysis / business process design / Fit-Gap: load the project's `industry/<key>.md` (from `config.json` → `industry` or `sap.env` → `SAP_INDUSTRY`). If unset, ask the user.
+8. **Country / localization context matters.** For tax, e-invoicing, banking, statutory reporting, date/number formats: load the project's `country/<iso>.md` (from `config.json` → `country` or `sap.env` → `SAP_COUNTRY`, ISO alpha-2 lowercase: `kr`, `us`, `de`, `eu-common`, …). Multi-country projects load every relevant file and flag cross-country touchpoints (intercompany, intra-EU VAT, transfer pricing). If unset, ask the user.
+9. **CBO discovery for module consultants.** Every `sap-*-consultant` (SD/MM/PP/PM/QM/WM/TM/TR/FI/CO/HCM/BW/PS/Ariba) must, once per project session, ask the user for the module's main package name, call `GetPackageContents` (walk `GetPackageTree` for sub-packages), present the table list with descriptions, drill into relevant tables via `GetTable`, and emit a `## CBO Tables in Scope` hand-off section when recommending to `sap-executor` / `sap-planner` / `sap-architect`. Never skip silently; if the user confirms no CBO tables, state it explicitly.
 
-### 🔒 Data Extraction Policy (MANDATORY)
-Before **any** call to `GetTableContents`, `GetSqlQuery`, or other row-returning MCP tools:
-1. **Check `exceptions/table_exception.md`** at the plugin root for the table (and every table inside a join/view).
-2. If a match is found (exact name, family pattern like `PA*`/`USR*`, Z-pattern): **refuse the call**, explain the category, and offer the allowed alternatives listed in `common/data-extraction-policy.md`.
-3. Never bypass silently. Never argue the policy with the user — surface it and let them decide.
-4. Schema/DDIC (`GetTable`, `GetStructure`, `GetView`, `GetDataElement`, `GetDomain`) is always permitted.
-
-### 🚫 `acknowledge_risk` — HARD RULE (no exceptions)
-
-`GetTableContents` / `GetSqlQuery` accept `acknowledge_risk: true` which bypasses the "ask"-tier confirmation gate. This flag is logged to stderr as a compliance audit record. Misuse is a policy breach.
-
-- **NEVER** set `acknowledge_risk: true` on a first call. Always let the hook/server gate it.
-- If the response is `ask` / "user confirmation required": **STOP, do not retry**. Surface the refusal to the user.
-- Ask an explicit yes/no question: `"⚠️ {TABLE} requires authorization. Proceed with acknowledge_risk=true? (yes/no)"`
-- Only retry with `acknowledge_risk: true` after an **explicit affirmative keyword** from the user: `yes` / `y` / `승인` / `authorize` / `approve` / `proceed` / `go ahead` / `confirmed`.
-- Ambiguous imperatives are NOT authorization — including `뽑아봐`, `가져와봐`, `해봐`, `try it`, `pull it`, `test it`, `my mistake`, silence.
-- Authorization is per-call, per-table, per-session. Does not carry across requests.
-
-See `common/data-extraction-policy.md` → **"The `acknowledge_risk` Parameter — HARD RULE"** for the full protocol.
-
-This applies to **every session** — sc4sap agents, direct user requests, pipelines, and ad-hoc analysis. Backed by a `PreToolUse` hook (`scripts/hooks/block-forbidden-tables.mjs`) when installed. See `common/data-extraction-policy.md` for the full protocol.
+Enforcement: L1 agent instructions → L2 this file → L3 `PreToolUse` hook (`scripts/hooks/block-forbidden-tables.mjs`) → L4 MCP server upstream guard.
 
 ## Plugin Usage
 
-### Skills (sc4sap: prefix)
-All skills are invoked with the `sc4sap:` prefix:
+### Skills (`/sc4sap:` prefix)
 - `/sc4sap:setup` — Initial plugin setup + SPRO config generation
 - `/sc4sap:autopilot` — Full autonomous execution pipeline
 - `/sc4sap:ralph` — Persistent loop with SAP verification
 - `/sc4sap:release` — CTS transport release workflow
 - `/sc4sap:mcp-setup` — MCP ABAP ADT server configuration guide
-- `/sc4sap:sap-option` — View and edit `.sc4sap/sap.env` (credentials, blocklist profile, whitelists)
+- `/sc4sap:sap-option` — View and edit `.sc4sap/sap.env` (credentials, industry, blocklist profile, HUD limits)
+- `/sc4sap:sap-doctor` — Diagnose plugin / MCP / SAP connection health
 
 ### Agents
-SAP-specialized agents are available for delegation:
-- `sap-analyst`, `sap-architect`, `sap-code-reviewer`, `sap-critic`
-- `sap-debugger`, `sap-doc-specialist`, `sap-executor`, `sap-planner`
-- `sap-qa-tester`, `sap-writer`
-- `sap-bc-consultant` — SAP Basis administration
-- Module consultants: `sap-sd-consultant`, `sap-mm-consultant`, etc.
+- Core: `sap-analyst`, `sap-architect`, `sap-code-reviewer`, `sap-critic`, `sap-debugger`, `sap-doc-specialist`, `sap-executor`, `sap-planner`, `sap-qa-tester`, `sap-writer`
+- Basis: `sap-bc-consultant`
+- Module consultants: `sap-sd-`, `sap-mm-`, `sap-pp-`, `sap-pm-`, `sap-qm-`, `sap-wm-`, `sap-tm-`, `sap-tr-`, `sap-fi-`, `sap-co-`, `sap-hcm-`, `sap-bw-`, `sap-ps-`, `sap-ariba-consultant`
 
 ### SPRO Config Reference
-Module config data is stored in `configs/{MODULE}/`:
-- `spro.md` — SPRO configuration tables/views
-- `tcodes.md` — Transaction codes
-- `bapi.md` — BAPI/Function Module list
-- `workflows.md` — Representative development workflows
+`configs/{MODULE}/` contains `spro.md`, `tcodes.md`, `bapi.md`, `tables.md`, `enhancements.md`, `workflows.md` per module. Consultant agents consult these + `common/spro-lookup.md` before IMG answers.
 
 ### MCP Server (mcp-abap-adt)
-All SAP system interactions go through the MCP ABAP ADT server (150+ tools):
-- CRUD: `CreateClass`, `UpdateClass`, `GetClass`, `DeleteClass`, etc.
+All SAP interactions go through the MCP ABAP ADT server (150+ tools):
+- CRUD: `CreateClass` / `UpdateClass` / `GetClass` / `DeleteClass` (and every DDIC/runtime object type)
 - Analysis: `GetAbapAST`, `GetAbapSemanticAnalysis`, `GetWhereUsed`
-- Runtime: `RunUnitTest`, `GetUnitTestResult`
-- System: `GetTableContents`, `GetSqlQuery`
+- Runtime: `RunUnitTest`, `GetUnitTestResult`, `RuntimeAnalyzeDump`
+- System: `GetTableContents`, `GetSqlQuery` (gated — see rule 5/6 above)
 - Transport: `CreateTransport`, `GetTransport`, `ListTransports`

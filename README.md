@@ -20,6 +20,10 @@ SuperClaude for SAP transforms Claude Code into a full-stack SAP development ass
 | **🏗️ Formatted Auto Program Maker** | Builds ABAP programs end-to-end following sc4sap conventions: Main + conditional Includes (t/s/c/a/o/i/e/f/_tst), OOP or Procedural split (`LCL_DATA` / `LCL_ALV` / `LCL_EVENT`), full ALV (CL_GUI_ALV_GRID + Docking) or SALV, mandatory Text Elements & CONSTANTS, Dynpro + GUI Status, ABAP Unit tests — all platform-aware (ECC / S4 On-Prem / Cloud). | `/sc4sap:program`, `/sc4sap:autopilot` |
 | **🔍 Program Analyze** | Reverse-direction intelligence: read any ABAP object via MCP, run Clean ABAP / performance / security review, or reverse-engineer a program into a Functional / Technical Spec (Markdown or Excel) with Socratic scope narrowing. | `/sc4sap:analyze-code`, `/sc4sap:program-to-spec` |
 | **🩺 Maintenance Diagnosis** | Operational triage loop: inspect ST22 dumps, SAT-style profiler traces, logs, and where-used graphs directly from Claude; narrow hypotheses, surface SAP Note candidates, and diagnose plugin / MCP / SAP connectivity health. | `/sc4sap:analyze-symptom`, `/sc4sap:sap-doctor` |
+| **🏭 Industry Context** | 14 industry reference files (`industry/*.md`) — retail, fashion, cosmetics, tire, automotive, pharmaceutical, food-beverage, chemical, electronics, construction, steel, utilities, banking, public-sector. Consultants load the project's industry file to apply business-specific patterns, pitfalls, and SAP IS mappings when doing config analysis, Fit-Gap, or master-data decisions. | All consultants |
+| **🌏 Country / Localization** | 15 per-country files + `eu-common.md` (KR, JP, CN, US, DE, GB, FR, IT, ES, NL, BR, MX, IN, AU, SG, EU common). Covers date/number formats, VAT/GST structure, mandatory e-invoicing (SDI / SII / MTD / CFDI / NF-e / 세금계산서 / Golden Tax / IRN / Peppol / STP), banking formats (IBAN / BSB / CLABE / SPEI / PIX / UPI / SEPA / Zengin …), payroll localization, statutory reporting cadence. Mandatory for analyst / critic / planner; wired into every consultant. | All consultants + analyst / critic / planner |
+| **🧬 CBO Discovery** | Every module consultant asks the user for the module's main package name once per session, calls `GetPackageContents` / `GetPackageTree`, presents the Z-table list with descriptions, drills into relevant ones via `GetTable`, and hands off a `## CBO Tables in Scope` section to `sap-executor` / `sap-planner` / `sap-architect`. No silent skipping. | `sap-*-consultant` (14 modules) |
+| **🤝 Module Consultation** | `sap-analyst`, `sap-critic`, `sap-planner`, and `sap-architect` emit a `## Module Consultation Needed` block whenever the question depends on module-specific business judgement (pricing, copy control, MRP, batch, payroll…) → delegates to `sap-{module}-consultant`. System-level issues → `sap-bc-consultant`. Never invents from general SAP knowledge. | analyst / critic / planner / architect |
 
 ## Requirements
 
@@ -91,7 +95,7 @@ The wizard asks **one question at a time** — never dumps the whole questionnai
 | # | Step | What happens |
 |---|------|--------------|
 | 1 | **Version check** | Verify Claude Code version compatibility |
-| 2 | **SAP system version** | Choose `S4` (S/4HANA — BP, MATDOC, ACDOCA, Fiori, CDS) or `ECC` (ECC 6.0 — XK01/XD01, MKPF/MSEG, BKPF/BSEG). Then enter **ABAP Release** (e.g., `750`, `756`, `758`). Drives which SPRO tables / BAPIs / TCodes agents reference and which ABAP syntax features are allowed |
+| 2 | **SAP system version + Industry** | (a) Choose `S4` (S/4HANA — BP, MATDOC, ACDOCA, Fiori, CDS) or `ECC` (ECC 6.0 — XK01/XD01, MKPF/MSEG, BKPF/BSEG). (b) Enter **ABAP Release** (e.g., `750`, `756`, `758`). (c) Pick **Industry** from a 15-option menu (retail / fashion / cosmetics / tire / automotive / pharmaceutical / food-beverage / chemical / electronics / construction / steel / utilities / banking / public-sector / other) — consultants load the matching `industry/*.md`. Drives SPRO tables / BAPIs / TCodes + ABAP syntax gating + industry-specific configuration patterns |
 | 3 | **Install MCP server** | Clone + build `abap-mcp-adt-powerup` into `<PLUGIN_ROOT>/vendor/abap-mcp-adt/`. Skipped if already installed (`--update` to refresh) |
 | 4 | **SAP connection** | Asked one field per question — `SAP_URL`, `SAP_CLIENT`, `SAP_AUTH_TYPE` (`basic` / `xsuaa`), `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_LANGUAGE`, `SAP_SYSTEM_TYPE` (`onprem` / `cloud`), `SAP_VERSION`, `ABAP_RELEASE`, `TLS_REJECT_UNAUTHORIZED` (dev only). Written to `.sc4sap/sap.env`. Optional L4 MCP-server blocklist vars (`MCP_BLOCKLIST_PROFILE`, `MCP_BLOCKLIST_EXTEND`, `MCP_ALLOW_TABLE`) are written as commented examples |
 | 5 | **Reconnect MCP** | Prompt to run `/mcp` so the newly installed server starts |
@@ -117,13 +121,19 @@ The wizard asks **one question at a time** — never dumps the whole questionnai
 
 ## Features
 
-### 24 SAP-Specialized Agents
+### 25 SAP-Specialized Agents
 
 | Category | Agents |
 |----------|--------|
 | **Core (10)** | Analyst, Architect, Code Reviewer, Critic, Debugger, Doc Specialist, Executor, Planner, QA Tester, Writer |
 | **Basis (1)** | BC Consultant — system admin, transport management, diagnostics |
 | **Modules (14)** | SD, MM, FI, CO, PP, PS, PM, QM, TR, HCM, WM, TM, Ariba, BW |
+
+**Delegation map (Module Consultation Protocol):**
+- `sap-analyst` / `sap-critic` / `sap-planner` → emit `## Module Consultation Needed` → `sap-{module}-consultant` (business semantics) or `sap-bc-consultant` (system-level)
+- `sap-architect` → emits `## Consultation Needed` → `sap-bc-consultant` for Basis topics (transport strategy, authorization, performance, sizing, system copy, patching) or `sap-{module}-consultant` for module design questions
+- Each `sap-{module}-consultant` runs **CBO Discovery** once per project (asks user for main Z-package → `GetPackageContents` → table list with descriptions → `GetTable` drill-down → hands back `## CBO Tables in Scope`)
+- `sap-analyst` / `sap-critic` / `sap-planner` additionally have a **mandatory Country Context** block that forces loading `country/<iso>.md` before producing output
 
 ### 17 Skills
 
@@ -171,10 +181,11 @@ The Dynpro / GUI Status / Text Element CRUD in particular enable sc4sap's classi
 
 ### Shared Conventions (`common/`)
 
-Cross-skill authoring rules live in `common/` so every skill and agent follows the same playbook without duplicating text:
+Cross-skill authoring rules live in `common/` so every skill and agent follows the same playbook without duplicating text. `CLAUDE.md` is a thin **index** that references these files (not a duplicate); agents pull the detailed rules on demand.
 
 | File | Covers |
 |------|--------|
+| `common/clean-code.md` | **Consolidated Clean ABAP standards** — naming, control flow, Open SQL, modularization, testing, performance, security, version awareness + self-check checklist |
 | `common/include-structure.md` | Main program + conditional include set (t/s/c/a/o/i/e/f/_tst) |
 | `common/oop-pattern.md` | Two-class OOP split (`LCL_DATA` + `LCL_ALV` + optional `LCL_EVENT`) |
 | `common/alv-rules.md` | Full ALV (CL_GUI_ALV_GRID + Docking Container) vs SALV + SALV-factory fieldcatalog pattern |
@@ -182,8 +193,56 @@ Cross-skill authoring rules live in `common/` so every skill and agent follows t
 | `common/constant-rule.md` | Mandatory `CONSTANTS` for non-fieldcatalog magic literals |
 | `common/procedural-form-naming.md` | `_{screen_no}` suffix for ALV-bound FORMs |
 | `common/naming-conventions.md` | Shared naming for programs, includes, LCL_*, screens, GUI status |
+| `common/sap-version-reference.md` | ECC vs S/4HANA differences (tables, TCodes, BAPIs, patterns) |
+| `common/abap-release-reference.md` | ABAP syntax availability by release (inline decl, Open SQL expressions, RAP, …) |
 | `common/spro-lookup.md` | SPRO lookup priority — local cache → static docs → MCP query |
-| `common/data-extraction-policy.md` | Agent-side refusal protocol for blocked tables |
+| `common/data-extraction-policy.md` | Agent-side refusal protocol + **`acknowledge_risk` HARD RULE** (explicit per-request user affirmative required) |
+
+### Industry Reference (`industry/`)
+
+Per-industry business-characteristic files — consulted by every `sap-*-consultant` before config analysis, Fit-Gap, or master-data decisions. Each file covers **Business Characteristics / Key Processes / Master Data Specifics / Module Implications / Common Customizations / SAP Industry Solutions / Pitfalls**.
+
+| File | Industry |
+|------|----------|
+| `industry/retail.md` | Retail (Article, Site, POS, Assortment) |
+| `industry/fashion.md` | Fashion / Apparel (Style × Color × Size, AFS/FMS) |
+| `industry/cosmetics.md` | Cosmetics (Batch, Shelf Life, Channel Pricing) |
+| `industry/tire.md` | Tire (OE/RE, Mixed Mfg, Mold, Recall) |
+| `industry/automotive.md` | Automotive (JIT/JIS, Scheduling Agreement, PPAP) |
+| `industry/pharmaceutical.md` | Pharmaceutical (GMP, Serialization, Batch Status) |
+| `industry/food-beverage.md` | Food & Beverage (Catch Weight, FEFO, TPM) |
+| `industry/chemical.md` | Chemical (Process, DG, Formula Pricing) |
+| `industry/electronics.md` | Electronics / High-Tech (VC / AVC, Serial, RMA) |
+| `industry/construction.md` | Construction / E&C (PS, POC Billing, Subcontracting) |
+| `industry/steel.md` | Steel / Metals (Characteristic-based inventory, Coil, Heat) |
+| `industry/utilities.md` | Utilities (IS-U, FI-CA, Device Mgmt) |
+| `industry/banking.md` | Banking (FS-CD, FS-BP, Parallel Ledger) |
+| `industry/public-sector.md` | Public Sector (Funds Mgmt, Grants Mgmt, Budget Control) |
+
+### Country / Localization Reference (`country/`)
+
+Per-country jurisdictional rules — consulted by every consultant (**mandatory** for analyst / critic / planner). Each file covers **Formats (date / number / currency / phone / postal / timezone) / Language & Locale / Tax System / e-Invoicing / Fiscal Reporting / Banking & Payments / Master Data Peculiarities / Statutory Reporting / SAP Country Version / Common Customizations / Pitfalls**.
+
+| File | Country | Key peculiarities |
+|------|---------|-------------------|
+| `country/kr.md` | 🇰🇷 Korea | e-세금계산서 (NTS), 사업자등록번호, 주민번호 PII rules |
+| `country/jp.md` | 🇯🇵 Japan | Qualified Invoice System (2023+), Zengin, 法人番号 |
+| `country/cn.md` | 🇨🇳 China | Golden Tax, 发票 / e-fapiao, 统一社会信用代码, SAFE FX |
+| `country/us.md` | 🇺🇸 USA | Sales & Use Tax (no VAT), EIN, 1099, ACH, Nexus rules |
+| `country/de.md` | 🇩🇪 Germany | USt, ELSTER, DATEV, XRechnung / ZUGFeRD e-invoice, SEPA |
+| `country/gb.md` | 🇬🇧 UK | VAT + MTD, BACS / FPS / CHAPS, Post-Brexit (GB vs XI) |
+| `country/fr.md` | 🇫🇷 France | TVA, FEC, Factur-X 2026, SIREN/SIRET |
+| `country/it.md` | 🇮🇹 Italy | IVA, FatturaPA / SDI (mandatory since 2019), Split Payment |
+| `country/es.md` | 🇪🇸 Spain | IVA, SII (real-time 4-day), TicketBAI, Confirming |
+| `country/nl.md` | 🇳🇱 Netherlands | BTW, KvK, Peppol, XAF, G-rekening |
+| `country/br.md` | 🇧🇷 Brazil | NF-e, SPED, CFOP, ICMS/IPI/PIS/COFINS, Boleto / PIX |
+| `country/mx.md` | 🇲🇽 Mexico | CFDI 4.0, SAT, Complementos, Carta Porte, SPEI |
+| `country/in.md` | 🇮🇳 India | GST (CGST/SGST/IGST), IRN e-invoice, e-Way Bill, TDS |
+| `country/au.md` | 🇦🇺 Australia | GST, ABN, STP Phase 2, BAS, BSB banking |
+| `country/sg.md` | 🇸🇬 Singapore | GST 9%, UEN, InvoiceNow (Peppol), PayNow |
+| `country/eu-common.md` | 🇪🇺 EU-wide | VAT ID format per country (VIES), INTRASTAT, ESL, OSS/IOSS, SEPA, GDPR |
+
+Identify the active country from `.sc4sap/config.json` → `country` (or `sap.env` → `SAP_COUNTRY`, ISO alpha-2 lowercase). Multi-country rollouts: every relevant file is loaded and cross-country touchpoints (intra-EU VAT, intercompany, transfer pricing, withholding across borders) are surfaced.
 
 ### SAP Platform Awareness (ECC / S4 On-Prem / Cloud)
 
@@ -242,7 +301,23 @@ A mandatory defense-in-depth layer that prevents row data from sensitive tables 
 | L3 — Claude Code hook | `scripts/hooks/block-forbidden-tables.mjs` (`PreToolUse`) | Programmatic block — intercepts the MCP call and returns a `deny` decision |
 | L4 — MCP server (opt-in) | `abap-mcp-adt-powerup` source (`src/lib/policy/blocklist.ts`) | Hardcoded block inside the MCP server regardless of caller — enable with env `SC4SAP_POLICY=on` |
 
-**Blocklist source**: `exceptions/table_exception.md` — 100+ tables / patterns across Banking (BNKA, KNBK, LFBK, REGUH), Customer/Vendor master PII (KNA1, LFA1, BUT000, BUT0ID), Addresses (ADRC, ADR6, ADRP), Authentication (USR02 password hashes, RFCDES, AGR_1251), HR/Payroll (PA* / HRP* / PCL* patterns), Tax IDs, Protected Business Data (VBAK/BKPF/ACDOCA), Audit logs, and customer `Z*` PII patterns.
+**Blocklist source**: `exceptions/table_exception.md` is the **index**; actual table lists live in **11 per-section files** under `exceptions/` so each file stays small and grep-able. The hook auto-scans every `*.md` in the folder except the index.
+
+| Tier | File | Covers |
+|------|------|--------|
+| minimal | `banking-payment.md` | Banking / Payment credentials (BNKA, KNBK, LFBK, REGUH, PAYR, CCARD, FPAYH…) |
+| minimal | `master-data-pii.md` | Customer / Vendor / BP master PII (KNA1, LFA1, BUT000, BUT0ID, KNVK…) + related CDS views (I_Customer, I_Supplier, I_BusinessPartner, I_Employee…) |
+| minimal | `addresses-communication.md` | ADR* (address, email, phone, fax) + CDS (I_Address, I_AddressEmailAddress…) |
+| minimal | `auth-security.md` | USR02 password hashes, RFCDES, AGR_1251, SSF_PSE_D + CDS (I_User, I_UserAuthorization…) |
+| minimal | `hr-payroll.md` | PA* / HRP* / PCL* infotypes and clusters (salary, medical, dependents…) |
+| minimal | `tax-government-ids.md` | KNAS, LFAS, BUT0TX, Brazil J_1B*, BP tax numbers |
+| minimal | **`pricing-conditions.md`** | **Pricing / Conditions / Rebates** — KONH, KONP, KONV, KONA, KOTE*, `PRCD_ELEMENT`, `PRCD_COND_HEAD`, `PRCD_COND`, `A###` (A001–A999 access tables) + pricing CDS (I_PriceCondition, I_PricingProcedure, I_RebateAgreement, I_SalesOrderItemPrice…). Top-tier commercial risk — leakage exposes customer-specific discounts and margin |
+| minimal | `custom-patterns.md` | `Z*` / `Y*` with PII content, ZHR_*, ZPA_*, ZCUST_*, ZVEND_*, ZKNA_* |
+| standard | `protected-business-data.md` | VBAK / BKPF / ACDOCA / VBRK / EKKO / CDHDR / STXH + transactional CDS (I_JournalEntry, I_SalesOrder, I_BillingDocument, I_PurchaseOrder, I_Payable, I_Receivable…) |
+| strict | `audit-security-logs.md` | BALDAT, SLG1, RSAU_BUF_DATA, SNAP, DBTABLOG |
+| strict | `communication-workflow.md` | SAPoffice (SOOD, SOC3), workflow (SWWWIHEAD, SWWCONT), broadcast |
+
+**Pattern syntax** — exact names, `TABLE*` wildcard, `TABLExxx` legacy wildcard, and `A###` (new: `#` = exactly one digit, so `A###` matches A001–A999 precisely without false positives).
 
 **Two actions — `deny` vs `warn`**:
 
@@ -291,6 +366,19 @@ export SC4SAP_ALLOW_TABLE=TAB1,TAB2        # session-scoped emergency exemption 
 ```
 
 When a blocked table is accessed, the MCP server responds with `isError: true` and the categorized reason — no SAP round-trip occurs.
+
+### 🚫 `acknowledge_risk` — HARD RULE
+
+`GetTableContents` / `GetSqlQuery` accept an `acknowledge_risk: true` parameter that bypasses the MCP server's `ask`-tier confirmation gate. **This flag is an audit boundary, not a convenience flag** — its value is logged to stderr and represents an attestation that the user granted per-request authorization. Agents MUST follow these rules without exception:
+
+1. **Never set `acknowledge_risk: true` on a first call.** Let the hook / server gate the request.
+2. **On an `ask` response**, STOP — do not retry. Surface the refusal to the user.
+3. **Ask an explicit yes/no question** naming the tables and scope.
+4. **Only retry with `acknowledge_risk: true` after an explicit affirmative keyword** from the user: `yes` / `y` / `승인` / `authorize` / `approve` / `proceed` / `go ahead` / `confirmed`.
+5. **Ambiguous imperatives are NOT authorization** — including `"pull it"`, `"try it"`, `"뽑아봐"`, `"가져와봐"`, `"해봐"`, `"my mistake"`, silence.
+6. **Per-call, per-table, per-session.** Authorization does not carry across requests.
+
+Full protocol: `common/data-extraction-policy.md` → "The `acknowledge_risk` Parameter — HARD RULE".
 
 ## Skills — Examples & Workflow
 
@@ -528,11 +616,6 @@ Common uses: rotate `SAP_PASSWORD`, switch `SAP_CLIENT`, change `MCP_BLOCKLIST_P
 ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?logo=vitest&logoColor=white)
 ![MCP](https://img.shields.io/badge/MCP_SDK-Protocol-FF6600)
-
-## Roadmap
-
-- **v0.1.x** (current) — 24 agents, 17 skills, 13 module configs, shared `common/` conventions, SPRO local cache, Data Extraction Blocklist (**L1–L4 all shipped**; L4 is opt-in via `SC4SAP_POLICY=on` in `abap-mcp-adt-powerup`), Cloud ABAP awareness, RAP skill
-- **v0.2.0** (planned) — richer `sc4sap:program` OOP templates, upstream PR to make L4 the default-on shipping behavior
 
 ## Acknowledgments
 

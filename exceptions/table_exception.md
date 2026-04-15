@@ -39,6 +39,10 @@ Any profile additionally respects `.sc4sap/blocklist-extend.txt` (one table name
 | strict | [audit-security-logs.md](audit-security-logs.md) | Audit / Security Logs |
 | strict | [communication-workflow.md](communication-workflow.md) | Communication & Workflow (mail, work items) |
 
+## CDS Views in Section Files
+
+Standard S/4HANA released CDS views (`I_*`, `A_*`, `C_*`, `P_*`) that wrap a blocked table are listed in the **same section file as the underlying table** (e.g., `I_Customer` lives with KNA1 in `master-data-pii.md`, `I_BankAccount` lives with BNKA in `banking-payment.md`). Aliases between view families (`I_Customer` ↔ `C_Customer`) share the same tier — add explicit aliases via `.sc4sap/blocklist-extend.txt` as they appear in your project. Custom Z-views inherit the tier of whatever table they join.
+
 ## Pattern Syntax (inside section files)
 
 - `TABLE_NAME` — exact match, uppercase

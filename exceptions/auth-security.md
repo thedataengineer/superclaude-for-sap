@@ -25,3 +25,12 @@ User logon data, password hashes, authorization profiles, RFC destinations with 
 | RSECACTB / RSECTAB | Secure Store keys | Crypto key material |
 | SNCSYSACL | SNC access list | Security policy |
 | SSF_PSE_D | PSE / X.509 data | Crypto material |
+
+### Related Standard CDS Views
+
+| View | Wraps | Why |
+|------|-------|-----|
+| I_User | USR02 / USR21 | User master (do NOT extract) |
+| I_UserAuthorization | AGR_1251 / USR12 | Auth values |
+| I_UserRole | AGR_USERS | Role assignments |
+| I_UserInfo | USR01 / USR21 | User metadata |

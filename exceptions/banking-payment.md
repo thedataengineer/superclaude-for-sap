@@ -19,3 +19,16 @@ Bank accounts, payment runs, cheque and card data — direct financial-credentia
 | TCRCO | Credit card organizations | Card processor credentials |
 | BSEGC | FI doc payment card segment | Card transaction data |
 | FPAYH / FPAYHX / FPAYP / FPAYPX | Payment medium data | Payment file contents |
+
+### Related Standard CDS Views
+
+| View | Wraps | Why |
+|------|-------|-----|
+| I_BankAccount | BNKA / T012K | Bank master and house-bank accounts |
+| I_Bank | BNKA | Bank master |
+| I_BusinessPartnerBankDetails | BUT0BK | BP bank accounts |
+| I_CustomerBankDetails | KNBK | Customer bank accounts |
+| I_SupplierBankDetails | LFBK | Vendor bank accounts |
+| I_HouseBankAccount | T012K | Company-code house bank |
+| I_PaymentMediumMT940 | FEBKO / FEBEP | Bank statement lines |
+| I_PaymentCard | CCARD / FPLTC | Payment-card tokens |

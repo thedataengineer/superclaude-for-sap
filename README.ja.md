@@ -20,6 +20,10 @@ SuperClaude for SAP は Claude Code をフルスタック SAP 開発アシスタ
 | **🏗️ 定型化されたプログラム自動生成** | sc4sap の規約に沿って ABAP プログラムをエンドツーエンドで生成: Main + 条件付き Include (t/s/c/a/o/i/e/f/_tst)、OOP/手続き型の分割 (`LCL_DATA` / `LCL_ALV` / `LCL_EVENT`)、完全な ALV (CL_GUI_ALV_GRID + Docking) または SALV、必須の Text Element · CONSTANTS、Dynpro + GUI Status、ABAP Unit テスト — プラットフォーム (ECC / S4 On-Prem / Cloud) まで自動判定。 | `/sc4sap:program`, `/sc4sap:autopilot` |
 | **🔍 プログラム解析** | 逆方向のインテリジェンス: MCP で ABAP オブジェクトを読み取り Clean ABAP / 性能 / セキュリティ観点でレビュー、または既存プログラムを機能/技術仕様書 (Markdown · Excel) にリバースエンジニア。ソクラテス式の範囲絞り込みで「全て文書化」の肥大化を防止。 | `/sc4sap:analyze-code`, `/sc4sap:program-to-spec` |
 | **🩺 運用診断** | 運用障害対応: ST22 ダンプ、SAT スタイルのプロファイラトレース、ログ、where-used グラフを Claude 上で直接調査し、仮説を絞り、SAP Note 候補を提示、プラグイン/MCP/SAP 接続の健全性まで診断。 | `/sc4sap:analyze-symptom`, `/sc4sap:sap-doctor` |
+| **🏭 業界コンテキスト (Industry)** | 14 業界レファレンスファイル (`industry/*.md`) — リテール · ファッション · 化粧品 · タイヤ · 自動車 · 製薬 · 食品飲料 · 化学 · 電子機器 · 建設 · 鉄鋼 · ユーティリティ · 銀行 · 公共。コンサルタントが構成分析 · Fit-Gap · マスターデータ判断時に当該業界ファイルをロードし、業界固有のパターン / 落とし穴 / SAP IS マッピングを反映。 | すべての consultant |
+| **🌏 国 / ローカライゼーション (Country)** | 15 カ国別ファイル + `eu-common.md` (KR · JP · CN · US · DE · GB · FR · IT · ES · NL · BR · MX · IN · AU · SG · EU 共通)。日付 / 数値フォーマット · VAT/GST 体系 · 必須 e-Invoicing(SDI / SII / MTD / CFDI / NF-e / 세금계산서 / 金税 / IRN / Peppol / STP / 適格請求書)· 銀行フォーマット(IBAN / BSB / CLABE / SPEI / PIX / UPI / SEPA / 全銀 …)· 給与ローカライゼーション · 法定報告サイクル。analyst / critic / planner は必須、すべての consultant に配線。 | すべての consultant + analyst / critic / planner |
+| **🧬 CBO Discovery** | 各モジュール consultant はプロジェクトセッションごとに一度、モジュールのメインパッケージ名をユーザーに質問し、`GetPackageContents` / `GetPackageTree` で Z-テーブル一覧 (説明付き) を取得して提示、関連テーブルを `GetTable` で構造分析し、`sap-executor` / `sap-planner` / `sap-architect` へ `## CBO Tables in Scope` セクションとして引き継ぐ。暗黙のスキップは禁止。 | `sap-*-consultant` (14 モジュール) |
+| **🤝 モジュール Consultation (会議・委任)** | `sap-analyst` / `sap-critic` / `sap-planner` / `sap-architect` はモジュール固有のビジネス判断が必要な場合、`## Module Consultation Needed` ブロックで `sap-{module}-consultant` へ委任。システムレベルの課題は `sap-bc-consultant`。一般的な SAP 知識での推測は禁止。 | analyst / critic / planner / architect |
 
 ## 要件
 
@@ -91,7 +95,7 @@ npm install && npm run build
 | # | ステップ | 内容 |
 |---|----------|------|
 | 1 | **バージョン確認** | Claude Code のバージョン互換性検証 |
-| 2 | **SAP システムバージョン** | `S4` (S/4HANA — BP, MATDOC, ACDOCA, Fiori, CDS) または `ECC` (ECC 6.0 — XK01/XD01, MKPF/MSEG, BKPF/BSEG) を選択。続いて **ABAP Release** を入力 (例: `750`, `756`, `758`)。エージェントが参照する SPRO テーブル / BAPI / TCode と利用可能な ABAP 構文機能を決定 |
+| 2 | **SAP システムバージョン + 業界 (Industry)** | (a) `S4` (S/4HANA — BP, MATDOC, ACDOCA, Fiori, CDS) または `ECC` (ECC 6.0 — XK01/XD01, MKPF/MSEG, BKPF/BSEG) を選択。(b) **ABAP Release** を入力 (例: `750`, `756`, `758`)。(c) **業界選択** — 15 オプションメニュー (retail / fashion / cosmetics / tire / automotive / pharmaceutical / food-beverage / chemical / electronics / construction / steel / utilities / banking / public-sector / other) から選択 — consultant が該当する `industry/*.md` をロード。SPRO テーブル / BAPI / TCode + ABAP 構文範囲 + 業界固有の構成パターンをすべて決定 |
 | 3 | **MCP サーバーインストール** | `abap-mcp-adt-powerup` を `<PLUGIN_ROOT>/vendor/abap-mcp-adt/` に clone + build。既にインストール済みならスキップ (`--update` で更新) |
 | 4 | **SAP 接続情報** | フィールドごとに一問ずつ — `SAP_URL`, `SAP_CLIENT`, `SAP_AUTH_TYPE` (`basic` / `xsuaa`), `SAP_USERNAME`, `SAP_PASSWORD`, `SAP_LANGUAGE`, `SAP_SYSTEM_TYPE` (`onprem` / `cloud`), `SAP_VERSION`, `ABAP_RELEASE`, `TLS_REJECT_UNAUTHORIZED` (開発のみ)。`.sc4sap/sap.env` に記録。L4 MCP サーバー側ブロックリスト変数 (`MCP_BLOCKLIST_PROFILE`, `MCP_BLOCKLIST_EXTEND`, `MCP_ALLOW_TABLE`) はコメント例として記録 |
 | 5 | **MCP 再接続** | `/mcp` の実行を案内 — 新規インストールしたサーバーを起動 |
@@ -117,13 +121,19 @@ npm install && npm run build
 
 ## 機能
 
-### 24 個の SAP 専門エージェント
+### 25 個の SAP 専門エージェント
 
 | 分類 | エージェント |
 |------|-------------|
 | **Core (10)** | Analyst, Architect, Code Reviewer, Critic, Debugger, Doc Specialist, Executor, Planner, QA Tester, Writer |
 | **Basis (1)** | BC Consultant — システム管理、トランスポート管理、診断 |
 | **モジュール (14)** | SD, MM, FI, CO, PP, PS, PM, QM, TR, HCM, WM, TM, Ariba, BW |
+
+**委任マップ (Module Consultation Protocol):**
+- `sap-analyst` / `sap-critic` / `sap-planner` → `## Module Consultation Needed` を出力 → `sap-{module}-consultant` (業務セマンティクス) または `sap-bc-consultant` (システムレベル)
+- `sap-architect` → `## Consultation Needed` を出力 → Basis トピック(トランスポート戦略、認可、性能、サイジング、システムコピー、パッチ)は `sap-bc-consultant`、モジュール設計の質問は `sap-{module}-consultant`
+- 各 `sap-{module}-consultant` はプロジェクトごとに一度 **CBO Discovery** を実施 (ユーザーにメイン Z-パッケージを質問 → `GetPackageContents` → 説明付きテーブル一覧を提示 → `GetTable` で構造分析 → `## CBO Tables in Scope` で引き継ぎ)
+- `sap-analyst` / `sap-critic` / `sap-planner` は追加で **必須 Country Context** ブロックを持ち、出力前に `country/<iso>.md` のロードを強制
 
 ### 17 個のスキル
 
@@ -171,10 +181,11 @@ sc4sap は拡張型 ADT MCP サーバー **[abap-mcp-adt-powerup](https://github
 
 ### 共通規約 (`common/`)
 
-スキルとエージェントが同一基準に従うよう、共通ルールを `common/` フォルダに集約しています:
+スキルとエージェントが同一基準に従うよう、共通ルールを `common/` フォルダに集約しています。`CLAUDE.md` はこれらのファイルを参照する**薄いインデックス**として再構成され、重複が排除されました。
 
 | ファイル | 内容 |
 |----------|------|
+| `common/clean-code.md` | **統合 Clean ABAP 標準** — 命名 · 制御フロー · Open SQL · モジュール化 · テスティング · 性能 · セキュリティ · リリース認識 + self-check チェックリスト |
 | `common/include-structure.md` | Main プログラム + 条件付き Include (t/s/c/a/o/i/e/f/_tst) |
 | `common/oop-pattern.md` | 2 クラス OOP 分割 (`LCL_DATA` + `LCL_ALV` + オプション `LCL_EVENT`) |
 | `common/alv-rules.md` | Full ALV (CL_GUI_ALV_GRID + Docking) vs SALV + SALV Factory フィールドカタログ |
@@ -182,8 +193,56 @@ sc4sap は拡張型 ADT MCP サーバー **[abap-mcp-adt-powerup](https://github
 | `common/constant-rule.md` | フィールドカタログ以外のマジックリテラルは `CONSTANTS` 必須 |
 | `common/procedural-form-naming.md` | ALV 関連の手続き型 FORM は `_{screen_no}` サフィックス |
 | `common/naming-conventions.md` | プログラム/Include/LCL/Screen/GUI Status の共通命名 |
+| `common/sap-version-reference.md` | ECC vs S/4HANA の差異 (テーブル·TCode·BAPI·パターン) |
+| `common/abap-release-reference.md` | ABAP リリース別構文可用性 (インライン宣言·Open SQL 式·RAP 等) |
 | `common/spro-lookup.md` | SPRO 参照優先順位 — ローカルキャッシュ → 静的ドキュメント → MCP |
-| `common/data-extraction-policy.md` | ブロック対象テーブルに対するエージェントの拒否プロトコル |
+| `common/data-extraction-policy.md` | ブロック対象テーブルに対するエージェントの拒否プロトコル + **`acknowledge_risk` HARD RULE** (リクエストごとの明示的ユーザー承認が必須) |
+
+### 業界レファレンス (`industry/`)
+
+すべての `sap-*-consultant` が構成分析·Fit-Gap·マスターデータ判断の前に参照。各ファイル構成: **Business Characteristics / Key Processes / Master Data Specifics / Module Implications / Common Customizations / SAP Industry Solutions / Pitfalls**。
+
+| ファイル | 業界 |
+|----------|------|
+| `industry/retail.md` | リテール (Article, Site, POS, Assortment) |
+| `industry/fashion.md` | ファッション/アパレル (Style × Color × Size, AFS/FMS) |
+| `industry/cosmetics.md` | 化粧品 (Batch, Shelf Life, Channel Pricing) |
+| `industry/tire.md` | タイヤ (OE/RE, Mixed Mfg, Mold, Recall) |
+| `industry/automotive.md` | 自動車 (JIT/JIS, Scheduling Agreement, PPAP) |
+| `industry/pharmaceutical.md` | 製薬 (GMP, Serialization, Batch Status) |
+| `industry/food-beverage.md` | 食品飲料 (Catch Weight, FEFO, TPM) |
+| `industry/chemical.md` | 化学 (Process, DG, Formula Pricing) |
+| `industry/electronics.md` | 電子/ハイテク (VC / AVC, Serial, RMA) |
+| `industry/construction.md` | 建設 (PS, POC Billing, Subcontracting) |
+| `industry/steel.md` | 鉄鋼/金属 (Characteristic-based inventory, Coil, Heat) |
+| `industry/utilities.md` | ユーティリティ (IS-U, FI-CA, Device Mgmt) |
+| `industry/banking.md` | 銀行 (FS-CD, FS-BP, Parallel Ledger) |
+| `industry/public-sector.md` | 公共部門 (Funds Mgmt, Grants Mgmt) |
+
+### 国 / ローカライゼーションレファレンス (`country/`)
+
+すべての consultant + **analyst / critic / planner は必須**。各ファイル構成: **フォーマット(日付 / 数値 / 通貨 / 電話 / 郵便番号 / タイムゾーン) / 言語 & ロケール / 税制 / e-Invoicing & 法定報告 / 銀行 & 決済 / マスターデータ特有事項 / 法定報告 / SAP Country Version / よくあるカスタマイズ / Pitfalls**。
+
+| ファイル | 国 | 主要特性 |
+|----------|------|---------|
+| `country/kr.md` | 🇰🇷 Korea | 電子税金計算書 (NTS), 事業者登録番号, 住民番号 PII 規制 |
+| `country/jp.md` | 🇯🇵 Japan | 適格請求書(2023+), 全銀, 法人番号 |
+| `country/cn.md` | 🇨🇳 China | 金税, 发票 / 電子発票, 統一社会信用コード, SAFE 外貨 |
+| `country/us.md` | 🇺🇸 USA | Sales & Use Tax (VAT ではない), EIN, 1099, ACH, Nexus |
+| `country/de.md` | 🇩🇪 Germany | USt, ELSTER, DATEV, XRechnung / ZUGFeRD, SEPA |
+| `country/gb.md` | 🇬🇧 UK | VAT + MTD, BACS / FPS / CHAPS, Brexit 後 GB vs XI |
+| `country/fr.md` | 🇫🇷 France | TVA, FEC, Factur-X 2026, SIREN / SIRET |
+| `country/it.md` | 🇮🇹 Italy | IVA, FatturaPA / SDI (2019+ 必須), Split Payment |
+| `country/es.md` | 🇪🇸 Spain | IVA, SII (リアルタイム 4 日), TicketBAI, Confirming |
+| `country/nl.md` | 🇳🇱 Netherlands | BTW, KvK, Peppol, XAF, G-rekening |
+| `country/br.md` | 🇧🇷 Brazil | NF-e, SPED, CFOP, ICMS/IPI/PIS/COFINS, Boleto / PIX |
+| `country/mx.md` | 🇲🇽 Mexico | CFDI 4.0, SAT, Complementos, Carta Porte, SPEI |
+| `country/in.md` | 🇮🇳 India | GST, IRN 電子インボイス, e-Way Bill, TDS |
+| `country/au.md` | 🇦🇺 Australia | GST, ABN, STP Phase 2, BAS, BSB |
+| `country/sg.md` | 🇸🇬 Singapore | GST 9%, UEN, InvoiceNow (Peppol), PayNow |
+| `country/eu-common.md` | 🇪🇺 EU 共通 | 国別 VAT ID フォーマット (VIES), INTRASTAT, ESL, OSS/IOSS, SEPA, GDPR |
+
+`.sc4sap/config.json` → `country` (または `sap.env` → `SAP_COUNTRY`, ISO alpha-2 小文字) で国を識別。Multi-country ロールアウトは関連するすべてのファイルをロード + クロスカントリーポイント(intra-EU VAT、法人間、トランスファープライシング、源泉徴収)を明示。
 
 ### SAP プラットフォーム認識 (ECC / S4 On-Prem / Cloud)
 
@@ -242,7 +301,36 @@ configs/common/       # 共通リファレンス (IDOC、Factory Calendar、DD* 
 | L3 — Claude Code フック | `scripts/hooks/block-forbidden-tables.mjs` (`PreToolUse`) | MCP 呼び出しをインターセプトし `deny` を返す (プログラマティック遮断) |
 | L4 — MCP サーバー (opt-in) | `abap-mcp-adt-powerup` ソース (`src/lib/policy/blocklist.ts`) | 呼び出し主体に関係なく MCP サーバー内部でハード遮断 — `SC4SAP_POLICY=on` 環境変数で有効化 |
 
-**ブロックリストソース**: `exceptions/table_exception.md` — 100+ テーブル/パターン。銀行 (BNKA, KNBK, LFBK, REGUH)、顧客/仕入先マスター PII (KNA1, LFA1, BUT000, BUT0ID)、住所 (ADRC, ADR6, ADRP)、認証 (USR02 パスワードハッシュ, RFCDES, AGR_1251)、HR/給与 (PA* / HRP* / PCL* パターン)、税 ID、保護対象取引データ (VBAK/BKPF/ACDOCA)、監査ログ、カスタム `Z*` PII パターンなど。
+**ブロックリストソース**: `exceptions/table_exception.md` は**インデックス**であり、実際のテーブルリストは **11 のセクション別ファイル**に分割されており、各ファイルが小さく grep しやすくなっています。フックはインデックスを除く `*.md` をすべて自動スキャンします。
+
+| Tier | ファイル | 対象 |
+|------|----------|------|
+| minimal | `banking-payment.md` | 銀行 / 支払認証情報 (BNKA, KNBK, LFBK, REGUH, PAYR, CCARD, FPAYH…) |
+| minimal | `master-data-pii.md` | Customer / Vendor / BP マスター PII (KNA1, LFA1, BUT000, BUT0ID, KNVK…) + 関連 CDS ビュー (I_Customer, I_Supplier, I_BusinessPartner, I_Employee…) |
+| minimal | `addresses-communication.md` | ADR* (住所·メール·電話·FAX) + CDS (I_Address, I_AddressEmailAddress…) |
+| minimal | `auth-security.md` | USR02 パスワードハッシュ, RFCDES, AGR_1251, SSF_PSE_D + CDS (I_User, I_UserAuthorization…) |
+| minimal | `hr-payroll.md` | PA* / HRP* / PCL* 情報タイプ & クラスタ (給与·医療·扶養情報など) |
+| minimal | `tax-government-ids.md` | KNAS, LFAS, BUT0TX, Brazil J_1B*, BP 税番号 |
+| minimal | **`pricing-conditions.md`** | **価格 / 条件 / リベート** — KONH, KONP, KONV, KONA, KOTE*, `PRCD_ELEMENT`, `PRCD_COND_HEAD`, `PRCD_COND`, `A###` (A001–A999 アクセステーブル) + 価格 CDS (I_PriceCondition, I_PricingProcedure, I_RebateAgreement, I_SalesOrderItemPrice…)。**最上位の商業リスク** — 顧客別割引・マージン漏洩 |
+| minimal | `custom-patterns.md` | PII 性質の `Z*` / `Y*`, ZHR_*, ZPA_*, ZCUST_*, ZVEND_*, ZKNA_* |
+| standard | `protected-business-data.md` | VBAK / BKPF / ACDOCA / VBRK / EKKO / CDHDR / STXH + 取引 CDS (I_JournalEntry, I_SalesOrder, I_BillingDocument, I_PurchaseOrder, I_Payable, I_Receivable…) |
+| strict | `audit-security-logs.md` | BALDAT, SLG1, RSAU_BUF_DATA, SNAP, DBTABLOG |
+| strict | `communication-workflow.md` | SAPoffice (SOOD, SOC3), ワークフロー (SWWWIHEAD, SWWCONT), ブロードキャスト |
+
+**パターン構文** — 厳密名、`TABLE*` ワイルドカード、`TABLExxx` レガシーワイルドカード、`A###` (新規: `#` = 1 桁数字、`A###` で A001–A999 のみ厳密マッチ)。
+
+### 🚫 `acknowledge_risk` — HARD RULE
+
+`GetTableContents` / `GetSqlQuery` は `acknowledge_risk: true` パラメータで MCP サーバーの `ask` ゲートを回避できます。**このフラグは利便性フラグではなく、監査境界です** — stderr にログされ、ユーザーがリクエストごとの承認を与えたことを証明します。エージェントは例外なく次のルールに従う必要があります:
+
+1. **初回呼び出しに `acknowledge_risk: true` を設定しない。** フック / サーバーが先にゲートするに任せます。
+2. **`ask` 応答を受け取ったら即座に中断** — リトライ禁止。拒否理由をユーザーに公開します。
+3. **テーブルと範囲を明示して yes/no 質問**を投げます。
+4. **ユーザーから明示的承認キーワード**を受け取った場合のみ `acknowledge_risk: true` で再試行: `yes` / `y` / `승인` / `authorize` / `approve` / `proceed` / `go ahead` / `confirmed`。
+5. **曖昧な命令は承認ではない** — `"pull it"`, `"try it"`, `"뽑아봐"`, `"가져와봐"`, `"해봐"`, `"my mistake"`, 沈黙を含む。
+6. **per-call · per-table · per-session.** 過去の承認は次のリクエストに持ち越されません。
+
+完全プロトコル: `common/data-extraction-policy.md` → "The `acknowledge_risk` Parameter — HARD RULE"。
 
 **2 つのアクション — `deny` vs `warn`**:
 
@@ -528,11 +616,6 @@ CTS トランスポートリリースワークフロー — リスト、検証 (
 ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)
 ![Vitest](https://img.shields.io/badge/Vitest-6E9F18?logo=vitest&logoColor=white)
 ![MCP](https://img.shields.io/badge/MCP_SDK-Protocol-FF6600)
-
-## ロードマップ
-
-- **v0.1.x** (現在) — 24 エージェント、17 スキル、13 モジュールコンフィグ、共通 `common/` 規約、SPRO ローカルキャッシュ、データ抽出ブロックリスト (**L1–L4 全てリリース**; L4 は `abap-mcp-adt-powerup` の `SC4SAP_POLICY=on` 環境変数で opt-in)、Cloud ABAP 認識、RAP スキル
-- **v0.2.0** (予定) — `sc4sap:program` OOP テンプレート拡充、L4 デフォルト有効化のためのアップストリーム PR
 
 ## Acknowledgments
 
