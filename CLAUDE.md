@@ -58,6 +58,19 @@ Before **any** call to `GetTableContents`, `GetSqlQuery`, or other row-returning
 3. Never bypass silently. Never argue the policy with the user — surface it and let them decide.
 4. Schema/DDIC (`GetTable`, `GetStructure`, `GetView`, `GetDataElement`, `GetDomain`) is always permitted.
 
+### 🚫 `acknowledge_risk` — HARD RULE (no exceptions)
+
+`GetTableContents` / `GetSqlQuery` accept `acknowledge_risk: true` which bypasses the "ask"-tier confirmation gate. This flag is logged to stderr as a compliance audit record. Misuse is a policy breach.
+
+- **NEVER** set `acknowledge_risk: true` on a first call. Always let the hook/server gate it.
+- If the response is `ask` / "user confirmation required": **STOP, do not retry**. Surface the refusal to the user.
+- Ask an explicit yes/no question: `"⚠️ {TABLE} requires authorization. Proceed with acknowledge_risk=true? (yes/no)"`
+- Only retry with `acknowledge_risk: true` after an **explicit affirmative keyword** from the user: `yes` / `y` / `승인` / `authorize` / `approve` / `proceed` / `go ahead` / `confirmed`.
+- Ambiguous imperatives are NOT authorization — including `뽑아봐`, `가져와봐`, `해봐`, `try it`, `pull it`, `test it`, `my mistake`, silence.
+- Authorization is per-call, per-table, per-session. Does not carry across requests.
+
+See `common/data-extraction-policy.md` → **"The `acknowledge_risk` Parameter — HARD RULE"** for the full protocol.
+
 This applies to **every session** — sc4sap agents, direct user requests, pipelines, and ad-hoc analysis. Backed by a `PreToolUse` hook (`scripts/hooks/block-forbidden-tables.mjs`) when installed. See `common/data-extraction-policy.md` for the full protocol.
 
 ## Plugin Usage

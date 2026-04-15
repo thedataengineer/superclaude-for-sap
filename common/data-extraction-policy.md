@@ -64,6 +64,24 @@ Do **not** silently comply. Do **not** argue policy — surface the block, offer
 - **Existence checks**: `SearchObject` — always OK.
 - **Field catalog extraction** via `cl_salv_table=>factory` on a **locally typed** internal table (no SELECT at all) — always OK.
 
+## ⚠️ The `acknowledge_risk` Parameter — HARD RULE
+
+`GetTableContents` and `GetSqlQuery` accept an `acknowledge_risk: true` parameter that bypasses the MCP server's L4 "ask"-tier confirmation gate. **This flag is an audit boundary, not a convenience flag.** Its value is logged to stderr and represents an attestation that the user has granted per-request authorization.
+
+**Agents MUST follow these rules without exception:**
+
+1. **Never set `acknowledge_risk: true` on the first call.** The initial call must omit the flag (or set it `false`) so the hook/server can gate the request.
+2. **If the response is `ask` / "user confirmation required"** — STOP. Do not retry. Surface the refusal reason verbatim to the user with the table name and category.
+3. **Ask an explicit yes/no question** with the exact tables and scope, e.g.:
+   > ⚠️ `ACDOCA` (Protected Business Data) requires explicit authorization to extract rows. Proceed with `acknowledge_risk=true`? **(yes / no)**
+4. **Only retry with `acknowledge_risk: true` after receiving an explicit affirmative keyword** from the user:
+   - Accept: `yes`, `y`, `승인`, `authorize`, `authorized`, `approve`, `approved`, `proceed`, `go ahead`, `confirmed`
+   - Reject (NOT authorization): `pull it`, `try it`, `test it`, `뽑아봐`, `가져와봐`, `해봐`, `내가 오판했다`, `my mistake`, silence, `why?`, or any ambiguous imperative. These describe the *task*, not *consent*.
+5. **Authorization is per-request.** It does not carry across tables, calls, or sessions. Each new `ask` requires a new confirmation.
+6. When in doubt: **stop and ask**. A surprised user whose data was pulled without consent is a policy failure; asking one extra question is not.
+
+The `acknowledge_risk` flag exists because some protected data has legitimate use cases (e.g., analyst reviewing their own company-code postings). It must not become a rubber stamp.
+
 ## Authorization Override
 
 A blocked extraction may be authorized per-task when the business need is real and documented. To authorize:

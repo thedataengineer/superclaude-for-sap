@@ -20,12 +20,16 @@
  * enforce the policy in that case.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const BLOCKLIST_PATH = resolve(__dirname, '..', '..', 'exceptions', 'table_exception.md');
+const EXCEPTIONS_DIR = resolve(__dirname, '..', '..', 'exceptions');
+// `table_exception.md` is the index/documentation file; each category lives in
+// its own `*.md` so the files stay small and grep-able. Everything under
+// exceptions/ EXCEPT the index is parsed and merged.
+const INDEX_FILE = 'table_exception.md';
 
 const TIER_ORDER = { minimal: 1, standard: 2, strict: 3 };
 const DEFAULT_PROFILE = 'strict';
@@ -59,11 +63,35 @@ function loadProfile(configPath) {
  * Parse markdown blocklist. Each H2 carries a tier (`<!-- tier: X -->`) and
  * optionally an action (`<!-- action: deny | warn -->`, default `deny`).
  */
+function listSectionFiles() {
+  try {
+    return readdirSync(EXCEPTIONS_DIR)
+      .filter((f) => f.toLowerCase().endsWith('.md') && f.toLowerCase() !== INDEX_FILE.toLowerCase())
+      .map((f) => join(EXCEPTIONS_DIR, f))
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
 function loadBuiltinBlocklist() {
-  const text = readFileSync(BLOCKLIST_PATH, 'utf8');
   const exact = new Map(); // name -> meta { category, tier, action, why }
   const patterns = [];     // { re, category, tier, action, why }
+  const sections = listSectionFiles();
+  // Back-compat: if no per-section files exist yet, fall back to the legacy
+  // single-file blocklist at exceptions/table_exception.md so upgrades don't
+  // break in-flight.
+  const files = sections.length > 0 ? sections : [join(EXCEPTIONS_DIR, INDEX_FILE)];
+  for (const file of files.filter((p) => existsSync(p))) {
+    parseBlocklistText(readFileSync(file, 'utf8'), exact, patterns);
+  }
+  return { exact, patterns };
+}
 
+// Parse one blocklist markdown text. State (category/tier/action) is scoped to
+// this call — callers reset at file boundaries so defaults from one section
+// file never bleed into the next. Within a file, H1 or H2 headings also reset.
+function parseBlocklistText(text, exact, patterns) {
   let currentCategory = 'Protected';
   let currentTier = 'strict';
   let currentAction = 'deny';
@@ -72,9 +100,10 @@ function loadBuiltinBlocklist() {
   for (const raw of lines) {
     const line = raw.trim();
 
-    // H2 heading resets per-section state.
-    if (line.startsWith('## ')) {
-      currentCategory = line.replace(/^##\s+/, '').trim();
+    // H1 or H2 heading resets per-section state (per-file H1 is typical when
+    // each category lives in its own file; legacy single-file layout used H2).
+    if (line.startsWith('# ') || line.startsWith('## ')) {
+      currentCategory = line.replace(/^#+\s+/, '').trim();
       currentTier = 'strict';
       currentAction = 'deny';
       continue;
@@ -105,11 +134,12 @@ function loadBuiltinBlocklist() {
     const why = cells[2] || '';
     const meta = { category: currentCategory, tier: currentTier, action: currentAction, why, description };
 
-    if (rawName.includes('*') || rawName.includes('xxx')) {
+    if (rawName.includes('*') || rawName.includes('xxx') || rawName.includes('#')) {
       const family = rawName
         .split(/[\s,(]/)[0]
         .replace(/xxx/gi, '[A-Z0-9_]*')
-        .replace(/\*/g, '[A-Z0-9_]*');
+        .replace(/\*/g, '[A-Z0-9_]*')
+        .replace(/#/g, '[0-9]');
       try {
         const re = new RegExp(`^${family}$`, 'i');
         patterns.push({ re, ...meta });
@@ -122,8 +152,6 @@ function loadBuiltinBlocklist() {
       if (/^[A-Z0-9_\/]+$/.test(name)) exact.set(name, meta);
     }
   }
-
-  return { exact, patterns };
 }
 
 /** Load a plain-text override file (one table/pattern per line). User
