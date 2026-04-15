@@ -116,6 +116,7 @@ Score ambiguity after each round. Do NOT proceed to spec generation until ≤ 5%
 
 **Phase 3 — Spec Writing**: `sap-writer`
 - Produce functional + technical spec from plan
+- **MANDATORY before writing**: open and read every shared convention file applicable to the program type (`alv-rules.md`, `text-element-rule.md`, `constant-rule.md`, `oop-pattern.md` if OOP, `procedural-form-naming.md` if Procedural, `naming-conventions.md`, `include-structure.md`). The spec must NOT contain instructions that contradict these conventions (e.g., "build LVC_T_FCAT manually" contradicts `alv-rules.md`'s SALV-factory rule). When the spec describes a technique, paraphrase the convention's prescribed approach — never invent a shortcut.
 - File: `.sc4sap/program/{PROG}/spec.md`
 - **User confirmation required** — do not proceed without explicit OK
 
@@ -130,19 +131,22 @@ Score ambiguity after each round. Do NOT proceed to spec generation until ≤ 5%
 - Call `RunUnitTest` → `GetUnitTestResult`
 - On FAIL: fix production code (not tests) → re-activate → re-run (loop until green or 3 attempts)
 
-**Phase 6 — Review**: `sap-code-reviewer`
-- Verify all shared conventions (text elements, constants, FORM naming, SALV-factory field catalog, include suffixes, naming)
-- Clean ABAP compliance
-- No inactive objects (`GetInactiveObjects`)
+**Phase 6 — Review (MANDATORY — never skip, never conditional)**: `sap-code-reviewer`
+
+> ⚠️ Phase 4 is NOT complete until Phase 6 has run. Phase 5 (QA) is conditional on OOP mode, Phase 7 (Debug) is conditional on failures, but **Phase 6 is unconditional**.
+
+**Authoritative checklist**: see [`phase6-review.md`](./phase6-review.md) in this skill folder. It defines the per-convention review items, the file format for `.sc4sap/program/{PROG}/review.md`, and the failure-handling loop. Read it before delegating to `sap-code-reviewer`, and pass its path to the agent.
 
 **Phase 7 — Debug escalation**: `sap-debugger`
 - Activation failures persisting after retry
 - Runtime dumps during test execution
 
 **Phase 8 — Completion Report**
+- **Pre-condition (HARD GATE)**: `.sc4sap/program/{PROG}/review.md` must exist and end in PASS verdicts for every applicable convention. If missing or contains unresolved violations, return to Phase 6 — do not write the report and do not tell the user the program is done.
 - Objects created + activation status
 - Transport number
 - Test results summary
+- Reference to `review.md` (Phase 6 verdicts)
 - File: `.sc4sap/program/{PROG}/report.md`
 </Agent_Pipeline>
 
