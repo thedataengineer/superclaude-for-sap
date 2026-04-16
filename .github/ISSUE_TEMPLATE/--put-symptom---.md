@@ -48,12 +48,10 @@ Ask claude to fill out this template.
 
 7. Diagnostic information
 - Output of: claude --version
-- Output of: /doctor
+- Output of: /sap-doctor
 - Relevant parts of settings.json, .claude/settings.json, or .mcp.json
 - PATH-related details if relevant
-- Whether ripgrep or other required dependencies are installed
 
 8. Attachments
 - Error logs as text
-- Short screen recording
 - Minimal reproducible sample project or sample code
