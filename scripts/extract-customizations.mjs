@@ -178,6 +178,107 @@ async function scanFormExit(client, includeName) {
   return { ok: true, customized: meaningful > 150, lineCount: meaningful };
 }
 
+// GGB0 (Substitution) / GGB1 (Validation) / GGB4 (Rule) — scan GB03 for
+// customer-namespace rule names (VSR_NAME starting with Z/Y) that are active.
+// BTYP encoding:
+//   1 = Validation (GGB1)
+//   2 = Substitution (GGB0)
+//   3 = Rule
+// GB03 is Customizing metadata — the VSR_NAME / BCLASS / APPLAREA / CALLUP_P
+// keys describe the rule, not transaction row data, so it is not blocklisted
+// (same category as MODSAP used in scanSmodCmod above).
+async function scanGgbRulesAll(client) {
+  const sql = "SELECT VSR_NAME, BCLASS, BTYP, BSTAT, APPLAREA, CALLUP_P FROM GB03 "
+            + "WHERE BSTAT = 'A' AND (VSR_NAME LIKE 'Z%' OR VSR_NAME LIKE 'Y%')";
+  const r = await callTool(client, 'GetSqlQuery', { sql_query: sql, row_number: 500 });
+  if (!r.ok || !r.json) return { ok: false, rules: [], error: r.error || 'no GB03 data' };
+  const rows = r.json.rows || [];
+  const rules = rows.map((row) => ({
+    name: row.VSR_NAME || row.vsr_name,
+    type: ({ '1': 'validation', '2': 'substitution', '3': 'rule' })[String(row.BTYP || row.btyp)] || 'unknown',
+    bclass: row.BCLASS || row.bclass,
+    applArea: row.APPLAREA || row.applarea,
+    callupPoint: row.CALLUP_P || row.callup_p,
+    status: 'active',
+  })).filter((x) => x.name && Z_PATTERN.test(x.name));
+  return { ok: true, rules };
+}
+
+// BTE (Business Transaction Events, FIBF / BF11 / BF24 / BF34) — scan the two
+// customer-FM registration tables:
+//   TBE24 — Publish/Subscribe customer product → FM (IFNR = P/S interface)
+//   TPS34 — Process Interface customer product → FM (IFNR = process interface)
+// Filter by FUNCTION starting with Z/Y (customer-namespace FM). EVENT is the
+// numeric event id (e.g. 00001025 = FI_TRANSFER_CUST_TO_SD). APPL is the
+// application code (FI-AP, FI-AR, FI-GL, FI-BL, TR-CM, CA, PM, etc.) which
+// we use downstream for module filtering.
+async function scanBteImplementationsAll(client) {
+  const out = { ok: true, implementations: [] };
+  // Publish/Subscribe
+  {
+    const sql = "SELECT EVENT, APPL, PRODUCT, FUNCTION FROM TBE24 "
+              + "WHERE FUNCTION LIKE 'Z%' OR FUNCTION LIKE 'Y%'";
+    const r = await callTool(client, 'GetSqlQuery', { sql_query: sql, row_number: 500 });
+    if (r.ok && r.json) {
+      for (const row of r.json.rows || []) {
+        const fn = row.FUNCTION || row.function;
+        if (!fn || !Z_PATTERN.test(fn)) continue;
+        out.implementations.push({
+          kind: 'P/S',
+          event: row.EVENT || row.event,
+          application: row.APPL || row.appl,
+          product: row.PRODUCT || row.product,
+          function: fn,
+        });
+      }
+    }
+  }
+  // Process Interface
+  {
+    const sql = "SELECT EVENT, APPL, PRODUCT, FUNCTION FROM TPS34 "
+              + "WHERE FUNCTION LIKE 'Z%' OR FUNCTION LIKE 'Y%'";
+    const r = await callTool(client, 'GetSqlQuery', { sql_query: sql, row_number: 500 });
+    if (r.ok && r.json) {
+      for (const row of r.json.rows || []) {
+        const fn = row.FUNCTION || row.function;
+        if (!fn || !Z_PATTERN.test(fn)) continue;
+        out.implementations.push({
+          kind: 'Process',
+          event: row.EVENT || row.event,
+          application: row.APPL || row.appl,
+          product: row.PRODUCT || row.product,
+          function: fn,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+// Module scope for GGB APPLAREA / BTE APPL filtering. Keys are module codes
+// used in the script; values are substring prefixes checked case-insensitively
+// against the rule's applArea / application field.
+const MODULE_SCOPE = {
+  FI: ['GLT', 'GLX', 'FS', 'RF05', 'FI-GL', 'FI-AP', 'FI-AR', 'FI-BL', 'FI-TV', 'FI-CA', 'FKR'],
+  CO: ['KOAR', 'KBE', 'CO'],
+  PS:  ['PS'],
+  TR:  ['TR', 'TR-CM', 'TR-TM'],
+  AA:  ['KAMV', 'FI-AA'],
+  PM:  ['PM'],
+  SD:  ['SD'],
+  HCM: ['HR', 'HCM', 'PY'],
+};
+
+function filterByModuleScope(items, mod, field) {
+  const scope = MODULE_SCOPE[mod];
+  if (!scope) return [];
+  return items.filter((it) => {
+    const v = String(it[field] || '').toUpperCase();
+    if (!v) return false;
+    return scope.some((p) => v.startsWith(p.toUpperCase()));
+  });
+}
+
 // Append structures / custom fields on a base table.
 // GetTable returns CDS-DDL in modern systems: `include ci_vbak_zz;` / `include z_append_vbak;`
 // Classic SE11 format: `.APPEND.CI_VBAK`
@@ -199,7 +300,7 @@ async function scanTableExtensions(client, baseTable) {
 
 /* ──────────────────── orchestration ──────────────────── */
 
-async function extractForModule(client, mod) {
+async function extractForModule(client, mod, globalCache) {
   const mdPath = resolve(CONFIGS_DIR, mod, 'enhancements.md');
   const parsed = parseEnhancementsMd(mdPath);
   if (!parsed) {
@@ -212,6 +313,8 @@ async function extractForModule(client, mod) {
     smodExits: [],
     badiImplementations: [],
     formBasedExits: [],
+    ggbRules: [],
+    bteImplementations: [],
   };
   const extensions = {
     appendStructures: [],
@@ -256,7 +359,29 @@ async function extractForModule(client, mod) {
     }
   }
 
-  // 4) Append structures / custom fields on base tables
+  // 4) GGB0/GGB1/Rule — from the pre-computed global scan, filtered by APPLAREA
+  if (globalCache?.ggb && MODULE_SCOPE[mod]) {
+    const mine = filterByModuleScope(globalCache.ggb, mod, 'applArea');
+    if (mine.length) {
+      enhancements.ggbRules = mine;
+      for (const g of mine) {
+        console.log(`  ✓ GGB ${g.type.padEnd(12)} ${g.name} — ${g.applArea}/${g.callupPoint || '*'}`);
+      }
+    }
+  }
+
+  // 5) BTE — from the pre-computed global scan, filtered by APPL
+  if (globalCache?.bte && MODULE_SCOPE[mod]) {
+    const mine = filterByModuleScope(globalCache.bte, mod, 'application');
+    if (mine.length) {
+      enhancements.bteImplementations = mine;
+      for (const b of mine) {
+        console.log(`  ✓ BTE ${b.kind.padEnd(8)} ${b.event} [${b.application}] → ${b.function}`);
+      }
+    }
+  }
+
+  // 6) Append structures / custom fields on base tables
   const baseTables = [...new Set(parsed.appends.map((a) => a.baseTable).filter((t) => /^[A-Z][A-Z0-9_]+$/.test(t)))];
   for (const tbl of baseTables) {
     const r = await scanTableExtensions(client, tbl);
@@ -282,10 +407,22 @@ async function main() {
 
   mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const summary = { modules: [], total: { smod: 0, badi: 0, formExits: 0, extensions: 0 } };
+  // One-shot global scans — GGB (GB03) and BTE (TBE24 + TPS34) customer impls
+  // are workspace-wide, not per-module; scanning once and filtering by
+  // APPLAREA/APPL into each module's bucket avoids repeating heavy SQL on
+  // every module iteration.
+  console.log('[cust] Scanning GGB0/GGB1 customer rules (GB03)...');
+  const ggbAll = await scanGgbRulesAll(client);
+  console.log(`[cust]   → ${ggbAll.rules?.length || 0} customer GGB rules`);
+  console.log('[cust] Scanning BTE customer FMs (TBE24, TPS34)...');
+  const bteAll = await scanBteImplementationsAll(client);
+  console.log(`[cust]   → ${bteAll.implementations?.length || 0} customer BTE FMs`);
+  const globalCache = { ggb: ggbAll.rules || [], bte: bteAll.implementations || [] };
+
+  const summary = { modules: [], total: { smod: 0, badi: 0, formExits: 0, extensions: 0, ggb: 0, bte: 0 } };
 
   for (const mod of selectedModules) {
-    const res = await extractForModule(client, mod);
+    const res = await extractForModule(client, mod, globalCache);
     if (!res) continue;
     const modDir = resolve(OUTPUT_DIR, mod);
     mkdirSync(modDir, { recursive: true });
@@ -309,19 +446,23 @@ async function main() {
       smodExits: res.enhancements.smodExits.length,
       badiImpls: res.enhancements.badiImplementations.length,
       formExits: res.enhancements.formBasedExits.length,
+      ggbRules: res.enhancements.ggbRules.length,
+      bteImpls: res.enhancements.bteImplementations.length,
       tableExtensions: res.extensions.appendStructures.length,
     });
     summary.total.smod += res.enhancements.smodExits.length;
     summary.total.badi += res.enhancements.badiImplementations.length;
     summary.total.formExits += res.enhancements.formBasedExits.length;
+    summary.total.ggb += res.enhancements.ggbRules.length;
+    summary.total.bte += res.enhancements.bteImplementations.length;
     summary.total.extensions += res.extensions.appendStructures.length;
   }
 
   console.log('\n[cust] === Summary ===');
   for (const m of summary.modules) {
-    console.log(`  ${m.module.padEnd(8)} SMOD:${m.smodExits}  BAdI:${m.badiImpls}  FormExit:${m.formExits}  TableExt:${m.tableExtensions}`);
+    console.log(`  ${m.module.padEnd(8)} SMOD:${m.smodExits}  BAdI:${m.badiImpls}  FormExit:${m.formExits}  GGB:${m.ggbRules}  BTE:${m.bteImpls}  TableExt:${m.tableExtensions}`);
   }
-  console.log(`  TOTAL    SMOD:${summary.total.smod}  BAdI:${summary.total.badi}  FormExit:${summary.total.formExits}  TableExt:${summary.total.extensions}`);
+  console.log(`  TOTAL    SMOD:${summary.total.smod}  BAdI:${summary.total.badi}  FormExit:${summary.total.formExits}  GGB:${summary.total.ggb}  BTE:${summary.total.bte}  TableExt:${summary.total.extensions}`);
   console.log(`  Output: ${OUTPUT_DIR}`);
 
   await client.close();

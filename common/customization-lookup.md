@@ -8,8 +8,10 @@ The customer's live Z*/Y* customizations — BAdI implementations, CMOD projects
 
 | File | Holds |
 |---|---|
-| `.sc4sap/customizations/{MODULE}/enhancements.json` | `smodExits[]` (standard SMOD → Z-namespace CMOD projects), `badiImplementations[]` (standard BAdI → Z*/Y* impl classes), `formBasedExits[]` (customized include programs with line counts) |
+| `.sc4sap/customizations/{MODULE}/enhancements.json` | `smodExits[]` (standard SMOD → Z-namespace CMOD projects), `badiImplementations[]` (standard BAdI → Z*/Y* impl classes), `formBasedExits[]` (customized include programs with line counts), `ggbRules[]` (customer GGB0 substitutions / GGB1 validations / rules from table `GB03`, filtered by `APPLAREA`), `bteImplementations[]` (customer BTE Publish/Subscribe and Process FMs from `TBE24` / `TPS34`, filtered by `APPL`) |
 | `.sc4sap/customizations/{MODULE}/extensions.json` | `appendStructures[]` — for each base table, the `CI_*` / `Z*` appends and `ZZ*` / `YY*` custom fields actually on the table |
+
+**Modules with GGB/BTE coverage**: `FI`, `CO`, `PS`, `TR`, `AA`, `PM`, `SD`, `HCM`. For other modules these arrays are always empty and should not be relied on.
 
 The JSON is **positive-only**: a standard exit or base table is listed only when the customer has actually customized it. Silence for a given exit means "no customization detected at last scan".
 
@@ -41,6 +43,8 @@ If the task is high-stakes (e.g., sap-critic about to REJECT a plan, sap-planner
 
 - `GetEnhancementSpot` to inspect a specific BAdI for Z*/Y* implementations
 - `GetSqlQuery` on `MODSAP` / `MODACT` to find CMOD projects for a given SMOD enhancement
+- `GetSqlQuery` on `GB03` filtered by `APPLAREA` to find customer GGB0/GGB1 rules (`BSTAT = 'A'`, `VSR_NAME` starts with `Z`/`Y`)
+- `GetSqlQuery` on `TBE24` / `TPS34` filtered by `APPL` to find customer BTE subscriber FMs (`FUNCTION` starts with `Z`/`Y`)
 - `GetTable` on a base table to read its appends and custom fields
 
 Every live call must:
@@ -82,6 +86,16 @@ When the cache shows `MV45AFZZ → lineCount: 420, customized: true`:
 
 - ✅ Recommend: "Add the check inside FORM `USEREXIT_SAVE_DOCUMENT_PREPARE` in `MV45AFZZ` (already customized — 420 non-comment lines)."
 - ❌ Do NOT recommend: "Create a new BAdI — the customer already has 420 lines of legacy form-exit code that must be kept coherent with any new logic."
+
+When FI cache shows `ggbRules: [{ name: "ZGL0001", type: "substitution", applArea: "GLT0", callupPoint: "0001" }]`:
+
+- ✅ Recommend: "Extend existing substitution `ZGL0001` at call-up point 0001 (FI document header) via GGB0 — add the new field/condition to its existing step."
+- ❌ Do NOT recommend: "Create a new `BADI_FI_DOCUMENT_SAVE` implementation" — the customer's framework of choice for FI header manipulation is clearly GGB0; a parallel BAdI makes the logic order ambiguous.
+
+When FI-AP cache shows `bteImplementations: [{ kind: "P/S", event: "00001025", application: "FI-AP", function: "Z_BTE_1025_PAYMENT_BLOCK" }]`:
+
+- ✅ Recommend: "Add the logic inside FM `Z_BTE_1025_PAYMENT_BLOCK` (already registered as subscriber for event 1025 / FI-AP)."
+- ❌ Do NOT recommend: "Implement `BAdI_PAYMENT_PROPOSAL`" — when the customer is already using BTE for this event, adding a BAdI splits control flow and makes reconciliation between the two paths fragile.
 
 ## Setup Awareness
 
