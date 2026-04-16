@@ -9,9 +9,6 @@ assignees: ''
 
 Ask claude to fill out this template. 
 
-Of course — here is the English version. I kept it natural and suitable for sending directly to Claude.
-
-text
 Please ask Claude to fill out the template below.
 
 Based on the following template, please describe the current SAP plugin issue in detail.
