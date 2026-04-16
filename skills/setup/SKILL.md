@@ -1,6 +1,6 @@
 ---
 name: sc4sap:setup
-description: Plugin setup — install abap-mcp-adt-powerup, write .sc4sap/{sap.env,config.json}, create ZMCP_ADT_UTILS, install PreToolUse blocklist hook, optional SPRO config auto-generation
+description: Plugin setup — install abap-mcp-adt-powerup, write .sc4sap/{sap.env,config.json}, create ZMCP_ADT_UTILS + ZCL_S4SAP_CM_* ALV OOP handlers, install PreToolUse blocklist hook, optional SPRO config auto-generation
 level: 2
 ---
 

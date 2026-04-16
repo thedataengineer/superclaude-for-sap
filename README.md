@@ -17,12 +17,11 @@ SuperClaude for SAP transforms Claude Code into a full-stack SAP development ass
 | Capability | What it does | Skill |
 |------------|--------------|-------|
 | **🔌 Auto MCP Install** | `abap-mcp-adt-powerup` is auto-installed, configured, and connection-tested during setup. No manual MCP wiring, no `claude_desktop_config.json` editing — credentials go to `.sc4sap/sap.env` and the hook/blocklist layers register themselves. | `/sc4sap:setup` |
-| **🏗️ Formatted Auto Program Maker** | Builds ABAP programs end-to-end following sc4sap conventions: Main + conditional Includes (t/s/c/a/o/i/e/f/_tst), OOP or Procedural split (`LCL_DATA` / `LCL_ALV` / `LCL_EVENT`), full ALV (CL_GUI_ALV_GRID + Docking) or SALV, mandatory Text Elements & CONSTANTS, Dynpro + GUI Status, ABAP Unit tests — all platform-aware (ECC / S4 On-Prem / Cloud). | `/sc4sap:program`, `/sc4sap:autopilot` |
+| **🏗️ Formatted Auto Program Maker** | Builds ABAP programs end-to-end following sc4sap conventions: Main + conditional Includes (t/s/c/a/o/i/e/f/_tst), OOP or Procedural split (`LCL_DATA` / `LCL_ALV` / `LCL_EVENT`), full ALV (CL_GUI_ALV_GRID + Docking) or SALV, mandatory Text Elements & CONSTANTS, Dynpro + GUI Status, ABAP Unit tests — all platform-aware (ECC / S4 On-Prem / Cloud). | `/sc4sap:create-program`, `/sc4sap:autopilot` |
 | **🔍 Program Analyze** | Reverse-direction intelligence: read any ABAP object via MCP, run Clean ABAP / performance / security review, or reverse-engineer a program into a Functional / Technical Spec (Markdown or Excel) with Socratic scope narrowing. | `/sc4sap:analyze-code`, `/sc4sap:program-to-spec` |
 | **🩺 Maintenance Diagnosis** | Operational triage loop: inspect ST22 dumps, SAT-style profiler traces, logs, and where-used graphs directly from Claude; narrow hypotheses, surface SAP Note candidates, and diagnose plugin / MCP / SAP connectivity health. | `/sc4sap:analyze-symptom`, `/sc4sap:sap-doctor` |
 | **🏭 Industry Context** | 14 industry reference files (`industry/*.md`) — retail, fashion, cosmetics, tire, automotive, pharmaceutical, food-beverage, chemical, electronics, construction, steel, utilities, banking, public-sector. Consultants load the project's industry file to apply business-specific patterns, pitfalls, and SAP IS mappings when doing config analysis, Fit-Gap, or master-data decisions. | All consultants |
 | **🌏 Country / Localization** | 15 per-country files + `eu-common.md` (KR, JP, CN, US, DE, GB, FR, IT, ES, NL, BR, MX, IN, AU, SG, EU common). Covers date/number formats, VAT/GST structure, mandatory e-invoicing (SDI / SII / MTD / CFDI / NF-e / 세금계산서 / Golden Tax / IRN / Peppol / STP), banking formats (IBAN / BSB / CLABE / SPEI / PIX / UPI / SEPA / Zengin …), payroll localization, statutory reporting cadence. Mandatory for analyst / critic / planner; wired into every consultant. | All consultants + analyst / critic / planner |
-| **🧬 CBO Discovery** | Every module consultant asks the user for the module's main package name once per session, calls `GetPackageContents` / `GetPackageTree`, presents the Z-table list with descriptions, drills into relevant ones via `GetTable`, and hands off a `## CBO Tables in Scope` section to `sap-executor` / `sap-planner` / `sap-architect`. No silent skipping. | `sap-*-consultant` (14 modules) |
 | **🤝 Module Consultation** | `sap-analyst`, `sap-critic`, `sap-planner`, and `sap-architect` emit a `## Module Consultation Needed` block whenever the question depends on module-specific business judgement (pricing, copy control, MRP, batch, payroll…) → delegates to `sap-{module}-consultant`. System-level issues → `sap-bc-consultant`. Never invents from general SAP knowledge. | analyst / critic / planner / architect |
 
 ## Requirements
@@ -132,7 +131,6 @@ The wizard asks **one question at a time** — never dumps the whole questionnai
 **Delegation map (Module Consultation Protocol):**
 - `sap-analyst` / `sap-critic` / `sap-planner` → emit `## Module Consultation Needed` → `sap-{module}-consultant` (business semantics) or `sap-bc-consultant` (system-level)
 - `sap-architect` → emits `## Consultation Needed` → `sap-bc-consultant` for Basis topics (transport strategy, authorization, performance, sizing, system copy, patching) or `sap-{module}-consultant` for module design questions
-- Each `sap-{module}-consultant` runs **CBO Discovery** once per project (asks user for main Z-package → `GetPackageContents` → table list with descriptions → `GetTable` drill-down → hands back `## CBO Tables in Scope`)
 - `sap-analyst` / `sap-critic` / `sap-planner` additionally have a **mandatory Country Context** block that forces loading `country/<iso>.md` before producing output
 
 ### 17 Skills
@@ -144,7 +142,7 @@ The wizard asks **one question at a time** — never dumps the whole questionnai
 | `sc4sap:sap-option` | View / edit `.sc4sap/sap.env` (credentials, blocklist profile, whitelists) |
 | `sc4sap:sap-doctor` | Plugin + MCP + SAP connection diagnostics |
 | `sc4sap:create-object` | ABAP object creation (hybrid mode — transport + package confirm, create, activate) |
-| `sc4sap:program` | Full ABAP program pipeline — Main+Include, OOP/Procedural, ALV, Dynpro, Text Elements, ABAP Unit |
+| `sc4sap:create-program` | Full ABAP program pipeline — Main+Include, OOP/Procedural, ALV, Dynpro, Text Elements, ABAP Unit |
 | `sc4sap:program-to-spec` | Reverse-engineer an ABAP program into a Functional/Technical Spec (Markdown / Excel) |
 | `sc4sap:analyze-code` | ABAP code analysis & improvement (Clean ABAP / performance / security) |
 | `sc4sap:analyze-symptom` | Step-by-step SAP operational error/symptom analysis (dumps, logs, SAP Note candidates) |
@@ -177,7 +175,7 @@ sc4sap is backed by **[abap-mcp-adt-powerup](https://github.com/babamba2/abap-mc
 | **Unit Tests (ABAP + CDS)** | `GetUnitTest`, `GetUnitTestResult`, `GetUnitTestStatus`, `GetCdsUnitTest`, `GetCdsUnitTestResult`, `GetCdsUnitTestStatus` | `CreateUnitTest`, `CreateCdsUnitTest` | `UpdateUnitTest`, `UpdateCdsUnitTest` | `DeleteUnitTest`, `DeleteCdsUnitTest` | Both ABAP Unit and CDS test framework |
 | **Transport** | `GetTransport`, `ListTransports` | `CreateTransport` | — | — | Full transport lifecycle in MCP |
 
-The Dynpro / GUI Status / Text Element CRUD in particular enable sc4sap's classical-UI pipeline (`sc4sap:program` with ALV + Docking + selection screen) to be fully AI-driven end-to-end — a scenario most ADT MCP servers cannot support.
+The Dynpro / GUI Status / Text Element CRUD in particular enable sc4sap's classical-UI pipeline (`sc4sap:create-program` with ALV + Docking + selection screen) to be fully AI-driven end-to-end — a scenario most ADT MCP servers cannot support.
 
 ### Shared Conventions (`common/`)
 
@@ -246,11 +244,11 @@ Identify the active country from `.sc4sap/config.json` → `country` (or `sap.en
 
 ### SAP Platform Awareness (ECC / S4 On-Prem / Cloud)
 
-`sc4sap:program` runs a mandatory **SAP Version Preflight** before anything else, reading `.sc4sap/config.json` for `sapVersion` (ECC / S4 On-Prem / S/4HANA Cloud Public / Private) and `abapRelease`. The pipeline branches accordingly:
+`sc4sap:create-program` runs a mandatory **SAP Version Preflight** before anything else, reading `.sc4sap/config.json` for `sapVersion` (ECC / S4 On-Prem / S/4HANA Cloud Public / Private) and `abapRelease`. The pipeline branches accordingly:
 
 - **ECC** — no RAP/ACDOCA/BP; syntax gated by release (no inline decl <740, no CDS <750, etc.)
 - **S/4HANA On-Premise** — classical Dynpro technically possible but warned; extensibility-first, MATDOC ACDOCA for finance
-- **S/4HANA Cloud (Public)** — **classical Dynpro forbidden**; redirects to RAP + Fiori Elements, `if_oo_adt_classrun`, or SALV-only output. Full prohibited-statement list + Cloud-native API replacements in `skills/program/cloud-abap-constraints.md`
+- **S/4HANA Cloud (Public)** — **classical Dynpro forbidden**; redirects to RAP + Fiori Elements, `if_oo_adt_classrun`, or SALV-only output. Full prohibited-statement list + Cloud-native API replacements in `skills/create-program/cloud-abap-constraints.md`
 - **S/4HANA Cloud (Private)** — refer CDS + AMDP + RAP, Business Partner APIs
 
 ### SPRO Configuration Reference
@@ -413,12 +411,12 @@ Hybrid-mode single-object creation: confirms transport + package interactively, 
 
 ---
 
-### `/sc4sap:program`
+### `/sc4sap:create-program`
 
 Flagship program creation pipeline with Main + Include wrapping, OOP or Procedural, full ALV + Dynpro support.
 
 ```
-/sc4sap:program
+/sc4sap:create-program
 → "Make an ALV report for open sales orders, selection screen by sales org + date range"
 ```
 

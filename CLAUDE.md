@@ -32,7 +32,6 @@ Before any work: verify `.sc4sap/config.json` exists and contains `sapVersion`, 
 6. **`acknowledge_risk` requires explicit user affirmative** (`yes` / `승인` / `authorize` / `approve` / `proceed` / `confirmed`). Ambiguous commands (`뽑아봐`, `try it`, `pull it`, `my mistake`) are NOT authorization. Per-call, per-table, per-session — never carries over. Full protocol: `common/data-extraction-policy.md` → "The `acknowledge_risk` Parameter — HARD RULE".
 7. **Industry context matters.** For config analysis / business process design / Fit-Gap: load the project's `industry/<key>.md` (from `config.json` → `industry` or `sap.env` → `SAP_INDUSTRY`). If unset, ask the user.
 8. **Country / localization context matters.** For tax, e-invoicing, banking, statutory reporting, date/number formats: load the project's `country/<iso>.md` (from `config.json` → `country` or `sap.env` → `SAP_COUNTRY`, ISO alpha-2 lowercase: `kr`, `us`, `de`, `eu-common`, …). Multi-country projects load every relevant file and flag cross-country touchpoints (intercompany, intra-EU VAT, transfer pricing). If unset, ask the user.
-9. **CBO discovery for module consultants.** Every `sap-*-consultant` (SD/MM/PP/PM/QM/WM/TM/TR/FI/CO/HCM/BW/PS/Ariba) must, once per project session, ask the user for the module's main package name, call `GetPackageContents` (walk `GetPackageTree` for sub-packages), present the table list with descriptions, drill into relevant tables via `GetTable`, and emit a `## CBO Tables in Scope` hand-off section when recommending to `sap-executor` / `sap-planner` / `sap-architect`. Never skip silently; if the user confirms no CBO tables, state it explicitly.
 
 Enforcement: L1 agent instructions → L2 this file → L3 `PreToolUse` hook (`scripts/hooks/block-forbidden-tables.mjs`) → L4 MCP server upstream guard.
 
@@ -46,6 +45,7 @@ Enforcement: L1 agent instructions → L2 this file → L3 `PreToolUse` hook (`s
 - `/sc4sap:mcp-setup` — MCP ABAP ADT server configuration guide
 - `/sc4sap:sap-option` — View and edit `.sc4sap/sap.env` (credentials, industry, blocklist profile, HUD limits)
 - `/sc4sap:sap-doctor` — Diagnose plugin / MCP / SAP connection health
+- `/sc4sap:analyze-cbo-obj` — Inventory a CBO package → save frequently-used Z objects + business purpose to `.sc4sap/cbo/<MODULE>/<PACKAGE>/` for reuse by `create-program` / `program-to-spec`
 
 ### Agents
 - Core: `sap-analyst`, `sap-architect`, `sap-code-reviewer`, `sap-critic`, `sap-debugger`, `sap-doc-specialist`, `sap-executor`, `sap-planner`, `sap-qa-tester`, `sap-writer`

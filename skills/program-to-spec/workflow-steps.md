@@ -8,6 +8,14 @@ Never skip unless the user supplies `object=...  depth=L2  format=md  lang=ko` s
 **Step 1 — Inventory** (auto, parallel MCP calls)
 - `SearchObject` — confirm object + sub-type
 - Metadata: `GetObjectInfo` — package, author, created/changed, transport
+
+**Step 1.5 — CBO inventory lookup** (auto)
+- Resolve `<PACKAGE>` from `GetObjectInfo` above.
+- Ask the user one question: "Which module does package `<PACKAGE>` belong to? (SD / MM / PP / PM / QM / WM / TM / TR / FI / CO / HCM / BW / PS / Ariba)" — only if the module cannot be derived from `.sc4sap/config.json` or the package's existing CBO folder.
+- Check `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json`.
+  - **Exists** → Load it. When the analyst describes data sources, tables, or helper calls in Step 3, annotate each one that matches an inventory entry with its CBO role + one-line business purpose (e.g., "writes to `ZSD_ORDER_LOG` — append-only sales-order processing log"). This turns opaque Z-references in the spec into named reusable assets.
+  - **Missing** → Print one line: "No CBO inventory at `.sc4sap/cbo/<MODULE>/<PACKAGE>/`. Run `/sc4sap:analyze-cbo-obj` first for richer spec annotations, or type `skip` to proceed."
+- Persist the loaded entries to `.sc4sap/specs/<OBJECT>/cbo-context.md` so sap-analyst and sap-writer consume it in Step 3.
 - Source:
   - Report/Program: `GetProgFullCode` + `GetIncludesList` → iterate `GetInclude`
   - Class: `ReadClass` (all sections) + `GetLocalDefinitions` / `GetLocalMacros` / `GetLocalTestClass` / `GetLocalTypes`
@@ -23,7 +31,7 @@ Never skip unless the user supplies `object=...  depth=L2  format=md  lang=ko` s
 - Drives which spec template is applied in Step 3.
 
 **Step 3 — Delegate to sap-analyst + sap-writer**
-- **sap-analyst** extracts: business purpose, inputs (selection screen / importing params), outputs (ALV cols / exporting params / OData entity), data sources (tables + CDS + BAPIs), main logic narrative, error cases, authorization checks (`AUTHORITY-CHECK` statements).
+- **sap-analyst** extracts: business purpose, inputs (selection screen / importing params), outputs (ALV cols / exporting params / OData entity), data sources (tables + CDS + BAPIs), main logic narrative, error cases, authorization checks (`AUTHORITY-CHECK` statements). When `cbo-context.md` exists, the analyst cross-references every Z-object mentioned against the inventory and replaces opaque "Z-table" / "Z-class" labels with the inventory's documented role + business purpose.
 - **sap-writer** renders into the chosen format (MD or Excel) at the chosen depth + language.
 - **sap-critic** gate (only if L4): verifies every claim cross-references a line range.
 

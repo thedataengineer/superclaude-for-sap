@@ -1,15 +1,15 @@
 ---
-name: sc4sap:program
+name: sc4sap:create-program
 description: Create ABAP programs (Report/CRUD/ALV/Batch) with Main+Include structure, OOP or Procedural, and full agent-driven coding/QA pipeline
 level: 4
 ---
 
-# SC4SAP Program
+# SC4SAP Create Program
 
 Core ABAP program creation skill. Generates a Main Program wrapped with conditional Includes following the sc4sap template convention. Supports both OOP (two-class split: Data + Screen/ALV) and Procedural (PERFORM) paradigms. Full pipeline: SAP version preflight → Socratic interview → planner → writer spec → user confirm → executor/qa/reviewer.
 
 <Purpose>
-sc4sap:program is the flagship skill for creating new ABAP programs. It handles a wide range of purposes (Report, CRUD, ALV list, Batch, Interface). Before coding starts, it runs an internal Socratic interview to resolve ambiguity, then produces a confirmed spec, then orchestrates coding and QA agents to deliver activated, tested ABAP objects following sc4sap conventions.
+sc4sap:create-program is the flagship skill for creating new ABAP programs. It handles a wide range of purposes (Report, CRUD, ALV list, Batch, Interface). Before coding starts, it runs an internal Socratic interview to resolve ambiguity, then produces a confirmed spec, then orchestrates coding and QA agents to deliver activated, tested ABAP objects following sc4sap conventions.
 </Purpose>
 
 <Use_When>
@@ -39,7 +39,7 @@ The following rules are **shared across sc4sap skills** and live in `sc4sap/comm
 | Procedural FORM naming (`_{screen_no}` suffix) | `../../common/procedural-form-naming.md` | Executor (Procedural), Reviewer |
 | Naming conventions (program/include/class/screen) | `../../common/naming-conventions.md` | Planner, Executor, Reviewer |
 
-Paths are relative to this skill's directory (`sc4sap/skills/program/`).
+Paths are relative to this skill's directory (`sc4sap/skills/create-program/`).
 </Shared_Conventions>
 
 <Preflight_SAP_Version_Check>
@@ -64,6 +64,22 @@ Outputs:
 - `.sc4sap/program/{PROG}/platform.md` — resolved platform, release, and constraints
 - Interview dimensions pre-filtered by platform (e.g., ALV-Full hidden on Cloud Public)
 </Preflight_SAP_Version_Check>
+
+<CBO_Inventory_Lookup>
+**Runs immediately after package + module are resolved during the interview** (Phase 1 dimension #6) and feeds every downstream phase.
+
+Steps:
+1. Resolve `<MODULE>` (from interview) and `<PACKAGE>` (from interview dimension #6).
+2. Check whether `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json` exists.
+   - **Exists** → Read it. Extract the `objects[]` array. Treat every entry as a **reuse candidate** and surface it in Phase 2 / Phase 3 so the planner and writer prefer the existing asset over creating a new one.
+   - **Does not exist** → Print one line to the user:
+     > "No CBO inventory at `.sc4sap/cbo/<MODULE>/<PACKAGE>/`. Run `/sc4sap:analyze-cbo-obj` first to map reusable Z objects, or type `skip` to proceed without reuse analysis."
+     If the user chooses to skip, record `cbo_inventory: "skipped"` in `.sc4sap/program/{PROG}/platform.md` and continue. If the user runs the CBO skill, resume here once it completes.
+3. Persist the loaded inventory to `.sc4sap/program/{PROG}/cbo-context.md` — one bullet per reusable object: name · type · role · one-line purpose · `reuse_hint`. Planner, writer, and executor all read this file.
+
+Reuse gating rule (applied by `sap-planner` and `sap-writer`):
+- If an inventory entry matches the spec's semantic need (same role + matching FK pattern + purpose overlap), **default to reuse**. Only propose a new Z-object when the consultant or user explicitly rejects the candidate, with the rejection reason logged in `plan.md`.
+</CBO_Inventory_Lookup>
 
 <Interview_Gating>
 **Ambiguity threshold: ≤ 5%** (stricter than deep-interview's "< 5/10").
@@ -99,6 +115,7 @@ Score ambiguity after each round. Do NOT proceed to spec generation until ≤ 5%
 - Consultant contribution is appended to `.sc4sap/program/{PROG}/interview.md` and carried into Phase 2 so `sap-planner` does not re-interview.
 
 **Phase 2 — Planning**: `sap-planner` (+ module consultant when needed)
+- **CBO reuse gate (mandatory when `.sc4sap/program/{PROG}/cbo-context.md` exists)**: Before designing any new Z-object (table / structure / class / FM / data element), scan `cbo-context.md` for a reuse candidate. Default to reuse when role + FK pattern + purpose overlap. Every new-object proposal in the plan must include a one-line justification of why no CBO candidate fits.
 - Apply shared conventions: `include-structure.md`, `naming-conventions.md`
 - **Consultant consultation (mandatory when requirements touch SAP business configuration)**:
   - Identify the affected SAP module(s) from the interview output (SD / MM / FI / CO / PP / PS / QM / PM / WM / HCM / TM / TR / Ariba / BW / BC)
@@ -116,6 +133,7 @@ Score ambiguity after each round. Do NOT proceed to spec generation until ≤ 5%
 
 **Phase 3 — Spec Writing**: `sap-writer`
 - Produce functional + technical spec from plan
+- **CBO reuse (mandatory when `cbo-context.md` exists)**: every spec section that references an existing CBO asset must name it explicitly (e.g., "writes to existing table `ZSD_ORDER_LOG`") and include a one-line reason for reuse.
 - **MANDATORY before writing**: open and read every shared convention file applicable to the program type (`alv-rules.md`, `text-element-rule.md`, `constant-rule.md`, `oop-pattern.md` if OOP, `procedural-form-naming.md` if Procedural, `naming-conventions.md`, `include-structure.md`). The spec must NOT contain instructions that contradict these conventions (e.g., "build LVC_T_FCAT manually" contradicts `alv-rules.md`'s SALV-factory rule). When the spec describes a technique, paraphrase the convention's prescribed approach — never invent a shortcut.
 - File: `.sc4sap/program/{PROG}/spec.md`
 - **User confirmation required** — do not proceed without explicit OK

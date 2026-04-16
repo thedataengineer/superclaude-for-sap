@@ -1,6 +1,6 @@
 # Phase 6 — Code Review (MANDATORY, Unconditional)
 
-This file is the authoritative checklist for the Phase 6 review step of `/sc4sap:program`. SKILL.md references this file — do not duplicate the content there.
+This file is the authoritative checklist for the Phase 6 review step of `/sc4sap:create-program`. SKILL.md references this file — do not duplicate the content there.
 
 ## Purpose
 
