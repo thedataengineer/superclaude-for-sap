@@ -7,51 +7,46 @@ assignees: ''
 
 ---
 
-Ask claude to fill out this template.
+Ask claude to fill out this template. 
+
+Of course — here is the English version. I kept it natural and suitable for sending directly to Claude.
+
+text
+Please ask Claude to fill out the template below.
+
+Based on the following template, please describe the current SAP plugin issue in detail.
+Do not leave unknown fields blank; mark them as "needs confirmation" instead.
+Please keep the error message as close to the original text as possible, and clearly describe the reproduction conditions and scope of impact.
 
 1. Environment
+- SAP landscape: On-premise / S/4HANA / SAP BTP ABAP Environment
+- System version / ABAP platform release:
 - OS:
-- IDE name and version:
-- Claude Code or plugin version:
-- Shell type: (bash / zsh / PowerShell / Git Bash / etc.)
-- Runtime environment: (Native Windows / WSL1 / WSL2)
-- If WSL2, networking mode: (NAT / mirrored)
-- Proxy / VPN / corporate network in use: Yes / No
+- Network context: Office / VPN / Proxy / Home network
 
-2. Expected behavior
-- Example: The plugin should be detected normally and connect to the IDE.
+2. Affected area
+- Object type: ABAP class / CDS view / Behavior Definition / Service Binding / Fiori preview / debugger / Transport / activation / login / repository access
+- If relevant: RAP / OData / Gateway / UI preview / ABAP Unit
 
-3. Actual behavior
-- Example: "No available IDEs detected"
-- Paste the exact error message here as plain text.
+3. Expected behavior
+- Example: The object should activate successfully in ADT.
 
-4. Steps to reproduce
-1) Open the project.
-2) Open the terminal.
-3) Run Claude or trigger the plugin feature.
-4) Describe exactly what was clicked, typed, or executed.
-5) Describe what appears on screen.
+4. Actual behavior
+- Please paste the exact error message as plain text.
+- Please also indicate whether the issue is consistently reproducible or occurs intermittently.
 
-5. Reproduction frequency
-- Always
-- Intermittent
-- Only in a specific project
-- Only under a specific network/environment
+5. Scope of impact
+- Whether it happens to only one user or multiple users
+- Whether it happens only to one specific object or to all objects of the same type
+- Whether it happens only in a specific workspace / on a specific PC / on a specific network
 
-6. What has already been tried
-- Restarted the IDE
-- Restarted the terminal
-- Signed out and signed in again
-- Reset settings
-- Tested in another project
-- Tested on another network
+6. Attached diagnostic information
+- Full original error message
+- Short dump / runtime error details, if available
+- Gateway or OData error details, if relevant
+- Browser console and network trace, if the issue occurs during app preview or Fiori/UI behavior
 
-7. Diagnostic information
-- Output of: claude --version
-- Output of: /sap-doctor
-- Relevant parts of settings.json, .claude/settings.json, or .mcp.json
-- PATH-related details if relevant
-
-8. Attachments
-- Error logs as text
-- Minimal reproducible sample project or sample code
+7. Additional notes
+- What has already been tried: restarting Eclipse, using a new workspace, reinstalling ADT, clearing cache, testing with a different user, testing on a different system, testing on a different network
+- Last known working date/time
+- Minimal reproducible sample code (plugin code)
