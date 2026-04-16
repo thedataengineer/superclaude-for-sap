@@ -143,6 +143,46 @@ export function activityState(transcriptPath) {
   return { working: ago < 2000, mtimeAgoMs: ago };
 }
 
+// Scan transcript tail for recent tool_result blocks whose matching tool_use
+// has name starting with `prefix` (e.g. `mcp__plugin_sc4sap_sap__`).
+// Returns 'ok' | 'error' | 'unknown' based on the most recent such call.
+// 'error' when the tool_result has is_error:true or content looks like an MCP
+// transport error (disconnected / not available). 'unknown' when no matching
+// call was seen within windowMs — caller falls back to the installed-file check.
+export function mcpConnectionState(transcriptPath, prefix = 'mcp__plugin_sc4sap_sap__', windowMs = 10 * 60 * 1000) {
+  if (!transcriptPath || !existsSync(transcriptPath)) return 'unknown';
+  const tail = readTail(transcriptPath, 512 * 1024);
+  const lines = tail.split('\n');
+  const cutoff = Date.now() - windowMs;
+  const idToName = new Map();
+  let last = null;
+  for (const line of lines) {
+    const rec = safeJson(line);
+    if (!rec) continue;
+    const ts = Date.parse(rec.timestamp || rec.ts || '') || 0;
+    if (ts && ts < cutoff) continue;
+    const msg = rec.message || rec;
+    const content = msg.content || rec.content || [];
+    if (!Array.isArray(content)) continue;
+    for (const b of content) {
+      if (b?.type === 'tool_use' && b.id && typeof b.name === 'string' && b.name.startsWith(prefix)) {
+        idToName.set(b.id, b.name);
+      } else if (b?.type === 'tool_result' && b.tool_use_id && idToName.has(b.tool_use_id)) {
+        const isErr = b.is_error === true;
+        const cText = typeof b.content === 'string'
+          ? b.content
+          : Array.isArray(b.content)
+            ? b.content.map((x) => (typeof x === 'string' ? x : x?.text || '')).join(' ')
+            : '';
+        const looksDisconnected = /MCP server.*(disconnected|not available|no longer available)|MCP error|server disconnected/i.test(cText);
+        last = { ts: ts || Date.now(), ok: !isErr && !looksDisconnected };
+      }
+    }
+  }
+  if (!last) return 'unknown';
+  return last.ok ? 'ok' : 'error';
+}
+
 // Current context size = input + both cache buckets (output is not in the context window going forward).
 export function contextSize(u) {
   if (!u) return 0;

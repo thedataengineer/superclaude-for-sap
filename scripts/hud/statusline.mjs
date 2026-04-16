@@ -5,11 +5,12 @@
 
 import { join } from 'path';
 import { priceFor, costOf } from './lib/pricing.mjs';
-import { latestUsage, contextSize, collectBlockUsage, collectWeeklyUsage, activityState } from './lib/transcript.mjs';
+import { latestUsage, contextSize, collectBlockUsage, collectWeeklyUsage, activityState, mcpConnectionState } from './lib/transcript.mjs';
 import { readConfig, sapEnvPresent, mcpInstalled, systemInfo } from './lib/sc4sap-status.mjs';
 import { color, paint, humanTokens, humanUsd, humanDuration, pctColor } from './lib/format.mjs';
 import { readCache, writeCache } from './lib/cache.mjs';
 import { getUsage } from './lib/usage-api.mjs';
+import { probeMcpState } from './lib/mcp-probe.mjs';
 
 // Fallback USD limits when the OAuth usage API is unreachable (no token, offline,
 // API KO, etc.). When the API works, these are ignored — we just render the real
@@ -134,8 +135,20 @@ async function main() {
       }
     }
 
-    // Health dots
-    const mcp = mcpInstalled()      ? paint('●', color.green) : paint('●', color.red);
+    // Health dots — MCP reflects runtime connection. Active process probe is the
+    // primary signal (cached 30s so we don't shell out per refresh); a recent
+    // tool_error in the transcript (<2m) still forces red even if the process
+    // is alive, because a live server that's returning errors is not "ok".
+    //   green  = mcp-server process alive and no recent tool errors
+    //   red    = process missing, OR recent transcript error, OR launcher not installed
+    //   yellow = probe indeterminate (no PowerShell / pgrep)
+    const probe = probeMcpState(ws);
+    const transcriptState = transcript ? mcpConnectionState(transcript, 'mcp__plugin_sc4sap_sap__', 2 * 60 * 1000) : 'unknown';
+    let mcp;
+    if (transcriptState === 'error')      mcp = paint('●', color.red);
+    else if (probe === 'ok')              mcp = paint('●', color.green);
+    else if (probe === 'error')           mcp = paint('●', color.red);
+    else                                  mcp = mcpInstalled() ? paint('●', color.yellow) : paint('●', color.red);
     const env = sapEnvPresent(ws)   ? paint('●', color.green) : paint('●', color.red);
 
     // Agent activity — does the transcript suggest an in-flight turn, and if
