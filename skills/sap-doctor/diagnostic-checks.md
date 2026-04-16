@@ -59,3 +59,7 @@ Report counts at the layer level: `9a: 3/3 installed`, `9b: 7/7 installed, 7/7 a
 - [ ] SAP host URL is reachable (HTTPS port)
 - [ ] Configured client matches `GetSession` response
 - [ ] Configured username matches `GetSession` response
+
+**Layer 6 - RFC Backend (conditional — branches on `SAP_RFC_BACKEND`)**
+
+Per-backend check lists for `soap` / `native` / `gateway` / `odata` live in **[`diagnostic-checks-rfc.md`](diagnostic-checks-rfc.md)**. Resolve `SAP_RFC_BACKEND` from `sap.env` first (default `soap`), then execute the matching sub-section from that file. Output a one-line banner stating which sub-section was executed.

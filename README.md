@@ -4,7 +4,8 @@ English | [한국어](README.ko.md) | [日本語](README.ja.md)
 
 > Claude Code plugin for SAP ABAP development — SAP ECC / S/4HANA On-Premise / S/4HANA Cloud (Public & Private)
 
-[![npm version](https://img.shields.io/badge/npm-v4.11.5-cb3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/superclaude-for-sap) 
+[![MCP server on npm](https://img.shields.io/npm/v/@babamba2/abap-mcp-adt-powerup?label=mcp-server&color=cb3837&logo=npm)](https://www.npmjs.com/package/@babamba2/abap-mcp-adt-powerup)
+[![Plugin version](https://img.shields.io/badge/sc4sap-v0.2.4-6B4FBB)](https://github.com/babamba2/superclaude-for-sap/releases)
 [![GitHub stars](https://img.shields.io/github/stars/babamba2/superclaude-for-sap?style=flat&color=yellow)](https://github.com/babamba2/superclaude-for-sap)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -133,18 +134,19 @@ The wizard asks **one question at a time** — never dumps the whole questionnai
 - `sap-architect` → emits `## Consultation Needed` → `sap-bc-consultant` for Basis topics (transport strategy, authorization, performance, sizing, system copy, patching) or `sap-{module}-consultant` for module design questions
 - `sap-analyst` / `sap-critic` / `sap-planner` additionally have a **mandatory Country Context** block that forces loading `country/<iso>.md` before producing output
 
-### 17 Skills
+### 18 Skills
 
 | Skill | Description |
 |-------|-------------|
 | `sc4sap:setup` | Plugin setup — auto-installs `abap-mcp-adt-powerup` MCP server, generates SPRO config, installs blocklist hook |
 | `sc4sap:mcp-setup` | Standalone MCP ABAP ADT server install / reconfigure guide |
-| `sc4sap:sap-option` | View / edit `.sc4sap/sap.env` (credentials, blocklist profile, whitelists) |
-| `sc4sap:sap-doctor` | Plugin + MCP + SAP connection diagnostics |
+| `sc4sap:sap-option` | View / edit `.sc4sap/sap.env` (credentials, RFC backend, blocklist profile, whitelists) |
+| `sc4sap:sap-doctor` | Plugin + MCP + SAP connection diagnostics (6 layers including RFC backend) |
 | `sc4sap:create-object` | ABAP object creation (hybrid mode — transport + package confirm, create, activate) |
 | `sc4sap:create-program` | Full ABAP program pipeline — Main+Include, OOP/Procedural, ALV, Dynpro, Text Elements, ABAP Unit |
 | `sc4sap:program-to-spec` | Reverse-engineer an ABAP program into a Functional/Technical Spec (Markdown / Excel) |
 | `sc4sap:analyze-code` | ABAP code analysis & improvement (Clean ABAP / performance / security) |
+| `sc4sap:analyze-cbo-obj` | **Customer Business Object (CBO) inventory** — scan a Z-package, catalogue frequently-used Z tables / FMs / data elements / classes / structures / table types; persists to `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json` so `create-program` / `program-to-spec` prefer reusing existing CBO assets over creating new ones |
 | `sc4sap:analyze-symptom` | Step-by-step SAP operational error/symptom analysis (dumps, logs, SAP Note candidates) |
 | `sc4sap:autopilot` | Full autonomous execution pipeline — idea → activated, tested ABAP |
 | `sc4sap:ralph` | Persistent self-correcting loop until syntax clean + activation + unit tests pass |
@@ -378,6 +380,44 @@ When a blocked table is accessed, the MCP server responds with `isError: true` a
 
 Full protocol: `common/data-extraction-policy.md` → "The `acknowledge_risk` Parameter — HARD RULE".
 
+### 🔀 RFC Backend Selection
+
+The Screen / GUI Status / Text Element operations dispatch through RFC-enabled function modules on SAP. sc4sap offers **4 transport backends** — pick the one that matches your environment:
+
+| `SAP_RFC_BACKEND` | How it calls SAP | When to use |
+|---|---|---|
+| `soap` (default) | HTTPS `/sap/bc/soap/rfc` | Most setups — works out of the box if ICF node is active |
+| `native` | Direct RFC via `node-rfc` + NW RFC SDK | Power users, lowest latency, requires SDK on each laptop |
+| `gateway` | HTTPS to a sc4sap-rfc-gateway middleware | Teams of 10+ developers, centralised deployment |
+| `odata` | HTTPS OData v2 service `ZMCP_ADT_SRV` | When company blocks `/sap/bc/soap/rfc` but allows OData Gateway — requires one-time Basis registration. See [`docs/odata-backend.md`](docs/odata-backend.md) |
+
+Switch backends any time with `/sc4sap:sap-option`, reconnect MCP, verify with `/sc4sap:sap-doctor`.
+
+### 🏢 RFC Gateway (Enterprise Deployment)
+
+For large SAP development teams (typically tens of developers), sc4sap supports a **central RFC Gateway** middleware so developer laptops never need the SAP NW RFC SDK, MSVC build tools, or S-user SDK downloads. One Linux host runs `node-rfc` + the SDK; all MCP clients speak HTTPS/JSON to it.
+
+When this matters:
+
+- Your IT policy forbids installing the SAP NW RFC SDK on developer machines
+- The SAP Basis team has deactivated the `/sap/bc/soap/rfc` ICF endpoint company-wide
+- You want centralised RFC logging, rate limiting, and per-developer audit trail
+
+Configuration on each developer laptop:
+
+```
+/sc4sap:sap-option
+# Set SAP_RFC_BACKEND=gateway
+#     SAP_RFC_GATEWAY_URL=https://rfc-gw.company.com
+#     SAP_RFC_GATEWAY_TOKEN=<team-or-per-user-bearer>
+```
+
+The gateway forwards the developer's SAP credentials on every request via `X-SAP-*` headers, so SAP's audit log still identifies the real user (not a shared service account).
+
+> **Private repository.** The gateway source lives at a **private repo** because the Docker image must be built against the SAP-licensed NW RFC SDK, which cannot be redistributed. Organisations contact the maintainer for access; they then clone, download the SDK themselves (S-user required), and build the image inside their own network. Individual open-source sc4sap users should continue using `SAP_RFC_BACKEND=soap` (default) — no gateway needed.
+
+Client-side design lives in this repo (`abap-mcp-adt-powerup/src/lib/gatewayRfc.ts`) — the HTTP contract is documented and any compliant middleware (Node, Java, Python, …) will work. Contact the maintainer for repository access or to discuss alternative gateway implementations.
+
 ## Skills — Examples & Workflow
 
 Each skill below shows a one-line invocation, a typical prompt, and what happens under the hood. Screenshots will be added in a future update.
@@ -438,6 +478,23 @@ Reads an existing ABAP object via MCP, runs `sap-code-reviewer` against Clean AB
 **Flow** — `ReadClass` / `GetProgFullCode` → `GetAbapSemanticAnalysis` + `GetWhereUsed` → sap-code-reviewer analysis → categorized report (Clean ABAP / Performance / Security / SAP Standard) → optional apply-fix loop.
 
 > _Screenshot placeholder — review findings table_
+
+---
+
+### `/sc4sap:analyze-cbo-obj`
+
+Customer Business Object (CBO) inventory scanner. Walks a Z-package and catalogues reusable Z tables / FMs / data elements / classes / structures / table types — then persists the list so downstream generators (`create-program`, `program-to-spec`) default to **reusing** instead of creating duplicates.
+
+```
+/sc4sap:analyze-cbo-obj
+→ "Scan ZSD_ORDER package for MM module reuse candidates"
+```
+
+**Flow** — `GetPackageTree` on target Z-package → `GetObjectsByType` per CBO category → frequency + purpose heuristics → write `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json`. `create-program` / `program-to-spec` load this JSON at plan time and add a reuse-first gate before any `Create*` call.
+
+Ideal for brownfield systems with hundreds of existing Z-objects; run once per package, keep warm for weeks of downstream work.
+
+> _Screenshot placeholder — CBO inventory output_
 
 ---
 

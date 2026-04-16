@@ -70,6 +70,8 @@ Referenced by `SKILL.md` — this file holds the full 12-step setup wizard.
    - `SAP_INDUSTRY` (e.g., `retail`, `cosmetics`, `automotive`, `other`) — from step 2; consumed by consultant agents to load `industry/<key>.md` for business-context analysis
    - `TLS_REJECT_UNAUTHORIZED=0` (dev only, self-signed certs) — omit or unset in production
    - `SC4SAP_MCP_AUTOBUILD=1` — auto-rebuild vendor MCP server when missing after a plugin version upgrade. Default `1` so users don't have to re-run `/sc4sap:setup mcp` after every version bump. Set to `0` to disable auto-build and require manual install.
+
+   **4bis. RFC backend selection (MANDATORY — ask before Step 5)** — pick the transport for Screen / GUI Status / Text Element ops (soap / native / gateway / odata) and run the backend-specific preflight. Full procedure lives in **[`rfc-backend-selection.md`](rfc-backend-selection.md)** — read that file and execute its steps before continuing to Step 5.
    - **Blocklist policy (optional, defaults to `standard`)** — this is the **MCP server-side guard (L4)** in `abap-mcp-adt-powerup`, read from env vars in `sap.env`. It is distinct from the **PreToolUse hook (L3)** configured in Step 12. Write these as commented examples so the user can uncomment as needed:
      ```
      # Blocklist profile: minimal | standard | strict | off
@@ -144,6 +146,8 @@ Referenced by `SKILL.md` — this file holds the full 12-step setup wizard.
    5. After each object: run `GetAbapSemanticAnalysis` for syntax, then activate. If activation fails at step ⑦ with unresolved references, verify ①–⑥ are **active** (not just created) via `GetInactiveObjects`.
    6. Final check: `SearchObject` for `ZCL_S4SAP_CM_ALV` returns an active object → report "✅ ALV OOP handlers installed (7 objects)".
    7. On partial failure (some objects created, others failed): surface which object failed and the error; do NOT auto-delete successfully created objects — let the user decide whether to retry or remove.
+
+   **9c. OData backend classes + cache utility — CONDITIONAL** (only when `SAP_RFC_BACKEND=odata`). Installs `ZCL_ZMCP_ADT_MPC/DPC/_EXT` classes + `ZMCP_ADT_FLUSH_CACHE` program + prints Basis registration guide. Full procedure in **[`odata-classes-install.md`](odata-classes-install.md)**.
 
 10. Write plugin config to `.sc4sap/config.json` — include `sapVersion`, `abapRelease`, and `industry` fields, and preserve the `systemInfo` block written in step 7 (merge, don't overwrite).
     - Note: `sapVersion` / `abapRelease` / `industry` are **duplicated** in `sap.env` (step 4) on purpose. `sap.env` is consumed by the MCP server process; `config.json` is consumed by plugin-side components (HUD, PreToolUse hook, agents, SPRO cache, consultant agents reading `industry/*.md`). Keep both in sync when the user changes them via `/sc4sap:sap-option`.

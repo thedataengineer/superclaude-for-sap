@@ -30,6 +30,7 @@ When invoked with `status` / `show` / `hud` (or as the preamble to any edit flow
 Contents (only show rows you could resolve):
 - **System**: `<SID>` · client `<MANDT>` · user `<BNAME>` · lang `<SPRAS>`   *(from `GetSession`)*
 - **Connection**: `<SAP_URL>` · auth `<SAP_AUTH_TYPE>` · type `<SAP_SYSTEM_TYPE>` · version `<SAP_VERSION>` · ABAP `<ABAP_RELEASE>`
+- **RFC backend**: `<SAP_RFC_BACKEND or "soap (default)">` — if `native`, append `· ashost <SAP_RFC_ASHOST>:<SAP_RFC_SYSNR>` or `· mshost <SAP_RFC_MSHOST>/<SAP_RFC_SYSID>`; if `gateway`, append `· <SAP_RFC_GATEWAY_URL>` (token masked); if `odata`, append `· <SAP_RFC_ODATA_SERVICE_URL>` (with CSRF TTL = `<SAP_RFC_ODATA_CSRF_TTL_SEC or "600">`s)
 - **Industry**: `<SAP_INDUSTRY or "(not set)">` — drives which `industry/*.md` consultant agents load
 - **Inactive objects**: `<count>` (0 = green, >0 = red)   *(from `GetInactiveObjects`)*
 - **Active transport (pinned)**: `<TRKORR> — <description>` if present in `config.json` → `activeTransport`, else "-"
@@ -65,6 +66,11 @@ Blocklist policy (optional — guard for `GetTableContents` / `GetSqlQuery`):
 - `MCP_BLOCKLIST_EXTEND`   — comma-separated extra table names / patterns (always denied)
 - `MCP_ALLOW_TABLE`        — comma-separated whitelist for audited bypass
 
+RFC backend (optional — selects transport for Screen / GUI Status / Text Element ops):
+- `SAP_RFC_BACKEND` — `soap` (default) | `native` | `gateway` | `odata`
+
+Per-backend env blocks (Native / Gateway / OData credentials and knobs) live in [`rfc-managed-keys.md`](rfc-managed-keys.md). Read that file when the user asks to change the RFC backend or edit any `SAP_RFC_*` field.
+
 XSUAA (only when `SAP_AUTH_TYPE=xsuaa`):
 - `XSUAA_URL`, `XSUAA_CLIENT_ID`, `XSUAA_CLIENT_SECRET`, `XSUAA_TOKEN_URL`
 
@@ -97,6 +103,7 @@ See [hud-limits.md](hud-limits.md).
 - `MCP_BLOCKLIST_EXTEND` / `MCP_ALLOW_TABLE`: comma-separated uppercase table names (`[A-Z0-9_*]+` allowed; `*` is glob). Strip whitespace around commas.
 - When adding to `MCP_ALLOW_TABLE`, explicitly warn that each entry is audited to stderr and is a soft bypass of the blocklist — user should remove entries when no longer needed.
 - `SAP_PASSWORD`: no validation on content (may contain anything), but refuse empty.
+- All `SAP_RFC_*` validation rules live in [`rfc-managed-keys.md`](rfc-managed-keys.md) → "Validation rules".
 </Validation>
 
 <Security>
