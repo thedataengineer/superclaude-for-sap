@@ -1,0 +1,55 @@
+---
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: ''
+assignees: ''
+
+---
+
+클로드에게 아래 양식을 채우라 요청하세요.
+
+
+본문:
+1. 환경
+- OS:
+- IDE 이름/버전:
+- Claude Code 또는 플러그인 버전:
+- Shell 종류: (bash / zsh / PowerShell / Git Bash 등)
+- 실행 환경: (Native Windows / WSL1 / WSL2)
+- WSL2라면 네트워킹 모드: (NAT / mirrored)
+- 프록시/VPN/사내망 사용 여부:
+
+2. 기대 결과
+- 예: 플러그인이 IDE를 정상 인식하고 연결되어야 함
+
+3. 실제 결과
+- 예: "No available IDEs detected" 발생
+- 또는 실제 오류 문구 원문 그대로 붙여넣기
+
+4. 재현 절차
+1) 프로젝트 열기
+2) 터미널에서 claude 실행
+3) /ide 또는 특정 플러그인 기능 실행
+4) 어떤 화면/메시지가 나오는지
+
+5. 재현 빈도
+- 항상 재현 / 10번 중 3번 / 특정 프로젝트에서만 재현
+
+6. 이미 해본 조치
+- IDE 재시작
+- 터미널 재시작
+- 로그아웃 후 재로그인
+- 설정 초기화 여부
+- 다른 프로젝트/다른 네트워크에서 재현 여부
+
+7. 진단 정보
+- claude --version 결과
+- /doctor 결과
+- 관련 settings.json, .claude/settings.json, .mcp.json 중 문제와 관계 있는 부분
+- 필요 시 PATH, Git Bash 경로, ripgrep 설치 여부
+
+8. 첨부
+- 에러 로그 텍스트
+- 짧은 화면 녹화
+- 최소 재현 프로젝트 또는 샘플 코드
