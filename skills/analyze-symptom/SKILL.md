@@ -24,7 +24,7 @@ sc4sap:analyze-symptom is the first-line triage skill for SAP production inciden
 - Root cause is already identified and only a code fix is needed — use `/sc4sap:ralph`
 - Pure static code quality review — use `/sc4sap:analyze-code`
 - Need to create a new ABAP object — use `/sc4sap:create-object`
-- Conceptual or configuration-guide question — use `/sc4sap:ask` or a module consultant agent
+- Conceptual or configuration-guide question — use a module consultant agent directly
 </Do_Not_Use_When>
 
 <Core_Principles>

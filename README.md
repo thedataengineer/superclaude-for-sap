@@ -107,7 +107,7 @@ The wizard asks **one question at a time** — never dumps the whole questionnai
 | 9 | **Create `ZMCP_ADT_UTILS`** | Required utility function group (package `$TMP`, local-only). Creates `ZMCP_ADT_DISPATCH` (Screen / GUI Status dispatcher) and `ZMCP_ADT_TEXTPOOL` (Text Pool R/W), both **RFC-enabled** and activated. Skipped if the FG already exists |
 | 10 | **Write `config.json`** | Plugin-side config with `sapVersion` + `abapRelease` (synced with `sap.env`) |
 | 11 | **SPRO extraction (optional)** | Prompt `y/N` — initial extraction is token-heavy but the resulting `.sc4sap/spro-config.json` cache dramatically reduces future token usage. Skipping is fine; static `configs/{MODULE}/*.md` references still work. Runs module-parallel via `scripts/extract-spro.mjs` |
-| 11b | **🆕 Customization inventory (optional)** | Prompt `y/N` — parse each module's `configs/{MODULE}/enhancements.md`, then query live SAP to find which standard exits the customer has actually implemented with `Z*`/`Y*` objects. Writes `.sc4sap/customizations/{MODULE}/{enhancements,extensions}.json`. Hard persistence rules: BAdI only if a Z impl exists; SMOD only if a Z CMOD project includes it; Append Structures + Custom Fields go to a separate `extensions.json`. Consumed by `/sc4sap:create-program` (reuse-first) and `/sc4sap:analyze-symptom` (standard-exit origin lookup). Runs module-parallel via `scripts/extract-customizations.mjs` |
+| 11b | **🆕 Customization inventory (optional)** | Prompt `y/N` — parse each module's `configs/{MODULE}/enhancements.md`, then query live SAP to find which standard exits the customer has actually implemented with `Z*`/`Y*` objects. Writes `.sc4sap/customizations/{MODULE}/{enhancements,extensions}.json`. Hard persistence rules: BAdI only if a Z impl exists; SMOD only if a Z CMOD project includes it; **GGB0 / GGB1 substitutions + validations + rules** (from `GB03`, scoped to each module's `APPLAREA`); **BTE Publish/Subscribe + Process FMs** (from `TBE24` / `TPS34`, scoped by `APPL` — FI/CO/PS/TR/AA/PM/SD/HCM); Append Structures + Custom Fields go to a separate `extensions.json`. Consumed by `/sc4sap:create-program` (reuse-first) and `/sc4sap:analyze-symptom` (standard-exit origin lookup) — so an agent recommends extending an existing `ZGL0001` substitution or `Z_BTE_1025_*` subscriber FM instead of creating a parallel BAdI. Runs module-parallel via `scripts/extract-customizations.mjs` |
 | 12 | **🔒 Blocklist hook (MANDATORY)** | **(a)** Pick profile — `strict` (default, everything) / `standard` (PII + credentials + HR + transactional finance) / `minimal` (PII + credentials + HR + Tax only) / `custom` (user list in `.sc4sap/blocklist-custom.txt`). **(b)** Install via `node scripts/install-hooks.mjs` (user-level) or `--project` (project-level). **(c)** Smoke-test with a BNKA payload, expect `permissionDecision: deny`. **(d)** Print final hook entry + extend / custom file status. Setup does not complete unless this succeeds |
 
 > **Two blocklist layers, configured separately**
@@ -155,9 +155,7 @@ The wizard asks **one question at a time** — never dumps the whole questionnai
 | `sc4sap:ralph` | Persistent self-correcting loop until syntax clean + activation + unit tests pass |
 | `sc4sap:ralplan` | Consensus-based planning gate (analyst / architect / critic convergence) |
 | `sc4sap:deep-interview` | Socratic requirements gathering before implementation |
-| `sc4sap:ask` | Question routing to appropriate expert agent |
 | `sc4sap:team` | Coordinated parallel agent execution (native Claude Code teams) |
-| `sc4sap:teams` | CLI team runtime (tmux-based process-parallel execution) |
 | `sc4sap:release` | CTS transport release workflow (validate, release, import monitor) |
 
 ### MCP ABAP ADT Server — Unique Capabilities
@@ -591,9 +589,9 @@ Socratic requirements gathering before any code is written. Surfaces hidden assu
 
 ---
 
-### `/sc4sap:team` / `/sc4sap:teams`
+### `/sc4sap:team`
 
-Coordinated parallel agent execution. `team` uses native Claude Code teams (in-process); `teams` uses tmux CLI panes (process-level parallelism).
+Coordinated parallel agent execution using native Claude Code teams (in-process).
 
 ```
 /sc4sap:team
@@ -618,21 +616,6 @@ CTS transport release workflow — list, validate (no inactive objects, no synta
 **Flow** — `GetTransport` → validation checklist → release via STMS → monitor import status → post-import smoke check.
 
 > _Screenshot placeholder — release checklist_
-
----
-
-### `/sc4sap:ask`
-
-Question routing to the right expert agent without committing to a full skill pipeline.
-
-```
-/sc4sap:ask
-→ "Which BAdI fires on VA01 save after pricing?"
-```
-
-**Flow** — classify question (module / technical / config / error) → route to matching consultant agent (e.g. `sap-sd-consultant`) → answer with SPRO cache + MCP `GetEnhancementSpot` lookups.
-
-> _Screenshot placeholder — routed answer_
 
 ---
 

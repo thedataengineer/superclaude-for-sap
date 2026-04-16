@@ -21,7 +21,7 @@ sc4sap:create-object handles the full lifecycle of creating a new ABAP object: d
 <Do_Not_Use_When>
 - Modifying an existing object -- use ralph or direct MCP Update* tools
 - Creating multiple interdependent objects -- use `/sc4sap:autopilot` or `/sc4sap:team`
-- User just wants to understand what type to use -- use `/sc4sap:ask`
+- User just wants to understand what type to use -- ask a module consultant agent directly
 </Do_Not_Use_When>
 
 <Supported_Object_Types>

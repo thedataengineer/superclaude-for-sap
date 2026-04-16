@@ -109,7 +109,6 @@ Next options:
 - `/sc4sap:analyze-code` — code quality review (what's wrong)
 - `/sc4sap:create-program` — spec → new program (forward direction)
 - `/sc4sap:deep-interview` — requirement clarification for new builds
-- `/sc4sap:ask` — single-question routing
 </Related_Skills>
 
 <Data_Extraction_Safety>
