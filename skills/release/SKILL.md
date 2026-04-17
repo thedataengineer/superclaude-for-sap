@@ -67,7 +67,7 @@ This ensures you never accidentally release the wrong transport, but don't need 
 </Workflow_Steps>
 
 <Error_Handling>
-- Syntax errors found: list each object with error message; do not release; suggest fix with `/sc4sap:ralph`
+- Syntax errors found: list each object with error message; do not release; suggest fix via direct MCP `Update*` calls or re-run `/sc4sap:create-program`
 - Inactive objects found: list each inactive object; do not release; suggest activation
 - Transport already released: report status and skip release step
 - Authorization error on release: report S_TRANSPRT authorization requirement

@@ -1,8 +1,14 @@
-# Clean ABAP — sc4sap Coding Standards
+# Clean ABAP — Shared Baseline (Paradigm-Neutral)
 
-Condensed Clean ABAP rules for sc4sap. Follow every rule unless a project-specific override is documented. Based on [SAP's Clean ABAP guide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md) with sc4sap-specific priorities.
+This file lists the Clean ABAP rules that apply regardless of paradigm. Follow every rule unless a project-specific override is documented.
 
 > **Gate rule**: every rule below is subordinate to `common/abap-release-reference.md` — never use syntax newer than the configured `ABAP_RELEASE` in `.sc4sap/config.json`.
+
+> **Paradigm-specific rules live in companion files — load the right one based on the interview's Paradigm dimension (Phase 1B #2)**:
+> - **OOP** (`paradigm = OOP`) → load **[`clean-code-oop.md`](clean-code-oop.md)** (classes, objects, constructors, method signatures, class-based exceptions, ABAP Unit with test doubles).
+> - **Procedural** (`paradigm = Procedural`) → load **[`clean-code-procedural.md`](clean-code-procedural.md)** (FORM / PERFORM, `USING`/`CHANGING`, TOP-include globals discipline, `EXCEPTIONS` clause on function modules, procedural testing limits).
+>
+> Load exactly ONE of the two paradigm files per program. Loading both mixes signatures and leads to inconsistent code. The formatting, testing-principles, and comment-detail rules that apply to both paradigms remain in `clean-code-oop.md` (as the more exhaustive companion) — procedural code reviewers treat the OOP file's formatting / testing-principles / comment-detail sections as canonical while skipping the class-scope / constructor / method-call-syntax sections.
 
 ## Naming
 
@@ -29,6 +35,40 @@ Condensed Clean ABAP rules for sc4sap. Follow every rule unless a project-specif
 - **Avoid `EXIT` / `CHECK` in the middle of long loops**. Extract instead.
 - **No silent `CONTINUE`** — the skip reason must be obvious or commented.
 
+## Conditions and IFs
+
+- **Prefer positive conditions**. `IF lv_is_ready` over `IF NOT lv_is_not_ready`.
+- **Prefer `IS NOT` to `NOT IS`**. `IF lv_x IS NOT INITIAL` over `IF NOT lv_x IS INITIAL`.
+- **No empty `IF` branches** — if one branch is empty, invert the condition or remove the branch.
+- **Decompose complex conditions** — assign each sub-condition to a well-named `lv_is_*` boolean, then combine. Long `IF ... AND ... OR ...` chains are unreadable.
+- **Predicative method calls** when the method returns a boolean — `IF is_released( lo_order )` over `IF is_released( lo_order ) = abap_true`.
+
+## Internal Tables
+
+- **Pick the right table type by access pattern**:
+  - `HASHED TABLE WITH UNIQUE KEY` — single-value lookups, ≥ a few thousand rows
+  - `SORTED TABLE WITH NON-UNIQUE KEY` — range reads / ordered iteration
+  - `STANDARD TABLE` — sequential processing only, no random access
+- **Avoid `DEFAULT KEY`** — implicit and inefficient. Declare the key explicitly or use a sorted/hashed type.
+- **Prefer `INSERT INTO TABLE`** to `APPEND TO` when the table is sorted/hashed. `APPEND` on a sorted table errors at runtime; on a hashed table it is rejected.
+- **Prefer `LINE_EXISTS( )`** to `READ TABLE ... TRANSPORTING NO FIELDS` or `LOOP AT ... ENDLOOP` just to detect presence.
+- **Prefer `READ TABLE ... WITH KEY` + `ASSIGNING <fs>`** over `INTO ls_` when only inspecting the row.
+- **Prefer `LOOP AT lt WHERE ...`** to a `LOOP AT` + inner `IF` filter — SAP evaluates `WHERE` with the key when possible.
+- **Secondary keys** — see the large-table rule under `## Open SQL` below.
+
+## Strings
+
+- **Use backticks** `` `literal` `` for string literals, not single quotes `'literal'`. Single quotes create fixed-length `C` types and silently trim trailing spaces; backticks create proper `STRING` values.
+- **Use string templates** `|text { lv_var } more|` for assembly. Avoid `CONCATENATE lv_a lv_b INTO lv_s` chains — the template is shorter and preserves explicit formatting (`|{ lv_amount NUMBER = USER }|`).
+- **One translatable literal per text element** — see [`text-element-rule.md`](text-element-rule.md). Never embed only-literal text in a template when the string is user-visible.
+
+## Booleans
+
+- **Type**: declare boolean variables as `ABAP_BOOL`, not `CHAR1` / `C(1)`.
+- **Compare against** `abap_true` / `abap_false` / `abap_undefined` — never `'X'` / `' '` / `''`.
+- **Set** via `XSDBOOL( condition )` instead of `IF ... lv_b = abap_true. ELSE. lv_b = abap_false. ENDIF.`
+- **Prefer enumeration types** (`ENUM STRUCTURE` or constants cluster) over a boolean when the concept has more than two states — "is_released" + "is_blocked" + "is_draft" should be one status enum, not three booleans.
+
 ## Expressions and Constructors (ABAP 740+)
 
 - **Prefer `NEW`** over `CREATE OBJECT`.
@@ -37,33 +77,54 @@ Condensed Clean ABAP rules for sc4sap. Follow every rule unless a project-specif
 - **Use `REDUCE`/`FOR` table-expressions** for small transformations; fall back to `LOOP` for complex logic.
 - **Table expressions `table[ key = ... ]`** over `READ TABLE ... INTO`. Catch `CX_SY_ITAB_LINE_NOT_FOUND`.
 
-## Exception Handling
+## Exception / Error Handling (paradigm-neutral part)
 
-- **Always catch what you can handle, rethrow what you cannot.** Never empty-catch (`CATCH cx_root INTO lx. ENDCATCH.`).
-- **Class-based exceptions only** (`CX_*`). Avoid `MESSAGE ... TYPE 'E'` mid-flow — raise, don't abort.
-- **Custom exceptions extend `CX_STATIC_CHECK`** for business errors, `CX_NO_CHECK` only for truly unrecoverable conditions.
-- **Preserve the stack**: `RAISE EXCEPTION TYPE ... PREVIOUS = lx_prev.`
+- **Always act on errors** — catch what you can handle, propagate what you cannot. Never silently swallow.
+- **Preserve the cause** — always include the original exception / `sy-subrc` value in any escalated error.
 - **Never swallow runtime exceptions** (`CX_SY_*`) unless the recovery path is explicit and documented.
+- Paradigm-specific details:
+  - OOP: class-based exceptions, `RAISE EXCEPTION NEW`, `CX_STATIC_CHECK` vs `CX_NO_CHECK` vs `CX_DYNAMIC_CHECK` — see [`clean-code-oop.md`](clean-code-oop.md) § Error Handling.
+  - Procedural: `sy-subrc` check after each statement, `EXCEPTIONS` clause on `CALL FUNCTION`, `MESSAGE ... RAISING` for FM errors — see [`clean-code-procedural.md`](clean-code-procedural.md) § Error Handling.
 
 ## Open SQL
 
 - **No `SELECT *`**. Always list the fields you need. Exception: `GetTable` schema probe (never for business reads).
-- **No `INTO CORRESPONDING FIELDS OF`** without an explicit field list. Prefer explicit SELECT with inline `DATA(@lt_result)`.
+- **Prefer explicit typed internal tables over inline `INTO TABLE @DATA(...)` declarations in SELECT** — declare the row `TYPES` + table variable at the top of the local FORM / method, then use `INTO CORRESPONDING FIELDS OF TABLE @<var>` (or `APPENDING CORRESPONDING FIELDS OF TABLE @<var>` when accumulating across multiple SELECTs). Rationale: the typed structure is reused across the FORM/method, DDIC alignment is explicit, the itab's field catalog is traceable for SALV and for QA review, and multi-SELECT accumulation flows cleanly with `APPENDING` without allocating throwaway inline tables each round. Inline `INTO TABLE @DATA(...)` is acceptable **only** for one-shot local helpers (lookup helper with single SELECT whose result never leaves the method and never feeds another SELECT).
+- **Secondary keys on internal tables that receive large-table SELECT results** — when the SELECT source is a transactional / high-volume table (VBRK, VBAP, BKPF, BSEG, EKKO, EKPO, ACDOCA, MATDOC, LIPS, MKPF, MSEG, etc.) AND the resulting internal table is subsequently accessed by `READ TABLE` / `LOOP ... WHERE` on a non-primary-key column, declare a `SECONDARY KEY` on that itab. Pattern:
+  ```abap
+  DATA: lt_vbap TYPE SORTED TABLE OF ty_vbap_row
+                WITH NON-UNIQUE KEY vbeln
+                WITH NON-UNIQUE SORTED KEY k_matnr COMPONENTS matnr.
+  " ...
+  READ TABLE lt_vbap WITH KEY k_matnr COMPONENTS matnr = lv_mat
+                     ASSIGNING <ls_vbap>.
+  LOOP AT lt_vbap USING KEY k_matnr WHERE matnr = lv_mat ...
+  ```
+  Choose `SORTED` vs `HASHED` by access pattern (range → SORTED; equality-only → HASHED). Do NOT blanket-apply secondary keys on small config/master itabs — they add memory overhead and make sense only when the lookup hotspot is measurable. This rule does NOT apply to small tables (T001, T001W, KNA1/LFA1 cached singletons, SPRO config tables). Record the rationale in a one-line comment next to the secondary key declaration when the itab size is borderline (< 100k but frequently accessed).
 - **Use CDS views** for any reusable read logic (ABAP 750+). See `configs/{MODULE}/` for module-standard views.
 - **Never `SELECT` inside a `LOOP`** — use `FOR ALL ENTRIES IN` or a join.
 - **Always check `sy-subrc`** or catch the class-based equivalent (`CX_SY_OPEN_SQL_DB`).
 - **Filter and aggregate server-side**. No `LOOP ... WHERE ... DELETE` to post-filter.
+- **Large transactional tables — mandatory pre-count**: before a SELECT on a transactional table (VBRK, VBAP, BKPF, BSEG, EKKO, EKPO, ACDOCA, MATDOC, LIPS, MKPF, MSEG, WBCROSSGT and equivalents), first run `SELECT COUNT(*) FROM <table> WHERE <same predicate>` to size the result set. If the count exceeds **1,000,000 rows**, do NOT run the main SELECT as-is — apply at least one of the following tuning measures before proceeding:
+  - tighten the `WHERE` predicate (add mandatory date/org unit filter) and re-count
+  - confirm an index covers the predicate (`DB02` / `ST05` during development, or the table's secondary index list via `GetTable`)
+  - switch to **package iteration**: `SELECT ... PACKAGE SIZE n` with chunked processing, or `OPEN CURSOR` + `FETCH NEXT CURSOR`
+  - parallelize via `aRFC` / `bgRFC` on independent key ranges
+  - push filtering/aggregation to a CDS view with the matching annotations (`@Analytics`, `@ClientHandling`, buffer hints) so only aggregates hit the ABAP layer
+  - reject row-level extraction and switch to aggregated output (SUM / GROUP BY)
+  
+  Record the count and the chosen tuning measure in `spec.md` / `plan.md` when Phase 2 detects the risk, and in the Phase 6 review notes when confirmed.
 - **Blocked tables**: before any `GetTableContents` / `GetSqlQuery`, consult [`data-extraction-policy.md`](data-extraction-policy.md) and `exceptions/table_exception.md`.
 
-## Modularization
+## Modularization (paradigm-neutral part)
 
-- **A method does one thing.** Single level of abstraction inside the body.
-- **Method length**: under ~30 lines as a default; extract when it grows.
-- **Parameter count**: ≤ 3 importing/exporting; beyond that, pass a structure.
-- **No output parameters masquerading as importing** — use `CHANGING` deliberately, `EXPORTING` for returns (or functional methods returning `RETURNING`).
-- **Functional methods return one value**; no side effects. Side-effecting methods return nothing.
-- **Respect include structure**: see [`include-structure.md`](include-structure.md) and [`procedural-form-naming.md`](procedural-form-naming.md).
-- **OOP two-class split**: see [`oop-pattern.md`](oop-pattern.md) for separation of concerns.
+- **One unit does one thing.** Whether the unit is a method, a FORM, or a function module, it should have a single purpose that the name captures.
+- **Length limit** — default under ~30 lines; extract when it grows.
+- **Parameter count** — aim for ≤ 3 inputs. Beyond that, pass a structure.
+- **Respect include structure**: see [`include-structure.md`](include-structure.md).
+- Paradigm-specific guidance:
+  - OOP methods / classes / constructors — see [`clean-code-oop.md`](clean-code-oop.md) § Methods and § OOP.
+  - Procedural FORM / PERFORM / FM — see [`clean-code-procedural.md`](clean-code-procedural.md) § Modularization and [`procedural-form-naming.md`](procedural-form-naming.md).
 
 ## Text and User Interaction
 
@@ -78,13 +139,15 @@ Condensed Clean ABAP rules for sc4sap. Follow every rule unless a project-specif
 - **No comment banners, author tags, or change logs.** Git/Transport is the audit trail.
 - **Delete commented-out code** — don't check it in.
 
-## Testing
+## Testing (paradigm-neutral principles)
 
-- **Write ABAP Unit tests** (`LOCAL CLASS ... FOR TESTING`) for every custom class with non-trivial logic.
+- **Tests exist for non-trivial logic** — every calculation, every branching decision, every integration edge.
 - **Test the public contract**, not private internals.
-- **One assert per test** when practical; descriptive test-method names: `is_released_returns_true_when_status_is_X`.
-- **Use test doubles** (`CL_ABAP_TESTDOUBLE`) instead of real DB hits.
+- **One concept per test** when practical; descriptive test names: `is_released_returns_true_when_status_is_X`.
 - **Each commit's tests pass** — `RunUnitTest` via MCP before release.
+- Paradigm-specific test patterns:
+  - OOP — ABAP Unit `LOCAL CLASS ... FOR TESTING`, `CL_ABAP_TESTDOUBLE`, `LOCAL FRIENDS` only for constructor access — see [`clean-code-oop.md`](clean-code-oop.md) § Testing.
+  - Procedural — FORM testing limits (hard to mock globals); recommend extracting testable logic into a helper class tested separately — see [`clean-code-procedural.md`](clean-code-procedural.md) § Testing.
 
 ## Performance
 

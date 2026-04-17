@@ -20,9 +20,9 @@ sc4sap:team spins up N coordinated agents that divide and conquer a SAP developm
 </Use_When>
 
 <Do_Not_Use_When>
-- Task is sequential (one object depends on another) -- use `ralph` instead
+- Task is sequential (one object depends on another) -- use `/sc4sap:create-program` (for a full program with ordered includes) or `/sc4sap:create-object` repeatedly
 - Single object creation or modification -- delegate directly to executor
-- User wants to review options first -- use `ralplan` instead
+- User wants to review options first -- use `/sc4sap:deep-interview` to crystallize the spec before dispatching agents
 </Do_Not_Use_When>
 
 <SAP_Agent_Roles>

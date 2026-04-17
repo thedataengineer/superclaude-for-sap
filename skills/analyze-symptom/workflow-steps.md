@@ -93,7 +93,7 @@ Split recommendations by who can act:
 
 **Step 8 — Escalation Routing**
 After hypothesis confirmation, hand off to the correct follow-up:
-- Custom code fix → `/sc4sap:ralph` or sap-debugger agent
+- Custom code fix → direct `UpdateClass` / `UpdateProgram` / `UpdateInclude` MCP calls, or sap-debugger agent
 - Code quality review → `/sc4sap:analyze-code`
 - Module-specific configuration deep-dive → module consultant (`sap-sd-consultant`, `sap-fi-consultant`, etc.)
 - Dump reproduction → `RuntimeRunClassWithProfiling` / `RuntimeRunProgramWithProfiling`

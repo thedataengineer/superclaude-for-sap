@@ -9,7 +9,7 @@ level: 2
 Follows OMC `deep-interview` pattern adapted for SAP. Conducts a structured Socratic interview to crystallize SAP development requirements before any code is written. Prevents wasted execution cycles on underspecified ABAP tasks.
 
 <Purpose>
-sc4sap:deep-interview asks targeted questions to resolve ambiguity in SAP requirements. It gates on a mathematical ambiguity threshold: only when requirements are sufficiently specified does it produce a validated spec file and offer to proceed to autopilot or ralph.
+sc4sap:deep-interview asks targeted questions to resolve ambiguity in SAP requirements. It gates on a mathematical ambiguity threshold: only when requirements are sufficiently specified does it produce a validated spec file and offer to proceed to `/sc4sap:create-program` or `/sc4sap:create-object`.
 </Purpose>
 
 <Use_When>
@@ -20,8 +20,8 @@ sc4sap:deep-interview asks targeted questions to resolve ambiguity in SAP requir
 </Use_When>
 
 <Do_Not_Use_When>
-- Requirements are concrete (specific class name, method signature, package) -- proceed directly to ralph
-- User wants immediate execution -- use autopilot and let it handle expansion
+- Requirements are concrete (specific class name, method signature, package) -- proceed directly to `/sc4sap:create-object`
+- User wants immediate execution on a full program spec -- use `/sc4sap:create-program`
 - Task is a one-line fix -- skip interview entirely
 </Do_Not_Use_When>
 
@@ -54,7 +54,7 @@ Do not proceed to spec generation until score is below 5.
 When ambiguity threshold is met:
 1. Write validated spec to `.omc/specs/deep-interview-sap-{timestamp}.md`
 2. Spec includes: object list, package, transport strategy, technical pattern, integration points, test requirements
-3. Offer: "Spec ready. Proceed with `/sc4sap:autopilot` or `/sc4sap:ralph`?"
+3. Offer: "Spec ready. Proceed with `/sc4sap:create-program` (full program) or `/sc4sap:create-object` (single object)?"
 </Output>
 
 Task: {{ARGUMENTS}}

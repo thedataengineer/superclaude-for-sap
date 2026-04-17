@@ -110,6 +110,6 @@ CBO inventory written:
 Frequently used: N tables · M structures · K data elements · P classes · Q FMs
 Sensitive objects flagged: X
 
-Downstream skills (/sc4sap:create-program, /sc4sap:program-to-spec, /sc4sap:autopilot)
+Downstream skills (/sc4sap:create-program, /sc4sap:program-to-spec, /sc4sap:create-object)
 read inventory.json and prefer pinned objects > frequently-used objects > new creation.
 ```

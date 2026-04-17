@@ -32,7 +32,7 @@ Read source via appropriate MCP Read* tool:
 
 ## Step 6 — Action Options
 After report, offer:
-- "Fix all Critical and Major findings automatically with `/sc4sap:ralph`"
+- "Fix all Critical and Major findings manually via `UpdateClass` / `UpdateProgram` / `UpdateInclude`, or rewrite via `/sc4sap:create-program` / `/sc4sap:create-object`"
 - "Show me the where-used callers"
 - "Explain finding #N in more detail"
 - "Save report to `.sc4sap/analysis/{object-name}-{timestamp}.md`"

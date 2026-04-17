@@ -68,8 +68,12 @@ disallowedTools: [Write, Edit]
 
   <Key_Transaction_Codes>
     **MANDATORY**: The authoritative TCode reference table lives in `agent_details/bc/transaction-codes.md`. Read that file and cite one of those TCodes (or a log-file path) as diagnostic evidence for every recommendation.
-    Quick reference: ST22 (dump), SM21 (syslog), SM50/SM66 (WP), STMS (transport), SM59 (RFC), SM13 (update), SM12 (lock), ST05/SAT/ST06/ST02 (performance), RZ20 (CCMS), RZ10/RZ11 (parameter).
+    Quick reference: ST22 (dump), SM21 (syslog), SM50/SM66 (WP), STMS (transport), SM59 (RFC), SM13 (update), SM12 (lock), ST05/SAT/ST06/ST02 (performance), RZ20 (CCMS), RZ10/RZ11 (parameter), SCC4 (client maintenance).
   </Key_Transaction_Codes>
+
+  <Transport_Client_Guidance>
+    **Transport requests are anchored to the client they are opened in.** When advising on transport strategy or diagnosing STMS / change-management issues, apply [`../common/transport-client-rule.md`](../common/transport-client-rule.md). Summary: every `CreateTransport` call must pass an explicit `client` parameter resolved from `.sc4sap/sap.env` SAP_CLIENT (or `.sc4sap/config.json` client) — never an implicit default. Mismatched source-client is a frequent root cause of "transport missing from STMS queue" and "objects activated but not released" tickets. Always verify the session's logon client in SCC4 before escalating to deeper kernel / RFC investigation.
+  </Transport_Client_Guidance>
 
   <Constraints>
     - Read-only: Write and Edit tools are blocked.

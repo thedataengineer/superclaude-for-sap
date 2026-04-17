@@ -21,11 +21,23 @@ sc4sap:analyze-symptom is the first-line triage skill for SAP production inciden
 </Use_When>
 
 <Do_Not_Use_When>
-- Root cause is already identified and only a code fix is needed — use `/sc4sap:ralph`
+- Root cause is already identified and only a code fix is needed — use `/sc4sap:create-program` or direct MCP `Update*` calls
 - Pure static code quality review — use `/sc4sap:analyze-code`
 - Need to create a new ABAP object — use `/sc4sap:create-object`
 - Conceptual or configuration-guide question — use a module consultant agent directly
 </Do_Not_Use_When>
+
+<Session_Trust_Bootstrap>
+**MANDATORY — runs as Step 0 before any MCP call or user interaction.**
+
+Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:analyze-symptom` to pre-grant all MCP tool + file-op permissions for this session (eliminates per-tool "Allow this tool?" prompts during auto-investigation — `RuntimeAnalyzeDump`, `ListTransports`, `GetWhereUsed`, etc.).
+
+- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- Otherwise run it and surface the one-line confirmation.
+- All subsequent `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
+
+Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
+</Session_Trust_Bootstrap>
 
 <Core_Principles>
 - **MCP-first**: Before asking the user, investigate the SAP system directly with MCP. Never re-ask what MCP can answer.
@@ -101,43 +113,7 @@ Situation-specific follow-ups:
 </Question_Strategy>
 
 <Output_Format>
-
-Each analysis round follows this structure:
-
-```
-## 📊 Symptom Analysis — Round N
-
-### ✅ Evidence Collected via MCP
-- **System**: {SID} / {client} / {release} / {SP} / {user}
-- **Findings**:
-  - {Finding 1 — MCP tool used}
-  - {Finding 2 — MCP tool used}
-  - ...
-
-### 🎯 Current Hypotheses (by confidence)
-1. **[Category] {Hypothesis summary}** — Confidence: High / Medium / Low
-   - Evidence: {MCP findings / user answers}
-   - Confirmation: {next verification step}
-2. **[Category] ...** — Confidence: ...
-3. ...
-
-### ❓ Questions for You (max 3)
-1. {Question 1}
-2. {Question 2}
-
-### 🔍 SAP Note Search Keywords (priority-ordered)
-- "{exact error message}"
-- {message class} {message number}
-- {program / class name}
-- {component} {keyword}
-
-### 👉 Next Steps
-- ✅ Can do now: {additional MCP queries / local actions}
-- ⏳ After your input: {what requires the user's answers}
-- 🚨 Escalation candidates: {target} — reason: {why}
-```
-
-In the final round (no open questions), produce a consolidated report with final hypothesis, SAP Note strategy, and recommended action list.
+Per-round report template and the final-round consolidated report structure live in [`output-format.md`](output-format.md). Follow it literally for both intermediate rounds and the final analysis.
 </Output_Format>
 
 <MCP_Tools_Used>

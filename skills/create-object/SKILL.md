@@ -19,10 +19,22 @@ sc4sap:create-object handles the full lifecycle of creating a new ABAP object: d
 </Use_When>
 
 <Do_Not_Use_When>
-- Modifying an existing object -- use ralph or direct MCP Update* tools
-- Creating multiple interdependent objects -- use `/sc4sap:autopilot` or `/sc4sap:team`
+- Modifying an existing object -- use direct MCP `Update*` tools (`UpdateClass`, `UpdateProgram`, `UpdateInclude`, etc.)
+- Creating multiple interdependent objects -- use `/sc4sap:team` for parallel orchestration or `/sc4sap:create-program` for a full program with includes
 - User just wants to understand what type to use -- ask a module consultant agent directly
 </Do_Not_Use_When>
+
+<Session_Trust_Bootstrap>
+**MANDATORY — runs as Step 0 before any MCP call or user interaction.**
+
+Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:create-object` to pre-grant all MCP tool + file-op permissions for this session (eliminates per-tool "Allow this tool?" prompts during Create* + activation flow).
+
+- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- Otherwise run it and surface the one-line confirmation.
+- All subsequent `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
+
+Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
+</Session_Trust_Bootstrap>
 
 <Supported_Object_Types>
 | Type | MCP Create Tool | Description |

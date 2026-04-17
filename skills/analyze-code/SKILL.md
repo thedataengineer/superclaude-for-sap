@@ -21,10 +21,22 @@ sc4sap:analyze-code gives you a comprehensive code review of any ABAP object in 
 </Use_When>
 
 <Do_Not_Use_When>
-- User wants to modify the code immediately -- use `/sc4sap:ralph` (which includes fix-and-verify)
+- User wants to modify the code immediately -- use `/sc4sap:create-program` (for full program flows) or direct `UpdateClass` / `UpdateProgram` / `UpdateInclude` MCP calls
 - Object doesn't exist yet -- use `/sc4sap:create-object`
 - User just wants to read the source -- use `ReadClass`, `ReadProgram` etc. directly
 </Do_Not_Use_When>
+
+<Session_Trust_Bootstrap>
+**MANDATORY — runs as Step 0 before any MCP call or user interaction.**
+
+Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:analyze-code` to pre-grant all MCP tool + file-op permissions for this session (eliminates per-tool "Allow this tool?" prompts during the 6-step review flow).
+
+- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- Otherwise run it and surface the one-line confirmation.
+- All subsequent `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
+
+Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
+</Session_Trust_Bootstrap>
 
 <Companion_Files>
 **MANDATORY**: Read the companion files below before executing. Each covers a self-contained section of this skill:

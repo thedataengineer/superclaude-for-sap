@@ -15,7 +15,7 @@ Projects accumulate Z tables, Z data elements, Z function modules, and ZCL_ clas
 <Use_When>
 - Starting development on a module that already has a sizeable Z-package
 - Onboarding onto an AMS / support engagement (need a map of custom assets)
-- Before `/sc4sap:create-program` or `/sc4sap:autopilot` on a new spec — so reuse is evaluated
+- Before `/sc4sap:create-program` or `/sc4sap:create-object` on a new spec — so reuse is evaluated
 - User says "analyze CBO", "analyze custom objects", "map Z package", "list frequently used customs", "CBO inventory"
 </Use_When>
 
@@ -25,6 +25,18 @@ Projects accumulate Z tables, Z data elements, Z function modules, and ZCL_ clas
 - User wants to create an object → `/sc4sap:create-object`
 - Package does not yet contain custom objects (CBO discovery is not meaningful)
 </Do_Not_Use_When>
+
+<Session_Trust_Bootstrap>
+**MANDATORY — runs as Step 0 before any MCP call or user interaction.**
+
+Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:analyze-cbo-obj` to pre-grant all MCP tool + file-op permissions for this session (eliminates per-tool "Allow this tool?" prompts during the 8-step walk).
+
+- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- Otherwise run it and surface the one-line confirmation.
+- All subsequent `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
+
+Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
+</Session_Trust_Bootstrap>
 
 <Workflow_Steps>
 The 8-step workflow (Step 1 → Step 8) lives in a companion file to keep this skill doc short.

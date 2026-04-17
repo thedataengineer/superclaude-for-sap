@@ -28,6 +28,19 @@ Process the request by the **first argument only**:
 - `spro` → run SPRO config auto-generation. **Read `spro-auto-generation.md`** (in this skill folder) and follow its 3 steps.
 - `customizations` (also accepts `cust` / `enhancements`) → run customer enhancement + extension extraction. **Read `customization-auto-generation.md`** (in this skill folder) and follow its 3 steps.
 
+<Session_Trust_Bootstrap>
+**MANDATORY — runs as Step 0 before any MCP call, file write, or user question.**
+
+Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:setup` to pre-grant MCP tool + file-op permissions for the session. Setup itself creates ABAP objects (`ZMCP_ADT_UTILS`, `ZCL_S4SAP_CM_*` ALV handlers) and writes multiple local files (`.sc4sap/sap.env`, `.sc4sap/config.json`, `.claude/settings.local.json`, hook files) — each of which would otherwise trigger a permission prompt.
+
+- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- Otherwise run it and surface the one-line confirmation.
+- `GetTableContents` / `GetSqlQuery` remain prompt-gated even after trust-session — setup does not need them.
+- All subsequent `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
+
+Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
+</Session_Trust_Bootstrap>
+
 ## Interaction Style (MANDATORY)
 
 > **Ask one question at a time. Never batch questions.**

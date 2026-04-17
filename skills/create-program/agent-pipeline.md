@@ -13,6 +13,13 @@ Phase 1 splits into **Phase 1A (Module Interview)** and **Phase 1B (Program Inte
 
 ### Phase 1A — Module Interview (module consultant lead)
 
+- **Step 0 — Session Trust Bootstrap (MANDATORY, before any MCP call or user question)**:
+  Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:create-program` to pre-grant all MCP tool + file-op permissions for the session. This ensures interview-time MCP calls (`SearchObject`, `GetWhereUsed`, SPRO consultant queries, `program-to-spec` L1 lookups) do NOT trigger permission prompts.
+  - If `.sc4sap/session-trust.log` has a line within the last 24h, skip silently.
+  - Otherwise run it and surface the one-line confirmation.
+  - All subsequent `Agent` dispatches (consultants, analyst, architect, planner, writer, executor, qa, reviewer, debugger) MUST pass `mode: "dontAsk"`.
+  - Phase 3.5 no longer invokes trust-session; it assumes the bootstrap has already happened here.
+
 - **Lead agent**: `sap-{module}-consultant` (`sap-sd-consultant`, `sap-mm-consultant`, `sap-fi-consultant`, `sap-co-consultant`, `sap-pp-consultant`, `sap-ps-consultant`, `sap-qm-consultant`, `sap-pm-consultant`, `sap-wm-consultant`, `sap-hcm-consultant`, `sap-tm-consultant`, `sap-tr-consultant`, `sap-ariba-consultant`, `sap-bw-consultant`, `sap-bc-consultant`)
 - **Trigger**: As soon as Phase 0 closes. If the target module is unclear from the initial request, the FIRST question is "which module?" — consultant cannot be summoned until resolved. Multi-module: summon each consultant in parallel and reconcile question streams through the skill.
 - **Industry / Country context preflight (MANDATORY — runs before the first business question)**:
@@ -86,22 +93,40 @@ Phase 1 splits into **Phase 1A (Module Interview)** and **Phase 1B (Program Inte
   - On approval: append `## Approval` section to spec.md with approver / timestamp / keyword, THEN proceed to Phase 4
   - Phase 4 Executor MUST refuse to run if spec.md missing, lacks Approval footer, or was modified after approval was logged
 
-## Phase 4 — Implementation: `sap-executor` (parallel where independent)
-- Apply shared conventions: `oop-pattern.md` (OOP), `alv-rules.md`, `text-element-rule.md`, `constant-rule.md`, `procedural-form-naming.md` (Procedural), `naming-conventions.md`
-- Create main program + all required includes
-- Create screens / GUI status / text elements as needed
-- Activate each object; syntax failures → fix-and-retry (max 3)
+## Phase 3.5 — Execution Mode Gate (MANDATORY, between spec approval and Phase 4)
 
-## Phase 5 — QA (OOP mode only): `sap-qa-tester`
-- Write `{PROG}_tst` with FOR TESTING RISK LEVEL HARMLESS DURATION SHORT local classes
+Full procedure — `trust-session` invocation, auto/manual/hybrid mode prompt, state.json schema, resume behavior — lives in [`execution-mode.md`](./execution-mode.md). Read it before dispatching Phase 4.
+
+**One-line summary**: Invoke `/sc4sap:trust-session` (suppresses all tool permission prompts for the session) → prompt user for mode (`auto` / `manual` / `hybrid`) → persist to `state.json` → proceed to Phase 4 per the chosen cadence. Permission prompts are suppressed in ALL modes; the only prompt in `manual`/`hybrid` is the phase-transition confirmation.
+
+## Phase 4 — Implementation: `sap-executor` (PARALLELIZED)
+
+**Authoritative flow**: [`phase4-parallel.md`](./phase4-parallel.md) — local source generation → parallel `CreateInclude` → `CreateProgram` → single `GetAbapSemanticAnalysis(main)` → batch activation via `GetInactiveObjects`. Replaces the old per-include create-check-activate loop (40–60% faster for typical 6–10 include programs).
+
+- Apply shared conventions: `oop-pattern.md` (OOP), `alv-rules.md`, `text-element-rule.md`, `constant-rule.md`, `procedural-form-naming.md` (Procedural), `naming-conventions.md`
+- Screens / GUI status / text elements run AFTER main activation (see phase4-parallel.md Step G)
+- Syntax failures → fix-and-retry loop (max 3 iterations on the main program, NOT per include)
+- In `manual`/`hybrid` mode: prompt user before starting Phase 4; do NOT prompt mid-flow once started
+
+## Phase 5 — QA (conditional): `sap-qa-tester`
+
+**Skip conditions (either triggers skip, recorded as `skipped` in state.json)**:
+- Paradigm = Procedural (no local test classes expected)
+- Paradigm = OOP AND `interview.md` dimension 7 (testing scope) = `none` / empty
+
+**When running**:
+- Test class SHOULD already exist — Phase 4 executor creates `{PROG}_tst` include as part of the initial parallel batch (see phase4-parallel.md Step B). Phase 5 agent only writes test methods + runs them.
 - Call `RunUnitTest` → `GetUnitTestResult`
 - On FAIL: fix production code (not tests) → re-activate → re-run (loop until green or 3 attempts)
+- In `manual`/`hybrid` mode: prompt before starting Phase 5 (unless skip condition matched, then auto-skip with message)
 
 ## Phase 6 — Review (MANDATORY — never skip, never conditional): `sap-code-reviewer`
 
 > ⚠️ Phase 4 is NOT complete until Phase 6 has run. Phase 5 (QA) is conditional on OOP mode, Phase 7 (Debug) is conditional on failures, but **Phase 6 is unconditional**.
 
 **Authoritative checklist**: see [`phase6-review.md`](./phase6-review.md) in this skill folder. It defines the per-convention review items, the file format for `.sc4sap/program/{PROG}/review.md`, and the failure-handling loop. Read it before delegating to `sap-code-reviewer`, and pass its path to the agent.
+
+**Execution strategy**: see [`phase6-buckets.md`](./phase6-buckets.md) — 4-bucket parallel Sonnet review (ALV+UI / Logic / Structure / Platform), merged with Opus escalation only when MAJOR findings exist. ~50% wall-clock reduction vs. single-Opus review. In `manual`/`hybrid` mode: prompt before starting Phase 6; the bucket run itself is uninterrupted once started.
 
 ## Phase 7 — Debug escalation: `sap-debugger`
 - Activation failures persisting after retry
@@ -113,4 +138,15 @@ Phase 1 splits into **Phase 1A (Module Interview)** and **Phase 1B (Program Inte
 - Transport number
 - Test results summary
 - Reference to `review.md` (Phase 6 verdicts)
+- **Timing summary** — read per-phase `timing` / `sec` fields from `state.json` and include a total-duration table (Phase 4 parallel gains, Phase 6 bucket gains, Opus escalation ratio)
 - File: `.sc4sap/program/{PROG}/report.md`
+- In `manual`/`hybrid` mode: prompt before writing the report
+
+## State.json — Resume Support (C-2)
+
+All phases above record their completion into `.sc4sap/program/{PROG}/state.json` per the schema in [`execution-mode.md`](./execution-mode.md). On a subsequent invocation for the same `{PROG}`, the skill:
+1. Reads `state.json` and finds the first non-completed, non-skipped phase
+2. Resumes from that phase, skipping all preceding ones
+3. In `auto` mode, resumption happens silently; in `manual`/`hybrid`, the user is shown the resume point and asked to confirm
+
+Phase restart (rerun a completed phase) requires the user to delete the corresponding `state.json` entry explicitly — the pipeline does not re-run completed phases automatically.

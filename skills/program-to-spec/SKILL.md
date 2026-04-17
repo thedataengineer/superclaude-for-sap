@@ -23,7 +23,7 @@ Turn legacy or unfamiliar ABAP objects into a reviewable Functional/Technical Sp
 <Do_Not_Use_When>
 - User wants a **code quality review** → `/sc4sap:analyze-code`
 - User wants to **create a new** program from a spec → `/sc4sap:create-program`
-- User wants to **fix** the program → `/sc4sap:ralph`
+- User wants to **fix** the program → direct MCP `Update*` calls or re-run `/sc4sap:create-program`
 - Object does not exist yet
 </Do_Not_Use_When>
 

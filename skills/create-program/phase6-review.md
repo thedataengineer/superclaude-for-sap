@@ -14,13 +14,15 @@ A successful activation from Phase 4 only proves the code **compiles and links**
 - Phase 5 (QA) is conditional on OOP mode. Phase 7 (Debug) is conditional on failures. **Phase 6 is unconditional.**
 - Phase 8 has a hard gate: it requires `review.md` to exist with PASS verdicts before the report can be written.
 
-## Agent
+## Agent + Strategy
 
 Delegate to `sap-code-reviewer`. Pass:
 - The list of object names created in Phase 4 (with type: PROG/I, PROG/P, DYNP, CUAD, etc.)
 - The transport number
 - The path to `spec.md`
 - A reminder to write the review log to `.sc4sap/program/{PROG}/review.md`
+
+**Execution strategy — 4-bucket parallel (Sonnet) + Opus escalation**: see [`phase6-buckets.md`](./phase6-buckets.md) for the authoritative bucket split, parallel dispatch rules, finding classification (PASS / MINOR / MAJOR), and the Sonnet→Opus escalation ladder. The checklist below remains the source of truth for WHAT is checked; buckets only govern HOW the checks are distributed.
 
 ## Convention Checklist
 
@@ -87,16 +89,45 @@ Applies to: every created object.
 - [ ] Include names match `{PROG}_{SUFFIX}` exactly
 - [ ] Function group / function module / data element / domain naming follows the table in the convention
 
-### 8. `../../common/clean-code.md` — Clean ABAP
+### 8. `../../common/clean-code.md` + paradigm-specific companion — Clean ABAP
 
-Applies to: all generated source.
+**Paradigm gate** — read `Paradigm` from `interview.md`: `OOP` → load [`clean-code-oop.md`](../../common/clean-code-oop.md); `Procedural` → load [`clean-code-procedural.md`](../../common/clean-code-procedural.md). Loading both or the wrong one is MAJOR.
 
+Core (clean-code.md, both paradigms):
 - [ ] No `SELECT *` — explicit field list
 - [ ] No `SELECT` inside `LOOP` — use `FOR ALL ENTRIES` or join
 - [ ] `SY-SUBRC` checked after every statement that sets it (SELECT SINGLE, READ TABLE, CALL FUNCTION with EXCEPTIONS)
-- [ ] Inline declarations (`DATA(...)`, `FIELD-SYMBOL(<...>)`) used where appropriate
-- [ ] Modern syntax (`VALUE #()`, `COND`, `SWITCH`, `REDUCE`, `FOR ... IN`, string templates) used when `ABAP_RELEASE` permits — do NOT emit syntax newer than the configured release
+- [ ] Internal table type matches access pattern (HASHED / SORTED / STANDARD), no DEFAULT KEY
+- [ ] Secondary key declared when SELECT source is a transactional / large table AND downstream access is on non-primary fields
+- [ ] Large-table SELECTs preceded by `COUNT(*)` check + tuning plan when count > 1M
+- [ ] Backtick string literals (` \` `) for STRING values, `|...|` templates for assembly
+- [ ] Boolean variables typed `ABAP_BOOL`, compared against `abap_true` / `abap_false`, set via `XSDBOOL( )`
+- [ ] Conditions positive, `IS NOT` over `NOT IS`, no empty IF branches
+- [ ] Prefer explicit typed internal tables over inline `INTO TABLE @DATA(...)` for SELECTs feeding further logic
+- [ ] Inline declarations / modern syntax used where `ABAP_RELEASE` permits — never newer than configured release
 - [ ] No commented-out code, no debug statements (`BREAK-POINT`, `MESSAGE 'TEST'`)
+
+Paradigm = OOP → load `clean-code-oop.md` and check:
+- [ ] **Main program structure matches `../../common/oop-sample/zrsc4sap_oop_ex.prog.abap`** — REPORT statement, INCLUDE order, event block layout, two-class bootstrap (`go_data = NEW lcl_data( )` / `go_alv = NEW lcl_alv( go_data )`). Any structural deviation must be justified in `spec.md`; otherwise MAJOR finding.
+- [ ] Classes `FINAL` unless designed for inheritance; members `PRIVATE` by default
+- [ ] Methods do one thing, ≤ 30 lines, single abstraction level, ≤ 3 IMPORTING parameters
+- [ ] Methods return one value (`RETURNING` over `EXPORTING`); no boolean input parameters
+- [ ] `NEW #( ... )` over `CREATE OBJECT`; multiple static creation methods over optional constructor params
+- [ ] Exceptions: class-based only; own project super class; wrap foreign `CX_SY_*`; `RAISE EXCEPTION NEW`
+- [ ] Formatting: 120-char line limit, consistent alignment, one statement per line
+- [ ] Tests: given-when-then naming, test publics only, inject doubles via constructor, `LOCAL FRIENDS` only for constructor access
+
+Paradigm = Procedural → load `clean-code-procedural.md` and check:
+- [ ] **Main program structure matches `../../common/procedural-sample/main-program.abap`** — REPORT statement, INCLUDE order (t/s/c/a/o/i/e/f/_tst), event block layout, PBO/PAI modules as one-line `PERFORM` delegators. Any structural deviation must be justified in `spec.md`; otherwise MAJOR finding.
+- [ ] All globals declared in TOP include only; no `DATA` in PBO/PAI/FORM/EVENT includes
+- [ ] Global / local variables visually distinguishable (`g*` vs `l*` prefix); no local shadows a global
+- [ ] FORM parameters typed (`USING p_a TYPE ...`); `USING` for inputs, `CHANGING` for in/out; no boolean `USING`
+- [ ] Screen-bound FORMs end with `_{screen_no}` suffix; utility FORMs have no suffix
+- [ ] PBO/PAI module bodies are one line (`PERFORM f_...`); logic lives in FORMs, not in modules
+- [ ] `sy-subrc` checked after every statement that sets it; `CALL FUNCTION` uses `EXCEPTIONS` clause with `CASE sy-subrc`
+- [ ] No `EXIT` / `STOP` / `LEAVE PROGRAM` used as error handling
+- [ ] Each FORM has a one-line header comment describing inputs / outputs / global side effects
+- [ ] Testing: if the spec requires tests, the testable logic is extracted to `LCL_HELPER` (not left inside FORMs)
 
 ### 9. `../../common/abap-release-reference.md` — ABAP Release Awareness
 

@@ -21,8 +21,8 @@ sc4sap:create-program is the flagship skill for creating new ABAP programs. It h
 
 <Do_Not_Use_When>
 - Creating a single class/interface/table — use `/sc4sap:create-object`
-- Modifying an existing program — use `/sc4sap:ralph` or direct `UpdateProgram`/`UpdateInclude`
-- Creating a RAP business object / OData service — use `/sc4sap:autopilot`
+- Modifying an existing program — use direct `UpdateProgram` / `UpdateInclude` MCP calls
+- Creating a RAP business object / OData service — use `/sc4sap:create-object` (with service binding + behavior definition) or `/sc4sap:team` for multi-object orchestration
 - User wants only scaffolding without coding — use `/sc4sap:create-object` with type=program
 </Do_Not_Use_When>
 
@@ -32,13 +32,18 @@ The following rules are **shared across sc4sap skills** and live in `sc4sap/comm
 | Convention | Reference File | Applied In |
 |------------|----------------|------------|
 | Include structure (t/s/c/a/o/i/e/f/_tst) | `../../common/include-structure.md` | Planner, Executor |
-| OOP two-class pattern (LCL_DATA + LCL_ALV) | `../../common/oop-pattern.md` | Executor (OOP mode) |
+| OOP two-class pattern (LCL_DATA + LCL_ALV) | `../../common/oop-pattern.md` | Executor (OOP mode only) |
 | ALV rules (Full vs SALV, field catalog standard) | `../../common/alv-rules.md` | Executor, Reviewer |
 | Text element rule (no hardcoded display literals) | `../../common/text-element-rule.md` | Executor, Reviewer |
 | Constant rule (no magic literals in logic) | `../../common/constant-rule.md` | Executor, Reviewer |
-| Procedural FORM naming (`_{screen_no}` suffix) | `../../common/procedural-form-naming.md` | Executor (Procedural), Reviewer |
+| Procedural FORM naming (`_{screen_no}` suffix) | `../../common/procedural-form-naming.md` | Executor (Procedural mode only), Reviewer |
 | Naming conventions (program/include/class/screen) | `../../common/naming-conventions.md` | Planner, Executor, Reviewer |
 | ECC DDIC fallback (Table / DTEL / DOMA on ECC) | `../../common/ecc-ddic-fallback.md` | Planner (gate), Executor (program generation), Reviewer |
+| Clean ABAP — shared baseline | `../../common/clean-code.md` | Executor, Reviewer (always) |
+| Clean ABAP — **OOP paradigm** | `../../common/clean-code-oop.md` | Executor, Reviewer — **only when Phase 1B `paradigm = OOP`** |
+| Clean ABAP — **Procedural paradigm** | `../../common/clean-code-procedural.md` | Executor, Reviewer — **only when Phase 1B `paradigm = Procedural`** |
+| **Mandatory main-program template (OOP)** | `../../common/oop-sample/zrsc4sap_oop_ex.prog.abap` (+ companion includes / screens in same folder) | Executor Wave 3 (starting skeleton) + Reviewer B3 bucket (structural match) — OOP paradigm |
+| **Mandatory main-program template (Procedural)** | `../../common/procedural-sample/main-program.abap` | Executor Wave 3 + Reviewer B3 bucket — Procedural paradigm |
 
 Paths are relative to this skill's directory (`sc4sap/skills/create-program/`).
 
@@ -60,7 +65,7 @@ Steps:
 Branching consequences:
 - **ECC**: no RAP, no ACDOCA, no Business Partner; inline decl only if 740+; CDS/AMDP typically unavailable (<750)
 - **S/4HANA On-Prem**: prefer CDS + AMDP, RAP where applicable, Business Partner APIs, ACDOCA for finance
-- **S/4HANA Cloud Public**: **REJECT classical Dynpro / custom screen + GUI Status requests**. The standard Full-ALV path (CL_GUI_ALV_GRID + Docking Container) is not executable on Cloud Public — must redirect to RAP + Fiori Elements, `if_oo_adt_classrun`, or SALV-only output. Fail-fast with an explanation. **Full prohibited-statement list and Cloud-native API replacements**: see `cloud-abap-constraints.md` in this skill directory.
+- **S/4HANA Cloud Public**: **REJECT classical Dynpro / custom screen + GUI Status requests**. The standard Full-ALV path (CL_GUI_ALV_GRID + Docking Container) is not executable on Cloud Public — must redirect to RAP + Fiori Elements, `if_oo_adt_classrun`, or SALV-only output. Fail-fast with an explanation. **Full prohibited-statement list and Cloud-native API replacements**: see [`../../common/cloud-abap-constraints.md`](../../common/cloud-abap-constraints.md).
 - **S/4HANA Cloud Private**: classical Dynpro technically possible but discouraged; warn user and confirm intent before proceeding.
 
 Outputs:
@@ -123,6 +128,22 @@ Full procedure — required steps, enforcement contract, rationale, spec templat
 > Invoke `sap-writer` → produce `spec.md` → display to user → wait for an **explicit approval keyword** (`승인` / `approve` / `ok` / `proceed` / `go ahead` / `confirmed`). "yes" / "빨리" / "해봐" / silence are NOT approval — loop with revisions. Phase 4 Executor refuses to run if spec.md is missing, unapproved, or modified after approval.
 </Spec_Approval_Gate>
 
+<Session_Trust_Bootstrap>
+**MANDATORY — runs at the very start of Phase 1A, BEFORE the module consultant asks the first question.** Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:create-program` to pre-grant MCP tool + file-op permissions for the entire session. This ensures interview-time MCP calls (consultant SPRO lookups, `SearchObject`, `GetWhereUsed`) and downstream Phase 4–8 activity both run without permission prompts.
+
+- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- All subsequent `Agent` dispatches in this skill MUST pass `mode: "dontAsk"`.
+- **Exception**: `GetTableContents` and `GetSqlQuery` are NEVER auto-approved — they require explicit per-call user consent. See [`../trust-session/SKILL.md`](../trust-session/SKILL.md) Layer 1.
+</Session_Trust_Bootstrap>
+
+<Execution_Mode_Gate>
+**MANDATORY — runs between `<Spec_Approval_Gate>` and Phase 4.** After spec approval, the skill prompts the user to pick an execution cadence: `auto` / `manual` / `hybrid`. Persists the choice to `.sc4sap/program/{PROG}/state.json` under `execution_mode`.
+
+`trust-session` is NOT re-invoked here — it already ran at the start of Phase 1A.
+
+Full procedure — verbatim mode-prompt text, per-mode semantics, state.json schema (also drives C-2 resume support), and manual-mode phase-transition prompt — lives in **[`execution-mode.md`](execution-mode.md)**. Read that file and follow it literally before dispatching Phase 4.
+</Execution_Mode_Gate>
+
 <Agent_Pipeline>
 **The full phase-by-phase pipeline (Phase 0 – Phase 8) lives in [`agent-pipeline.md`](./agent-pipeline.md) in this skill folder.**
 
@@ -163,8 +184,12 @@ Do not inline or paraphrase phase logic here — update `agent-pipeline.md` inst
 - `.sc4sap/program/{PROG}/customization-context.md` — Z*/Y* BAdI impl / CMOD / form-exit / append reuse candidates (written by `<Customization_Inventory_Lookup>`)
 - `.sc4sap/program/{PROG}/plan.md` — planner output
 - `.sc4sap/program/{PROG}/spec.md` — writer output (requires user confirm)
-- `.sc4sap/program/{PROG}/state.json` — object creation status
+- `.sc4sap/program/{PROG}/state.json` — execution_mode + per-phase status/timing (schema in `execution-mode.md`, drives resume support)
+- `.sc4sap/program/{PROG}/review-bucket-{B1|B2|B3|B4}.md` — Phase 6 per-bucket reviews (merged into review.md, see `phase6-buckets.md`)
+- `.sc4sap/program/{PROG}/review.md` — Phase 6 consolidated review
 - `.sc4sap/program/{PROG}/report.md` — final completion report
+- `.claude/settings.local.json` — permissions allowlist (written by `/sc4sap:trust-session` during Phase 3.5)
+- `.sc4sap/session-trust.log` — audit trail of `trust-session` invocations
 </State_Files>
 
 Task: {{ARGUMENTS}}

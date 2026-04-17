@@ -18,7 +18,7 @@ SuperClaude for SAP transforms Claude Code into a full-stack SAP development ass
 | Capability | What it does | Skill |
 |------------|--------------|-------|
 | **🔌 Auto MCP Install** | `abap-mcp-adt-powerup` is auto-installed, configured, and connection-tested during setup. No manual MCP wiring, no `claude_desktop_config.json` editing — credentials go to `.sc4sap/sap.env` and the hook/blocklist layers register themselves. | `/sc4sap:setup` |
-| **🏗️ Formatted Auto Program Maker** | Builds ABAP programs end-to-end following sc4sap conventions: Main + conditional Includes (t/s/c/a/o/i/e/f/_tst), OOP or Procedural split (`LCL_DATA` / `LCL_ALV` / `LCL_EVENT`), full ALV (CL_GUI_ALV_GRID + Docking) or SALV, mandatory Text Elements & CONSTANTS, Dynpro + GUI Status, ABAP Unit tests — all platform-aware (ECC / S4 On-Prem / Cloud). | `/sc4sap:create-program`, `/sc4sap:autopilot` |
+| **🏗️ Formatted Auto Program Maker** | Builds ABAP programs end-to-end following sc4sap conventions: Main + conditional Includes (t/s/c/a/o/i/e/f/_tst), OOP or Procedural split (`LCL_DATA` / `LCL_ALV` / `LCL_EVENT`), full ALV (CL_GUI_ALV_GRID + Docking) or SALV, mandatory Text Elements & CONSTANTS, Dynpro + GUI Status, ABAP Unit tests — all platform-aware (ECC / S4 On-Prem / Cloud). Phase 1 invokes `trust-session` to suppress tool prompts; Phase 3.5 asks the user for auto / manual / hybrid execution cadence; Phase 4 runs include creation in parallel; Phase 6 runs the convention review in 4 Sonnet buckets with Opus escalation on MAJOR findings. | `/sc4sap:create-program` |
 | **🔍 Program Analyze** | Reverse-direction intelligence: read any ABAP object via MCP, run Clean ABAP / performance / security review, or reverse-engineer a program into a Functional / Technical Spec (Markdown or Excel) with Socratic scope narrowing. | `/sc4sap:analyze-code`, `/sc4sap:program-to-spec` |
 | **🩺 Maintenance Diagnosis** | Operational triage loop: inspect ST22 dumps, SM02 system messages, /IWFND/ERROR_LOG Gateway errors, SAT-style profiler traces, logs, and where-used graphs directly from Claude; narrow hypotheses, surface SAP Note candidates, and diagnose plugin / MCP / SAP connectivity health. | `/sc4sap:analyze-symptom`, `/sc4sap:sap-doctor` |
 | **♻️ CBO Reuse (Brownfield Accelerator)** | Inventory a Customer Business Object (Z) package once — catalogue frequently-used Z tables / FMs / data elements / classes / structures / table types and persist to `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json`. `create-program` / `program-to-spec` load the inventory at plan time and **prefer reusing existing CBO assets over creating duplicates** — essential for brownfield systems with hundreds of legacy Z-objects. | `/sc4sap:analyze-cbo-obj` → `/sc4sap:create-program` |
@@ -152,9 +152,8 @@ The wizard asks **one question at a time** — never dumps the whole questionnai
 | `sc4sap:analyze-code` | ABAP code analysis & improvement (Clean ABAP / performance / security) |
 | `sc4sap:analyze-cbo-obj` | **Customer Business Object (CBO) inventory** — scan a Z-package, catalogue frequently-used Z tables / FMs / data elements / classes / structures / table types; persists to `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json` so `create-program` / `program-to-spec` prefer reusing existing CBO assets over creating new ones |
 | `sc4sap:analyze-symptom` | Step-by-step SAP operational error/symptom analysis (dumps, logs, SAP Note candidates) |
-| `sc4sap:autopilot` | Full autonomous execution pipeline — idea → activated, tested ABAP |
-| `sc4sap:ralph` | Persistent self-correcting loop until syntax clean + activation + unit tests pass |
-| `sc4sap:ralplan` | Consensus-based planning gate (analyst / architect / critic convergence) |
+| `sc4sap:create-program` | Full ABAP program pipeline (Phase 0–8) with execution-mode gate (auto/manual/hybrid), parallel Phase 4 include creation, 4-bucket Phase 6 review with Opus escalation, and session trust bootstrap at Phase 1 |
+| `sc4sap:trust-session` | INTERNAL-ONLY — session-wide MCP permission bootstrap; auto-invoked by parent skills, direct invocation rejected. `GetTableContents` / `GetSqlQuery` are deliberately left prompt-gated for data-extraction safety |
 | `sc4sap:deep-interview` | Socratic requirements gathering before implementation |
 | `sc4sap:team` | Coordinated parallel agent execution (native Claude Code teams) |
 | `sc4sap:release` | CTS transport release workflow (validate, release, import monitor) |
@@ -187,7 +186,7 @@ Cross-skill authoring rules live in `common/` so every skill and agent follows t
 
 | File | Covers |
 |------|--------|
-| `common/clean-code.md` | **Consolidated Clean ABAP standards** — naming, control flow, Open SQL, modularization, testing, performance, security, version awareness + self-check checklist |
+| `common/clean-code.md` + `clean-code-oop.md` + `clean-code-procedural.md` | **Clean ABAP standards, split by paradigm** — shared baseline (naming, control flow, Open SQL, tables, strings, booleans, performance, security, version awareness) plus one paradigm-specific file chosen from the Phase 1B Paradigm dimension. Loading both paradigm files at once is a MAJOR finding in Phase 6 review. |
 | `common/include-structure.md` | Main program + conditional include set (t/s/c/a/o/i/e/f/_tst) |
 | `common/oop-pattern.md` | Two-class OOP split (`LCL_DATA` + `LCL_ALV` + optional `LCL_EVENT`) |
 | `common/alv-rules.md` | Full ALV (CL_GUI_ALV_GRID + Docking Container) vs SALV + SALV-factory fieldcatalog pattern |
@@ -252,7 +251,7 @@ Identify the active country from `.sc4sap/config.json` → `country` (or `sap.en
 
 - **ECC** — no RAP/ACDOCA/BP; syntax gated by release (no inline decl <740, no CDS <750, etc.)
 - **S/4HANA On-Premise** — classical Dynpro technically possible but warned; extensibility-first, MATDOC ACDOCA for finance
-- **S/4HANA Cloud (Public)** — **classical Dynpro forbidden**; redirects to RAP + Fiori Elements, `if_oo_adt_classrun`, or SALV-only output. Full prohibited-statement list + Cloud-native API replacements in `skills/create-program/cloud-abap-constraints.md`
+- **S/4HANA Cloud (Public)** — **classical Dynpro forbidden**; redirects to RAP + Fiori Elements, `if_oo_adt_classrun`, or SALV-only output. Full prohibited-statement list + Cloud-native API replacements in `common/cloud-abap-constraints.md`
 - **S/4HANA Cloud (Private)** — refer CDS + AMDP + RAP, Business Partner APIs
 
 ### SPRO Configuration Reference
@@ -530,48 +529,34 @@ Reverse-engineer an existing ABAP program back into a Functional / Technical Spe
 
 ---
 
-### `/sc4sap:autopilot`
+### `/sc4sap:create-program`
 
-Full autonomous pipeline from vague idea to activated, tested ABAP objects — runs `deep-interview` → `ralplan` → agent pipeline → `ralph` loop until clean.
+Full ABAP program pipeline from spec to activated, tested objects. Handles the Main + conditional Includes convention, OOP or Procedural split, and full ALV or SALV output. Self-paces through a consultant-led business interview, a technical interview, planning, spec writing + user approval, and then parallelized implementation + review.
 
 ```
-/sc4sap:autopilot
-→ "Build a custom Vendor Payment approval workflow"
+/sc4sap:create-program
+→ "Build an FI clearing report for vendor payment documents (F-44/F-53 flow)"
 ```
 
-**Flow** — deep-interview crystallizes scope → ralplan consensus plan → sap-planner WRICEF breakdown → sap-executor creates objects → sap-qa-tester runs unit tests → sap-code-reviewer gates → ralph loop retries until green.
+**Flow** —
+- **Phase 0** SAP version preflight (ECC / S4 On-Prem / Cloud variants).
+- **Phase 1** module consultant business interview (Phase 1A) → analyst + architect technical interview (Phase 1B). At the very start of Phase 1A, `/sc4sap:trust-session` is auto-invoked to suppress per-tool permission prompts for the entire session (except `GetTableContents` / `GetSqlQuery`, which stay prompt-gated for data-extraction safety).
+- **Phase 2** planning with CBO + customization reuse gates and module consultant consultation.
+- **Phase 3** spec writing, followed by the explicit approval gate (`승인` / `approve`).
+- **Phase 3.5** execution-mode gate — user picks `auto` (unattended Phase 4→8), `manual` (confirm before every phase), or `hybrid` (auto Phase 4, prompt Phase 5–8).
+- **Phase 4** parallel include generation → single `GetAbapSemanticAnalysis` on the main program → batch activation via `GetInactiveObjects` (≈ 40–60 % faster than per-include loops).
+- **Phase 5** ABAP Unit (OOP-only, skipped when testing scope is `none`).
+- **Phase 6** mandatory 4-bucket convention review run in parallel on Sonnet (ALV + UI / Logic / Structure + Naming / Platform), escalating to Opus only when MAJOR findings appear.
+- **Phase 7** debug escalation on activation failures or runtime dumps.
+- **Phase 8** completion report gated on Phase 6 PASS, with timing table from `state.json` (drives C-2 resume support).
 
-> _Screenshot placeholder — autopilot progress stream_
+> _Screenshot placeholder — execution-mode gate_
 
 ---
 
-### `/sc4sap:ralph`
+### `/sc4sap:trust-session` (internal-only)
 
-Persistent self-correcting loop: runs until syntax is clean, activation succeeds, and unit tests pass. Drop-in for any "make it work" task.
-
-```
-/sc4sap:ralph
-→ "Fix all activation errors in ZMM_GR_POSTING and its includes"
-```
-
-**Flow** — iterate: `GetAbapSemanticAnalysis` → identify error → edit via `UpdateProgram` / `UpdateClass` / `UpdateInclude` → activate → re-run unit test → stop when all three pass. Cancels on manual intervention or max iterations.
-
-> _Screenshot placeholder — ralph iteration log_
-
----
-
-### `/sc4sap:ralplan`
-
-Consensus planning gate — multiple agent perspectives (analyst / architect / critic) converge on one plan before coding starts. Prevents autopilot from building the wrong thing.
-
-```
-/sc4sap:ralplan
-→ "Plan the rewrite of legacy ZSD_ORDER_RELEASE to RAP-based workflow"
-```
-
-**Flow** — sap-analyst extracts requirements → sap-architect proposes technical design → sap-critic challenges design → convergence iterations → approved plan handed to autopilot / team.
-
-> _Screenshot placeholder — ralplan convergence diff_
+Internal permission bootstrap. Auto-invoked as Step 0 by `create-program`, `create-object`, `analyze-cbo-obj`, `analyze-code`, `analyze-symptom`, `team`, and `setup`. Writes explicit allowlist entries to `.claude/settings.local.json` for MCP tool namespaces (SAP plugin, legacy ADT, Notion, IDE) and file-op tools (`Read`, `Write`, `Edit`, `Glob`, `Grep`, `Agent`), deliberately **excluding** `GetTableContents` and `GetSqlQuery` so row-level data extraction keeps surfacing per-call prompts. Direct invocation (`/sc4sap:trust-session`) is refused with a redirect message pointing to the appropriate parent skill.
 
 ---
 
@@ -599,7 +584,7 @@ Coordinated parallel agent execution using native Claude Code teams (in-process)
 → "Split this WRICEF list into 4 workers and build in parallel"
 ```
 
-**Flow** — shared task list → N workers pick tasks → each runs create-object / program / ralph → merge-back via transport.
+**Flow** — shared task list → N workers pick tasks → each runs `create-object` / `create-program` → merge-back via transport.
 
 > _Screenshot placeholder — tmux pane view / team dashboard_
 
@@ -661,7 +646,7 @@ Common uses: rotate `SAP_PASSWORD`, switch `SAP_CLIENT`, change `MCP_BLOCKLIST_P
 
 ## Acknowledgments
 
-This project was inspired by [**oh-my-claudecode**](https://github.com/huryechan/oh-my-claudecode) by **허예찬 (Hur Ye-chan)**. The multi-agent orchestration patterns, Socratic deep-interview gating, ralph/autopilot pipelines, and the overall plugin philosophy here all trace back to that work. Huge thanks — sc4sap would not exist in this form without it.
+This project was inspired by [**oh-my-claudecode**](https://github.com/huryechan/oh-my-claudecode) by **허예찬 (Hur Ye-chan)**. The multi-agent orchestration patterns, Socratic deep-interview gating, persistent loop concepts, and the overall plugin philosophy here all trace back to that work. Huge thanks — sc4sap would not exist in this form without it.
 
 The bundled MCP server (`abap-mcp-adt-powerup`) builds on [**mcp-abap-adt**](https://github.com/fr0ster/mcp-abap-adt) by **fr0ster**. That project provided the original ADT-over-MCP foundation — request shaping, endpoint coverage, object I/O — that every sc4sap tool call relies on. It was an enormous help; genuine thanks to fr0ster for the pioneering work.
 
