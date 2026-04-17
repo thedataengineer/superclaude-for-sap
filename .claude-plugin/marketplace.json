@@ -9,7 +9,7 @@
     {
       "name": "sc4sap",
       "description": "Claude Code plugin for SAP ABAP development on On-Premise S/4HANA — 25 specialized agents, workflow skills (create-program with execution-mode gate and parallel Phase 4/6, create-object, analyze-*, team, release, setup, internal trust-session), paradigm-split Clean ABAP, and SPRO config reference for 14 modules.",
-      "version": "0.2.4",
+      "version": "0.2.5",
       "author": {
         "name": "paek seunghyun"
       },
@@ -60,5 +60,5 @@
       ]
     }
   ],
-  "version": "0.2.1"
+  "version": "0.2.2"
 }

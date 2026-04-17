@@ -56,16 +56,24 @@ After printing the message, STOP. Do NOT modify `.claude/settings.local.json`. D
 <What_This_Skill_Does>
 Two-layer permission grant:
 
-**Layer 1 — `.claude/settings.local.json` allowlist** (project-local, persists):
-Append entries under `permissions.allow`. For the two ABAP MCP namespaces, enumerate individual tool names (NOT a wildcard) so the two data-extraction tools are naturally excluded from auto-approval:
+**Layer 1 — `.claude/settings.local.json` allowlist** (project-local, persists). **Scope policy: SAP MCP handlers auto-approved; non-SAP operations kept prompt-gated**. Specifically:
 
-- **SC4SAP plugin namespace** (`mcp__plugin_sc4sap_sap__`) — enumerate all Get*/Read*/Create*/Update*/Delete*/List*/Search* tools and `Runtime*` tools, **EXCEPT** `GetTableContents` and `GetSqlQuery`. Use the authoritative tool list in `data/sc4sap-mcp-tools.md` as the source; skip the 2 excluded names.
-- **Legacy ABAP ADT namespace** (`mcp__mcp-abap-adt__`) — same rule: enumerate all tools EXCEPT `GetTableContents` and `GetSqlQuery`.
-- **Non-ABAP namespaces** (safe to use wildcards):
-  - `mcp__claude_ai_Notion__*` — Notion integration
-  - `mcp__ide__*` — IDE diagnostics and execution
-  - `Agent(*)` — sub-agent dispatch
-  - `Read(*)`, `Write(*)`, `Edit(*)`, `Glob(*)`, `Grep(*)` — file operations
+- **SAP MCP — allowed (enumerated, NOT wildcarded)**:
+  - **SC4SAP plugin namespace** (`mcp__plugin_sc4sap_sap__`) — enumerate all `Get*` / `Read*` / `Create*` / `Update*` / `Delete*` / `List*` / `Search*` / `Runtime*` / `RunUnitTest` / `CreateTransport` / `ValidateServiceBinding` tools, **EXCEPT** `GetTableContents` and `GetSqlQuery`.
+  - **Legacy ABAP ADT namespace** (`mcp__mcp-abap-adt__`) — same enumeration rule, same two exclusions.
+  - Wildcards are forbidden in these two namespaces because they would silently include the two excluded tools.
+- **Sub-agent dispatch — allowed**:
+  - `Agent(*)` — required so Phase 6 4-bucket parallel review and any other sub-agent fan-out run without prompts. Each sub-agent's tool calls still go through the same allowlist individually.
+- **Internal state file I/O — allowed (path-scoped)**:
+  - `Write(.sc4sap/**)`, `Edit(.sc4sap/**)` — runtime state files only (`state.json`, `spec.md`, `plan.md`, `review.md`, `report.md`, `cbo/**`, `session-trust.log`, etc.). Writes outside `.sc4sap/**` prompt.
+  - `Read(.sc4sap/**)`, `Read(sc4sap/**)` — read project state and rule files (common/, skills/).
+  - `Glob(.sc4sap/**)`, `Glob(sc4sap/**)`, `Grep(.sc4sap/**)`, `Grep(sc4sap/**)` — search within project and state folders.
+- **Everything else — NOT added to allow** (so normal prompt behavior is preserved):
+  - Non-SAP MCP namespaces (`mcp__claude_ai_Notion__*`, `mcp__ide__*`, and any other MCP server) — prompt per call.
+  - `Bash(...)` — prompt per command; the pre-existing specific Bash entries in the user's settings remain but trust-session does not add new Bash wildcards.
+  - `Write` / `Edit` outside `.sc4sap/**` — prompt (prevents accidental edits to `sc4sap/` source files, `.claude/`, or anywhere else).
+  - `WebFetch` / `WebSearch` — prompt.
+  - Any tool not listed above — prompt.
 
 Idempotent: if an entry already exists, do not duplicate.
 
@@ -88,7 +96,11 @@ Every subsequent `Agent` call made by the calling skill MUST pass `mode: "dontAs
 <Execution_Steps>
 0. **Standalone gate** — if `<Standalone_Invocation_Refusal>` conditions match, refuse and STOP. Do not proceed to step 1.
 1. Read `.claude/settings.local.json` (create `{"permissions":{"allow":[]}}` skeleton if missing).
-2. **Strip SAP-namespace wildcards if any** — if `permissions.allow` contains `mcp__plugin_sc4sap_sap__*` or `mcp__mcp-abap-adt__*`, remove those specific entries. (They would otherwise silently auto-approve the excluded row-data tools.)
+2. **Strip forbidden wildcards if any** — remove the following entries from `permissions.allow` when found (they violate the "SAP handlers only + scoped file I/O" policy):
+   - `mcp__plugin_sc4sap_sap__*` — would auto-approve the excluded row-data tools
+   - `mcp__mcp-abap-adt__*` — same reason
+   - `mcp__claude_ai_Notion__*`, `mcp__ide__*` — non-SAP MCP; must prompt
+   - `Read(*)`, `Write(*)`, `Edit(*)`, `Glob(*)`, `Grep(*)` — too broad; replaced by path-scoped entries in Step 4.
 3. **Enumerate SAP tools explicitly** — for the two ABAP MCP namespaces, append individual tool entries to `permissions.allow`. Pull the canonical tool list from `data/sc4sap-mcp-tools.md`; SKIP `GetTableContents` and `GetSqlQuery` in both namespaces. Required tool categories:
    - `Get*` (object inspection) — GetClass, GetProgram, GetFunctionModule, GetInterface, GetInclude, GetTable, GetStructure, GetDataElement, GetDomain, GetView, GetPackage, GetPackageContents, GetPackageTree, GetTransport, GetSession, GetAbapSemanticAnalysis, GetAbapAST, GetObjectInfo, GetObjectStructure, GetTypeInfo, GetWhereUsed, GetEnhancements, GetEnhancementImpl, GetEnhancementSpot, GetBehaviorDefinition, GetBehaviorImplementation, GetServiceDefinition, GetServiceBinding, GetMetadataExtension, GetScreen, GetGuiStatus, GetTextElement, GetInactiveObjects, GetUnitTest, GetUnitTestResult, GetUnitTestStatus, GetCdsUnitTest, GetCdsUnitTestResult, GetCdsUnitTestStatus, GetLocalDefinitions, GetLocalTypes, GetLocalMacros, GetLocalTestClass, GetProgFullCode, GetAdtTypes, GetIncludesList, GetScreensList, GetGuiStatusList
    - `Read*` (read-optimized views) — all `Read*` tools
@@ -96,20 +108,22 @@ Every subsequent `Agent` call made by the calling skill MUST pass `mode: "dontAs
    - `List*` / `Search*` — ListTransports, SearchObject, DescribeByList
    - `Runtime*` — all runtime/profiler tools
    - `RunUnitTest`, `CreateTransport`, `ValidateServiceBinding`
-4. **Wildcard-safe non-ABAP namespaces** — append to `permissions.allow` only if not already present:
+4. **Sub-agent + scoped file ops** — append the following entries to `permissions.allow` only if not already present:
    ```
-   mcp__claude_ai_Notion__*
-   mcp__ide__*
    Agent(*)
-   Read(*)
-   Write(*)
-   Edit(*)
-   Glob(*)
-   Grep(*)
+   Read(.sc4sap/**)
+   Read(sc4sap/**)
+   Write(.sc4sap/**)
+   Edit(.sc4sap/**)
+   Glob(.sc4sap/**)
+   Glob(sc4sap/**)
+   Grep(.sc4sap/**)
+   Grep(sc4sap/**)
    ```
+   Do NOT add `Read(*)`, `Write(*)`, `Edit(*)`, `Glob(*)`, `Grep(*)`, `mcp__claude_ai_Notion__*`, `mcp__ide__*`, or any other non-SAP wildcard — those remain prompt-gated per policy. If a previous run added them, remove them as part of Step 2.
 5. Preserve all existing entries in the file verbatim (env, hooks, other permissions).
 6. Write the updated JSON back with 2-space indent.
-7. Print one-line confirmation: `"✅ Session trust granted by {parent_skill} — MCP + file ops auto-approved. GetTableContents / GetSqlQuery intentionally left prompt-gated."`
+7. Print one-line confirmation: `"✅ Session trust granted by {parent_skill} — SAP MCP handlers + .sc4sap/ state I/O + Agent dispatch auto-approved. Non-SAP ops (Bash, WebFetch, Write/Edit outside .sc4sap/, GetTableContents, GetSqlQuery) remain prompt-gated."`
 8. Record activation in `.sc4sap/session-trust.log` (append line: `{ISO-timestamp} granted-by={parent_skill}`) for audit.
 </Execution_Steps>
 
