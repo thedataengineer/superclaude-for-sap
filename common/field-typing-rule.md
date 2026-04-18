@@ -13,6 +13,36 @@
 | **3 — New CBO DE** | Freshly-created Z data element (triggers a `CreateDataElement` / ECC DTEL helper) | Semantics are genuinely new AND the field will appear in ≥ 2 places OR carries domain-specific meaning that deserves a label + F1 help. Must follow `naming-conventions.md` (`ZFIE00010`, …). |
 | **4 — Data Type + Length** | `CHAR 10`, `NUMC 4`, `DEC 15 2`, … directly on the field | Last resort. Only for purely technical / internal fields with NO business meaning (counters, flags, temporary buffers, checksums). Never for business keys (vendor, material, plant, doc no, date, quantity, UoM, currency, user, …). |
 
+## HARD RULE — Semantic Categories That REQUIRE a Data Element
+
+**Priority 4 (raw data type + length) is FORBIDDEN when the field falls into any of these five semantic categories — MUST use priority 1, 2, or 3 (create a new DE if nothing fits):**
+
+| Category | Intent | Typical standard DE candidates | If no match → create |
+|---|---|---|---|
+| **Quantity / 수량** | Any numeric count of business things (pcs, kg, liters, units, …) | `MENGE_D`, `LABST`, `MEINS` (UoM companion), `BRGEW`/`NTGEW` (weight), `VOLUM` | `ZMME{NN}` domain `QUAN n d` + sibling UoM field referencing `MEINS` |
+| **Amount / 금액** | Any monetary value | `DMBTR` (local crcy), `WRBTR` (doc crcy), `NETWR`, `BRTWR`, `WAERS` (currency companion) | `ZMME{NN}` domain `CURR 15 2` + sibling currency field referencing `WAERS` |
+| **Date / 날짜** | Any calendar date | `BUDAT`, `BLDAT`, `CPUDT`, `ERDAT`, `AEDAT`, `LAEDA`, `VALDT` | `ZMME{NN}` domain `DATS 8` |
+| **Number / 번호** | Document numbers, IDs, sequences, reference numbers | `BELNR_D`, `VBELN`, `EBELN`, `EBELP`, `MBLNR`, `AUFNR`, `POSNR`, `BANFN`, `BNFPO`, `MATNR`, `LIFNR`, `KUNNR`, `AENNR`, `STLNR` | `ZMME{NN}` domain `CHAR n` or `NUMC n` |
+| **Status / 상태값** | Enum-like status / flag with a fixed set of values | `SYMSGTY`, domain-backed status DEs | `ZMME{NN}` + **new `ZMMD{NN}` domain with fixed values** (e.g., `S` / `E` / `P` for Success/Error/Pending). Do NOT emit `CHAR 1` as raw primitive — the fixed-value list is what makes a status semantically meaningful. |
+
+### Why this rule exists
+
+- **Quantity / Amount** without a DE loses the decimal handling, unit/currency linkage (`REFERENCE` fields in DDIC), and conversion exits — data silently rounds or misaligns at report time.
+- **Date** without a DE loses locale-aware display and validation helpers.
+- **Number** without a DE loses foreign-key propagation, conversion exits (alpha/numc), and search helps.
+- **Status** without a DE-backed domain loses the fixed-value whitelist — any 1-char junk becomes accepted, and the UI shows no F4 dropdown.
+
+### Detection heuristics (field-name → category)
+
+Agents applying this rule classify a field by name + length + business context:
+- Ends with `MENGE` / `QTY` / `_QTY` / `_MNG` or decimal places > 0 on a number type → **Quantity**
+- Ends with `BETR` / `AMT` / `_AMT` / `WRBTR` / `NETWR` or type `CURR` → **Amount**
+- Ends with `DAT` / `_DATE` / `_DT` or type `DATS` → **Date**
+- Ends with `NR` / `NO` / `_NO` / `_ID` / `NUMBER` / `BELNR` / `VBELN` / `EBELN` / `POSNR` or type `NUMC` → **Number**
+- 1-char `CHAR` used as flag / state / indicator, or name contains `STATUS` / `FLAG` / `TYPE` / `KZ` / `_ST` → **Status** (MUST have a fixed-value domain)
+
+If any heuristic matches, priority-4 primitive is automatically rejected at plan review. The planner/executor must route through priority 1→2→3 and, on priority 3, create the DE (and domain where needed) as a sibling artifact of the table.
+
 ## Lookup Protocol (before picking a priority)
 
 Each field goes through this order on every run — no shortcut, no cached guess.
