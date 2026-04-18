@@ -28,7 +28,6 @@ async function main() {
 
     const directory = data.cwd || data.directory || process.cwd();
     const sessionId = data.session_id || data.sessionId || '';
-    const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
     const messages = [];
 
     // Inject SAP development context reminder
@@ -45,7 +44,7 @@ async function main() {
 `);
 
     // Check for active autopilot state
-    const stateDir = join(directory, '.omc', 'state');
+    const stateDir = join(directory, '.sc4sap', 'state');
     const autopilotState = readJsonFile(join(stateDir, 'autopilot-state.json'));
     if (autopilotState?.active) {
       messages.push(`<session-restore>
@@ -82,27 +81,8 @@ Treat this as prior-session context only. Prioritize the user's newest request.
 `);
     }
 
-    // Check MCP ABAP ADT server connectivity hint
-    if (pluginRoot) {
-      const mcpConfigPath = join(pluginRoot, '.omc', 'state', 'mcp-abap-status.json');
-      const mcpStatus = readJsonFile(mcpConfigPath);
-      if (mcpStatus?.lastError) {
-        messages.push(`<session-restore>
-
-[MCP ABAP ADT WARNING]
-
-Last known MCP server issue: ${mcpStatus.lastError}
-If SAP system operations fail, verify MCP server is running with /sc4sap:mcp-setup.
-
-</session-restore>
-
----
-`);
-      }
-    }
-
     // Check for notepad Priority Context
-    const notepadPath = join(directory, '.omc', 'notepad.md');
+    const notepadPath = join(directory, '.sc4sap', 'notepad.md');
     if (existsSync(notepadPath)) {
       try {
         const notepadContent = readFileSync(notepadPath, 'utf-8');

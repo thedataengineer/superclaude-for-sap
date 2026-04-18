@@ -7,7 +7,7 @@
  *
  * Cleanup:
  * - Deactivate stale mode states
- * - Log session summary to .omc/logs/
+ * - Log session summary to .sc4sap/logs/
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
@@ -33,7 +33,7 @@ async function main() {
     const sessionId = data.session_id || data.sessionId || '';
 
     // Deactivate any active mode states
-    const stateDir = join(directory, '.omc', 'state');
+    const stateDir = join(directory, '.sc4sap', 'state');
     if (existsSync(stateDir)) {
       const modeFiles = ['ralph-state.json', 'autopilot-state.json'];
       for (const file of modeFiles) {
@@ -51,7 +51,7 @@ async function main() {
     }
 
     // Log session summary
-    const logsDir = join(directory, '.omc', 'logs');
+    const logsDir = join(directory, '.sc4sap', 'logs');
     if (!existsSync(logsDir)) {
       try { mkdirSync(logsDir, { recursive: true }); } catch {}
     }

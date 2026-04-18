@@ -5,7 +5,7 @@
  * Auto-detects project environment and injects SAP-specific context.
  * Adapted from OMC project-memory-session.mjs.
  *
- * Reads project memory from .omc/project-memory.json if available.
+ * Reads project memory from .sc4sap/project-memory.json if available.
  */
 
 import { existsSync, readFileSync } from 'fs';
@@ -55,7 +55,7 @@ async function main() {
     const directory = data.cwd || data.directory || process.cwd();
 
     // Load project memory
-    const memoryPath = join(directory, '.omc', 'project-memory.json');
+    const memoryPath = join(directory, '.sc4sap', 'project-memory.json');
     const memory = readJsonFile(memoryPath);
 
     if (!memory) {

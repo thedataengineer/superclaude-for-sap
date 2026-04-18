@@ -52,7 +52,7 @@ Do not proceed to spec generation until score is below 5.
 
 <Output>
 When ambiguity threshold is met:
-1. Write validated spec to `.omc/specs/deep-interview-sap-{timestamp}.md`
+1. Write validated spec to `.sc4sap/deep-interviews/sap-{timestamp}.md`
 2. Spec includes: object list, package, transport strategy, technical pattern, integration points, test requirements
 3. Offer: "Spec ready. Proceed with `/sc4sap:create-program` (full program) or `/sc4sap:create-object` (single object)?"
 </Output>

@@ -64,7 +64,7 @@ async function main() {
     }
 
     // Load existing project memory
-    const memoryPath = join(directory, '.omc', 'project-memory.json');
+    const memoryPath = join(directory, '.sc4sap', 'project-memory.json');
     const memory = readJsonFile(memoryPath) || {
       techStack: { languages: ['ABAP'], frameworks: ['SAP'] },
       sapModules: [],

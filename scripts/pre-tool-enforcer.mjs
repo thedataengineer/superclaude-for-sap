@@ -27,7 +27,7 @@ function getTodoStatus(directory) {
   let inProgress = 0;
 
   const localPaths = [
-    join(directory, '.omc', 'todos.json'),
+    join(directory, '.sc4sap', 'todos.json'),
     join(directory, '.claude', 'todos.json')
   ];
 

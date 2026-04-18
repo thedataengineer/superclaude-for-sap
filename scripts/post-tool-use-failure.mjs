@@ -22,11 +22,11 @@ function isPathContained(targetPath, basePath) {
   return normalizedTarget.startsWith(normalizedBase + sep) || normalizedTarget === normalizedBase;
 }
 
-function initOmcDir(directory) {
+function initStateDir(directory) {
   const cwd = process.cwd();
   if (!isPathContained(directory, cwd)) directory = cwd;
 
-  const stateDir = join(directory, '.omc', 'state');
+  const stateDir = join(directory, '.sc4sap', 'state');
   if (!existsSync(stateDir)) {
     try { mkdirSync(stateDir, { recursive: true }); } catch {}
   }
@@ -82,7 +82,7 @@ async function main() {
       return;
     }
 
-    const stateDir = initOmcDir(directory);
+    const stateDir = initStateDir(directory);
     const statePath = join(stateDir, 'last-tool-error.json');
     const existingState = readErrorState(statePath);
     const retryCount = calculateRetryCount(existingState, toolName, Date.now());
