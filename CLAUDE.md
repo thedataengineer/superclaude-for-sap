@@ -47,6 +47,7 @@ Enforcement: L1 agent instructions → L2 this file → L3 `PreToolUse` hook (`s
 - `/sc4sap:create-object` — Single ABAP object creation (auto-invokes `trust-session`)
 - `/sc4sap:program-to-spec` — Reverse-engineer a program into a spec artifact
 - `/sc4sap:analyze-code` — Static code review (auto-invokes `trust-session`)
+- `/sc4sap:compare-programs` — Business-angle side-by-side comparison of 2–5 ABAP programs sharing the same scenario but differing by module / country / persona (reader = consultant) → `.sc4sap/comparisons/*.md` (auto-invokes `trust-session`)
 - `/sc4sap:analyze-symptom` — Dump/error root-cause analysis (auto-invokes `trust-session`)
 - `/sc4sap:analyze-cbo-obj` — Inventory a CBO package → save frequently-used Z objects to `.sc4sap/cbo/<MODULE>/<PACKAGE>/` for reuse by `create-program` / `program-to-spec` (auto-invokes `trust-session`)
 - `/sc4sap:team` — Parallel multi-agent orchestration

@@ -27,6 +27,7 @@ SuperClaude for SAP は Claude Code をフルスタック SAP 開発アシスタ
 | 🏗️ **自動プログラムメーカー** | ABAP プログラムのエンドツーエンド生成:Main + 条件付き Include、OOP/Procedural、フル ALV + Docking、Dynpro + GUI ステータス、必須 Text Elements、ABAP Unit — プラットフォーム対応(ECC / S4 On-Prem / Cloud)。 |
 | 🔍 **プログラム解析** | MCP で ABAP オブジェクトを読み取り → Clean ABAP / パフォーマンス / セキュリティレビュー、または機能/技術仕様へのリバースエンジニアリング(Markdown/Excel)。 |
 | 🧪 **コード解析** | `/sc4sap:analyze-code` — `sap-code-reviewer` 専用の静的レビュー:Clean ABAP / パフォーマンス / セキュリティ / SAP 標準準拠。重大度順の指摘と具体的な修正提案。 |
+| 🔀 **プログラム比較** | `/sc4sap:compare-programs` — 同一の業務シナリオを共有しつつモジュール(MM/CO)・国(KR/EU)・ペルソナ(コントローラー/倉庫)で分岐した 2〜5 本の ABAP プログラムをコンサルタント視点で 10 次元比較 → Markdown レポート。 |
 | 🩺 **運用診断** | 運用トリアージ:ST22 ダンプ、SM02、/IWFND/ERROR_LOG、プロファイラトレース、ログ、where-used — すべて Claude から。 |
 | ♻️ **CBO 再利用** | Z パッケージを一度棚卸し → `create-program` / `program-to-spec` が既存 CBO 資産を優先再利用。ブラウンフィールドに必須。 |
 | 🧷 **CBO 拡張認識 (CMOD / GGB1·2 / BAdI / APPEND)** | ユーザーエグジット (CMOD)、置換/検証 (GGB1/GGB2)、BAdI 実装、APPEND ストラクチャを棚卸し。`create-program` / BAPI 呼び出しでは既存の拡張フィールド(例:BAPI `EXTENSIONIN` / テーブル append)を新規 CBO より優先;ダンプ・障害対応では拡張ポイントを第一容疑者として検査。 |
