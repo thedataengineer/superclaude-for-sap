@@ -45,6 +45,7 @@ The 8-step workflow (Step 1 → Step 8) lives in a companion file to keep this s
 - Step 1 / 1.5 / 2 — Socratic questions: package name → flagship programs (optional) → module.
 - Step 3 / 4 — Walk package (TABL/STRU/TTYP/DTEL/DOMA/VIEW/CLAS/INTF/FUGR/PROG) and build the `GetWhereUsed` graph; objects used by flagship programs receive a `key_boost = len(used_by_key_programs) * 10` so they always rank as "frequently used".
 - Step 5 — Infer business purpose from DDIC metadata (role: header / line / log / mapping / classification / config / util / service / event / dto).
+- **Step 5b — Cross-module gap analysis**: read `SAP_ACTIVE_MODULES` from `sap.env` / `config.json`, then for each CBO flag **expected-but-missing** integration fields per the matrix in [`../../common/active-modules.md`](../../common/active-modules.md). Example: MM CBO in a landscape with PS active but no `PS_POSID` / `PROJ_POSID_INT` / `AUFNR` fields found → record under `inventory.json → crossModuleGaps[]` as a potential integration gap.
 - Step 6 — Persist `.sc4sap/cbo/<MODULE>/<PACKAGE>/{index.md, inventory.json}` with **pinned (flagship-referenced) objects sorted to the top**; see the JSON schema example inside `workflow-steps.md`.
 - Step 7 — Sensitive-name flagging against `exceptions/custom-patterns.md`; never call `GetTableContents` / `GetSqlQuery`.
 - Step 8 — Hand-off summary for downstream skills.
