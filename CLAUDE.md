@@ -21,6 +21,7 @@ This file is the **index** of development rules. Detailed rules live in `common/
 | Blocklist (per-category table lists) | [`exceptions/table_exception.md`](exceptions/table_exception.md) (index) + `exceptions/*.md` section files |
 | Industry business-context references (14 industries) | [`industry/README.md`](industry/README.md) + `industry/*.md` |
 | Country / localization references (16 countries + EU common) | [`country/README.md`](country/README.md) + `country/*.md` |
+| Active modules — cross-module integration matrix (MM↔PS, SD↔CO, QM↔PP, …) | [`common/active-modules.md`](common/active-modules.md) |
 
 Before any work: verify `.sc4sap/config.json` exists and contains `sapVersion`, `abapRelease`, `industry`. Every recommendation, piece of generated code, and tool invocation must respect those fields.
 

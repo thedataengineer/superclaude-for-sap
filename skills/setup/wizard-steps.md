@@ -37,6 +37,7 @@ Ask user for SAP credentials and write `.sc4sap/sap.env`:
 - `SAP_VERSION` (`S4` or `ECC`) — from step 2
 - `ABAP_RELEASE` (e.g., `750`, `756`, `758`) — from step 2; consumed by agents to gate ABAP syntax features
 - `SAP_INDUSTRY` (e.g., `retail`, `cosmetics`, `automotive`, `other`) — from step 2; consumed by consultant agents to load `industry/<key>.md` for business-context analysis
+- `SAP_ACTIVE_MODULES` — comma-separated codes (`FI,CO,MM,SD,PP,PM,QM,WM,HCM,PS,TR,TM,BW,Ariba`). Ask user which modules their landscape has activated. Consumed by `create-program`, `analyze-cbo-obj`, and all module consultant agents to apply **cross-module integration rules** (e.g., MM + PS active → WBS element integration required on PR/PO). See [`common/active-modules.md`](../../common/active-modules.md) for the full matrix. Default if user unsure: `FI,CO,MM,SD,PP,QM,HCM` (common ERP baseline).
 - `TLS_REJECT_UNAUTHORIZED=0` (dev only, self-signed certs) — omit or unset in production
 - `SC4SAP_MCP_AUTOBUILD=1` — auto-rebuild vendor MCP server when missing after a plugin version upgrade. Default `1` so users don't have to re-run `/sc4sap:setup mcp` after every version bump. Set to `0` to disable auto-build and require manual install.
 
@@ -79,6 +80,7 @@ Target shape in `config.json`:
   "sapVersion": "S4",
   "abapRelease": "758",
   "industry": "cosmetics",
+  "activeModules": ["FI", "CO", "MM", "SD", "PP", "QM", "HCM"],
   "systemInfo": {
     "sid": "S4H",
     "client": "100",
@@ -101,12 +103,12 @@ Run `GetInactiveObjects` to confirm ADT access rights.
 
 ## Step 9 — Create ABAP Utility Objects
 
-Full procedure: **[`wizard-step-09-abap-objects.md`](wizard-step-09-abap-objects.md)**. Three bundles (9a/9b/9c) installed in `$TMP`.
+Full procedure: **[`wizard-step-09-abap-objects.md`](wizard-step-09-abap-objects.md)**. Four bundles installed in `$TMP`: 9a (ZMCP_ADT_UTILS FMs) + 9b (ALV OOP handlers) + 9c (conditional — OData classes when `SAP_RFC_BACKEND=odata`) + 9d (conditional — ZRFC ICF handler when `SAP_RFC_BACKEND=zrfc`).
 
 ## Step 10 — Write `.sc4sap/config.json`
 
-Include `sapVersion`, `abapRelease`, and `industry` fields, and preserve the `systemInfo` block written in step 7 (merge, don't overwrite).
-- Note: `sapVersion` / `abapRelease` / `industry` are **duplicated** in `sap.env` (step 4) on purpose. `sap.env` is consumed by the MCP server process; `config.json` is consumed by plugin-side components (HUD, PreToolUse hook, agents, SPRO cache, consultant agents reading `industry/*.md`). Keep both in sync when the user changes them via `/sc4sap:sap-option`.
+Include `sapVersion`, `abapRelease`, `industry`, and `activeModules` fields, and preserve the `systemInfo` block written in step 7 (merge, don't overwrite).
+- Note: `sapVersion` / `abapRelease` / `industry` / `activeModules` are **duplicated** in `sap.env` (step 4) on purpose. `sap.env` is consumed by the MCP server process; `config.json` is consumed by plugin-side components (HUD, PreToolUse hook, agents, SPRO cache, consultant agents reading `industry/*.md`). Keep both in sync when the user changes them via `/sc4sap:sap-option`.
 - `systemInfo` is **not** duplicated in `sap.env` — it represents what the system actually reported, not what the user typed, so it only lives in `config.json`.
 
 ## Steps 11 & 11b — Optional Extraction (SPRO + Customizations)

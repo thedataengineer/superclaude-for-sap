@@ -75,6 +75,8 @@ Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
 
 <Workflow_Steps>
 **MANDATORY**: Follow the step sequence defined in [`workflow-steps.md`](workflow-steps.md). It covers Step 1 (classify) → Step 2 (metadata) → Step 3 (pre-creation check) → Step 3.5 (version branch) → Step 4 / Step 4-ECC → Step 5 / Step 6 (standard flow only) → Step 7 (completion report, including the mandatory ECC message format).
+
+At Step 2 (metadata collection) — when the object belongs to a specific SAP module (MM table, SD structure, PS data element, …) — read `SAP_ACTIVE_MODULES` from `sap.env` / `config.json` and consult [`../../common/active-modules.md`](../../common/active-modules.md). If companion modules are active, proactively suggest integration fields (e.g., creating an MM CBO table in a landscape with PS active → suggest adding `PS_POSID` / `AUFNR`). Do NOT add silently — propose to user and let them accept/decline.
 </Workflow_Steps>
 
 <Naming_Convention_Enforcement>
