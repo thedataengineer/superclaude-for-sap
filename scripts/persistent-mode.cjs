@@ -50,7 +50,7 @@ function writeJsonFile(path, data) {
 const SESSION_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,255}$/;
 
 function getStatePath(directory, modeName, sessionId) {
-  const stateDir = join(directory, '.omc', 'state');
+  const stateDir = join(directory, '.sc4sap', 'state');
   if (sessionId && SESSION_ID_PATTERN.test(sessionId)) {
     return join(stateDir, 'sessions', sessionId, `${modeName}-state.json`);
   }

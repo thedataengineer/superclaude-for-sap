@@ -6,7 +6,7 @@
  * Adapted from OMC skill-injector.mjs.
  *
  * Searches for .md skill files in:
- * - Project-level: .omc/skills/
+ * - Project-level: .sc4sap/skills/
  * - Plugin-level: $CLAUDE_PLUGIN_ROOT/skills/
  */
 
@@ -51,7 +51,7 @@ function findSkillFiles(directory) {
   const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
 
   // Project-level skills (higher priority)
-  const projectDir = join(directory, '.omc', 'skills');
+  const projectDir = join(directory, '.sc4sap', 'skills');
   if (existsSync(projectDir)) {
     try {
       for (const file of readdirSync(projectDir, { withFileTypes: true })) {

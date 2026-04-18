@@ -5,7 +5,7 @@
  * Intercepts Stop events to suggest code review for recently modified files.
  * Adapted from OMC code-simplifier.mjs.
  *
- * Opt-in via .omc/config.json: { "codeSimplifier": { "enabled": true } }
+ * Opt-in via .sc4sap/config.json: { "codeSimplifier": { "enabled": true } }
  * Default: disabled
  */
 
@@ -25,10 +25,10 @@ function readJsonFile(filePath) {
 
 function readConfig(directory) {
   // Check project-level config first, then global
-  const projectConfig = readJsonFile(join(directory, '.omc', 'config.json'));
+  const projectConfig = readJsonFile(join(directory, '.sc4sap', 'config.json'));
   if (projectConfig?.codeSimplifier?.enabled) return projectConfig;
 
-  const globalConfig = readJsonFile(join(homedir(), '.omc', 'config.json'));
+  const globalConfig = readJsonFile(join(homedir(), '.sc4sap', 'config.json'));
   return globalConfig;
 }
 

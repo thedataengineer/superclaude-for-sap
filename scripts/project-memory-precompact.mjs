@@ -28,7 +28,7 @@ async function main() {
     const directory = data.cwd || data.directory || process.cwd();
 
     // Load project memory
-    const memoryPath = join(directory, '.omc', 'project-memory.json');
+    const memoryPath = join(directory, '.sc4sap', 'project-memory.json');
     const memory = readJsonFile(memoryPath);
 
     if (!memory || !memory.userDirectives?.length) {

@@ -3,7 +3,7 @@
 /**
  * sc4sap Setup Init Hook (SessionStart, matcher: "init")
  * Runs initial setup when a new sc4sap project is initialized.
- * Creates .omc directory structure and default configuration.
+ * Creates .sc4sap directory structure and default configuration.
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
@@ -18,14 +18,13 @@ async function main() {
 
     const directory = data.cwd || data.directory || process.cwd();
 
-    // Create .omc directory structure
+    // Create .sc4sap directory structure
     const dirs = [
-      join(directory, '.omc'),
-      join(directory, '.omc', 'state'),
-      join(directory, '.omc', 'skills'),
-      join(directory, '.omc', 'plans'),
-      join(directory, '.omc', 'research'),
-      join(directory, '.omc', 'logs'),
+      join(directory, '.sc4sap'),
+      join(directory, '.sc4sap', 'state'),
+      join(directory, '.sc4sap', 'skills'),
+      join(directory, '.sc4sap', 'research'),
+      join(directory, '.sc4sap', 'logs'),
     ];
 
     for (const dir of dirs) {
@@ -35,7 +34,7 @@ async function main() {
     }
 
     // Create default notepad if it doesn't exist
-    const notepadPath = join(directory, '.omc', 'notepad.md');
+    const notepadPath = join(directory, '.sc4sap', 'notepad.md');
     if (!existsSync(notepadPath)) {
       try {
         writeFileSync(notepadPath, `# SC4SAP Project Notepad
@@ -56,7 +55,7 @@ async function main() {
     }
 
     // Create default project memory if it doesn't exist
-    const memoryPath = join(directory, '.omc', 'project-memory.json');
+    const memoryPath = join(directory, '.sc4sap', 'project-memory.json');
     if (!existsSync(memoryPath)) {
       try {
         writeFileSync(memoryPath, JSON.stringify({
@@ -73,7 +72,7 @@ async function main() {
       continue: true,
       hookSpecificOutput: {
         hookEventName: 'SessionStart',
-        additionalContext: '[SC4SAP] Project initialized. .omc directory structure created.'
+        additionalContext: '[SC4SAP] Project initialized. .sc4sap directory structure created.'
       }
     }));
   } catch (error) {

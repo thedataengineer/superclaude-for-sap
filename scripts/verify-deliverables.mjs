@@ -21,7 +21,7 @@ function sanitizePath(filePath) {
 
 // Load deliverable requirements
 function loadDeliverableConfig(directory) {
-  const projectConfig = join(directory, '.omc', 'deliverables.json');
+  const projectConfig = join(directory, '.sc4sap', 'deliverables.json');
   if (existsSync(projectConfig)) {
     try {
       return JSON.parse(readFileSync(projectConfig, 'utf-8'));

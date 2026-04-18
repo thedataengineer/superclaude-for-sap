@@ -5,13 +5,13 @@
  * Preserves important context before compaction occurs.
  * Adapted from OMC pre-compact.mjs.
  *
- * Saves critical state to .omc/state/ so it survives compaction:
+ * Saves critical state to .sc4sap/ so it survives compaction:
  * - Active SAP objects being worked on
  * - Transport request numbers
  * - Current task context
  */
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { readStdin } from './lib/stdin.mjs';
 
@@ -33,22 +33,8 @@ async function main() {
     const directory = data.cwd || data.directory || process.cwd();
     const messages = [];
 
-    // Save compaction timestamp for session tracking
-    const stateDir = join(directory, '.omc', 'state');
-    if (!existsSync(stateDir)) {
-      try { mkdirSync(stateDir, { recursive: true }); } catch {}
-    }
-
-    try {
-      writeFileSync(
-        join(stateDir, 'last-compact.json'),
-        JSON.stringify({ timestamp: new Date().toISOString() }, null, 2),
-        { mode: 0o600 }
-      );
-    } catch {}
-
     // Inject project memory summary for post-compact context
-    const memoryPath = join(directory, '.omc', 'project-memory.json');
+    const memoryPath = join(directory, '.sc4sap', 'project-memory.json');
     const memory = readJsonFile(memoryPath);
     if (memory) {
       const parts = [];
@@ -72,7 +58,7 @@ async function main() {
     }
 
     // Inject notepad priority context
-    const notepadPath = join(directory, '.omc', 'notepad.md');
+    const notepadPath = join(directory, '.sc4sap', 'notepad.md');
     if (existsSync(notepadPath)) {
       try {
         const notepadContent = readFileSync(notepadPath, 'utf-8');

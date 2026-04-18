@@ -33,7 +33,7 @@ function writeJsonFile(path, data) {
 
 function processSubagentStart(data) {
   const directory = data.cwd || data.directory || process.cwd();
-  const trackingFile = join(directory, '.omc', 'state', 'subagent-tracking.json');
+  const trackingFile = join(directory, '.sc4sap', 'state', 'subagent-tracking.json');
 
   const tracking = readJsonFile(trackingFile) || {
     agents: [],
@@ -66,7 +66,7 @@ function processSubagentStart(data) {
 
 function processSubagentStop(data) {
   const directory = data.cwd || data.directory || process.cwd();
-  const trackingFile = join(directory, '.omc', 'state', 'subagent-tracking.json');
+  const trackingFile = join(directory, '.sc4sap', 'state', 'subagent-tracking.json');
 
   const tracking = readJsonFile(trackingFile) || {
     agents: [],

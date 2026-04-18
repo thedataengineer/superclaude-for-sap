@@ -21,7 +21,7 @@ async function main() {
     const messages = [];
 
     // Clean up stale state files
-    const stateDir = join(directory, '.omc', 'state');
+    const stateDir = join(directory, '.sc4sap', 'state');
     if (existsSync(stateDir)) {
       try {
         const now = Date.now();
