@@ -77,6 +77,7 @@ Phase 1 splits into **Phase 1A (Module Interview)** and **Phase 1B (Program Inte
   - For multi-module scenarios, consult each module in parallel and let `sap-planner` reconcile
 - `sap-planner` integrates consultant inputs into the final plan
 - Output: include list, screen numbers, class names, transport plan, test coverage, **referenced SPRO views / standard APIs / authorization objects**
+- **Execution Sizing (new — mandatory)** — plan.md MUST include a § *Execution Sizing* with numeric estimates used by Phase 4 to decide single vs multi-executor dispatch: `programs_count`, `includes_count`, `total_mcp_writes`, `text_elements_count`, `ddic_objects_count`. Thresholds and split strategies live in [`multi-executor-split.md`](./multi-executor-split.md). Planner may mark `split_recommendation: "single" | "2-way" | "3-way"` + `split_strategy: "A" | "B" | "C"` explicitly when the scope is obvious (e.g., multi-program sweep → Strategy A).
 - File: `.sc4sap/program/{PROG}/plan.md`
 
 **Skip consultant when**: pure technical utility with no business logic (e.g., a generic string helper class, a pure file converter) — `sap-planner` proceeds alone.
@@ -104,6 +105,8 @@ Full procedure — `trust-session` invocation, auto/manual/hybrid mode prompt, s
 ## Phase 4 — Implementation: `sap-executor` (PARALLELIZED)
 
 **Authoritative flow**: [`phase4-parallel.md`](./phase4-parallel.md) — local source generation → parallel `CreateInclude` → `CreateProgram` → single `GetAbapSemanticAnalysis(main)` → batch activation via `GetInactiveObjects`. Replaces the old per-include create-check-activate loop (40–60% faster for typical 6–10 include programs).
+
+**Multi-executor split**: when Phase 2 plan.md § *Execution Sizing* crosses the thresholds in [`multi-executor-split.md`](./multi-executor-split.md), the skill dispatches 2 or 3 parallel `sap-executor` instances per Strategy A / B / C in that file. Shared transport, single activation at Final Step.
 
 - Apply shared conventions: `oop-pattern.md` (OOP), `alv-rules.md`, `text-element-rule.md`, `constant-rule.md`, `procedural-form-naming.md` (Procedural), `naming-conventions.md`
 - Screens / GUI status / text elements run AFTER main activation (see phase4-parallel.md Step G)

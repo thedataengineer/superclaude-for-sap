@@ -3,6 +3,22 @@
 All notable changes to **SuperClaude for SAP (sc4sap)** will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] — 2026-04-20
+
+### Added — Multi-Executor Split for Phase 4 bulk work
+
+- **`skills/create-program/multi-executor-split.md`** *(new, 71 lines)* — Threshold table + 3 split strategies (A: by program range, B: by object class, C: within single program) + shared-transport / single-activation coordination rules. Planner decides single vs 2-way vs 3-way at Phase 2 sizing; Phase 4 skill reads the recommendation and dispatches accordingly.
+
+### Changed — Phase 2 planner emits sizing; Phase 4 triggers split
+
+- **`skills/create-program/agent-pipeline.md`** Phase 2 — planner now MUST emit § *Execution Sizing* into `plan.md` with `programs_count` / `includes_count` / `total_mcp_writes` / `text_elements_count` / `ddic_objects_count` and a `split_recommendation` + `split_strategy`. Phase 4 reads these to pick single vs parallel dispatch.
+- **`skills/create-program/phase4-parallel.md`** — new "Multi-Executor Split" intro section points to the companion file; Waves 3 and 4 inherit the split decision from Phase 2.
+- **`skills/create-program/spec-approval-gate.md`** — spec.md template gains § 8 *Execution Sizing* so the user sees the scale + split plan before approving.
+
+### Why
+
+The ZMMR00010–ZMMR00200 repair sweep (20 programs, ~150 MCP writes) ran as a single `sap-executor` dispatch that blew past its session budget mid-way. Thresholds + pre-computed sizing + disjoint-scope split let the same workload run as 3 parallel executors sharing a transport — faster wall-clock, lower per-call attention load, cleaner failure isolation (one blocked executor doesn't poison the other two's work).
+
 ## [0.5.0] — 2026-04-20
 
 ### Added — Context Loading Protocol + Model Routing Rule

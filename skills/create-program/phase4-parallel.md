@@ -48,6 +48,10 @@ Final step:
 
 **Why G4 splits**: Text Elements are attached to the main program but don't need the program to exist during creation (they're just strings). Screens and GUI Status, however, are child objects of the program — they must be created AFTER the main program exists. So `G4-prep` (Text Elements) runs with Wave 2; `G4-late` (Screens + GUI Status) runs as Wave 4.
 
+## Multi-Executor Split — triggered by Phase 2 sizing
+
+Default is ONE `sap-executor` dispatch per Wave. When `plan.md` § *Execution Sizing* crosses the thresholds in [`multi-executor-split.md`](./multi-executor-split.md) (programs > 5, or includes > 15, or total writes > 40, or text elements > 40, or DDIC > 5), Wave 3 + Wave 4 split into 2-way or 3-way parallel executors per Strategy A/B/C in that file. Transport is shared; `ActivateObjects` and `GetInactiveObjects` run once at Final Step by the leader.
+
 ## Per-Wave Protocol
 
 Each Wave declares a **Context kit** (files agent MUST read — per `../../common/context-loading-protocol.md`) and a **Model** (per `../../common/model-routing-rule.md`).
