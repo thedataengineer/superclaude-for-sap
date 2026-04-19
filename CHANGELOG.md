@@ -3,6 +3,34 @@
 All notable changes to **SuperClaude for SAP (sc4sap)** will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-04-20
+
+### Added — Context Loading Protocol + Model Routing Rule
+
+Two cross-cutting architectural rules that change how every `Agent(...)` dispatch in sc4sap consumes context and selects a model. Result: lower per-dispatch tokens, higher enforcement accuracy, cheaper repetitive bulk work.
+
+- **`common/context-loading-protocol.md`** *(new, 85 lines)* — `CLAUDE.md` is an index, not a payload. Every dispatch declares a **Context kit** (minimal file set) + optional triggered reads. Agents read only the kit; expansion requires a logged on-demand fetch or `BLOCKED` return. Kills the implicit "load 25 rule files just in case" anti-pattern observed in past runs.
+- **`common/model-routing-rule.md`** *(new, 88 lines)* — 3-tier heuristic (Sonnet for reads + repetitive bulk + template writes; Opus for novel code + cross-file reasoning + ambiguity; Haiku for trivial lookups). Per-phase / per-Wave routing table for `/sc4sap:create-program`. Sonnet → Opus escalation pattern for hard blockers.
+
+### Changed — Every phase now declares kit + model
+
+- **`skills/create-program/phase4-parallel.md`** — Each Wave (1 DDIC, 2 Classes/FMs/Text, 3 Includes+Main, 4 Screen/GUI, Final Activation) now lists its `**Context kit**:` + `**Model**:` at the top of its section. Wave 2 G4-prep explicitly routes to Sonnet for `CreateTextElement` × N bulk; Wave 4 Screen/GUI to Sonnet for template-based Create/Update/Verify.
+- **`skills/create-program/phase6-review.md`** — Convention Checklist header mandates that each §1–§12 is an independent bucket with its own narrow kit. Bucket-scoped reads replace the "read everything, skim checks" pattern.
+- **`skills/create-program/agent-pipeline.md`** — Top paragraph anchors the discipline to the two rule files.
+- **`agents/sap-executor.md`** — New `<Context_Kit_Protocol>` + `<Model_Selection>` sections. The large `<Shared_Conventions>` table is demoted to a LOOKUP INDEX (not a preload list).
+- **`agents/sap-code-reviewer.md`** — Same two sections; explicit per-bucket kit rule (no preloading across §1–§12).
+- **`CLAUDE.md`** — Top intro now flags the index-not-payload semantics; index adds rows for the two new rules.
+
+### Why
+
+The `/sc4sap:create-program` pipeline was running every agent with the implicit "load every common/*.md referenced by CLAUDE.md" behavior. Two measured costs: (1) per-dispatch token overhead of ~40–60% on simple repetitive tasks, (2) reviewer attention dilution — 12-bucket checklist gets skimmed because all 12 rule files are in context at once. The context kit + model routing fix both in the same release.
+
+### Expected effects
+
+- Per-dispatch tokens: −40 to −60% on Sonnet-tier work.
+- Opus usage share: −50% across `/sc4sap:create-program` (previously all Opus; now only Waves that need reasoning).
+- Phase 6 reviewer consistency: MAJOR-finding detection improves because each bucket runs with only its relevant rule in context.
+
 ## [0.4.1] — 2026-04-20
 
 ### Added — OK_CODE Binding Pattern for Procedural Screens

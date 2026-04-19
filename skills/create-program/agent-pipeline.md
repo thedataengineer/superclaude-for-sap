@@ -2,6 +2,8 @@
 
 Authoritative pipeline for the `sc4sap:create-program` skill. `SKILL.md` references this file instead of inlining the phase definitions. Every phase below is MANDATORY unless explicitly marked conditional. Do not skip, reorder, or merge phases.
 
+**Context + model discipline** — every phase declares its context kit (files the lead agent MUST read) per [`../../common/context-loading-protocol.md`](../../common/context-loading-protocol.md), and its expected model (Sonnet / Opus) per [`../../common/model-routing-rule.md`](../../common/model-routing-rule.md). Per-phase values in the per-Wave detail file `phase4-parallel.md` and the bullets below are authoritative — do not preload beyond them.
+
 ## Phase 0 — SAP Version Preflight (skill itself, mandatory)
 - Resolve/confirm platform (ECC / S4 On-Prem / S4 Cloud Public / S4 Cloud Private) and `abapRelease`
 - Block or redirect incompatible requests (e.g., classical Dynpro on Cloud Public)

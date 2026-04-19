@@ -1,6 +1,6 @@
 # SuperClaude for SAP (sc4sap) — Development Rules
 
-This file is the **index** of development rules. Detailed rules live in `common/` and `exceptions/` — consult those files before making judgment calls. Everything referenced below is MANDATORY for every sc4sap session (agents, skills, direct user requests, pipelines).
+This file is the **index** of development rules — NOT a payload to preload. Detailed rules live in `common/` and `exceptions/`. Consult files on demand per [`common/context-loading-protocol.md`](common/context-loading-protocol.md); every dispatch declares its minimal context kit. Everything referenced below is MANDATORY for every sc4sap session (agents, skills, direct user requests, pipelines).
 
 ## Development Standards — References
 
@@ -25,6 +25,8 @@ This file is the **index** of development rules. Detailed rules live in `common/
 | Industry business-context references (14 industries) | [`industry/README.md`](industry/README.md) + `industry/*.md` |
 | Country / localization references (16 countries + EU common) | [`country/README.md`](country/README.md) + `country/*.md` |
 | Active modules — cross-module integration matrix (MM↔PS, SD↔CO, QM↔PP, …) | [`common/active-modules.md`](common/active-modules.md) |
+| Context loading protocol (CLAUDE.md is an index; every dispatch declares its minimal context kit) | [`common/context-loading-protocol.md`](common/context-loading-protocol.md) |
+| Model routing (Sonnet for reads + repetitive bulk; Opus for novel code, cross-file reasoning, ambiguity) | [`common/model-routing-rule.md`](common/model-routing-rule.md) |
 
 Before any work: verify `.sc4sap/config.json` exists and contains `sapVersion`, `abapRelease`, `industry`. Every recommendation, piece of generated code, and tool invocation must respect those fields.
 

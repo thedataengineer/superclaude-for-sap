@@ -28,6 +28,8 @@ Delegate to `sap-code-reviewer`. Pass:
 
 For each created object, fetch source via the appropriate MCP tool (`GetInclude`, `GetProgram`, `GetClass`, `GetInterface`, `GetScreen`, `GetGuiStatus`, `GetTextElement`) and verify against **every** convention below that applies. Record verdict per check: `PASS` / `FIX-APPLIED` / `N/A (reason)`.
 
+**Context kit discipline (per `../../common/context-loading-protocol.md`)**: each §1–§12 below is an independent reviewer bucket. Load ONLY the rule file(s) named in that section when checking it — do NOT preload all 12. On a MAJOR finding, escalate to Opus with the narrow context for that section only.
+
 ### 1. `../../common/alv-rules.md` — ALV Display Rules + Screen/GUI Population
 
 Applies to: any program that displays a result set in ALV.
