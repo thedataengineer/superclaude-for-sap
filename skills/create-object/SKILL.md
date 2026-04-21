@@ -12,6 +12,10 @@ Guided ABAP object creation workflow. Hybrid mode: confirms transport and packag
 sc4sap:create-object handles the full lifecycle of creating a new ABAP object: determining the right object type, confirming package and transport assignment, creating the object via MCP, generating a well-structured initial implementation, and activating it — all in one workflow.
 </Purpose>
 
+<Response_Prefix>
+Every response triggered by this skill MUST begin with `[Model: <main-model> · Dispatched: <sub-summary>]` per [`../../common/model-routing-rule.md`](../../common/model-routing-rule.md) § Response Prefix Convention.
+</Response_Prefix>
+
 <Use_When>
 - User says "create", "new class", "new program", "create object", "add a function module", "new table", etc.
 - A new ABAP development artifact needs to be created from scratch
@@ -59,6 +63,20 @@ Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
 **MANDATORY**: Read [`../../common/ecc-ddic-fallback.md`](../../common/ecc-ddic-fallback.md) before creating any Table / Data Element / Domain. It defines when the ECC branch triggers, the helper-program naming rules, the strict template format (mirroring the files under `ecc/`), and the hard constraints (`$TMP` only, no activate, no CTS).
 </ECC_DDIC_Fallback>
 
+<Field_Typing_Rule>
+**MANDATORY** for every Table / Structure / Table Type field-type decision (standard MCP flow **and** ECC helper-program fallback): read [`../../common/field-typing-rule.md`](../../common/field-typing-rule.md).
+
+Priority: **Standard DE (1)** → **existing CBO DE (2)** → **new CBO DE (3)** → **Data Type + Length (4, last resort)**. Raw primitives like `LIFNR CHAR 10` / `MATNR CHAR 40` / `BUKRS CHAR 4` are forbidden when an authoritative SAP data element exists. Before each field, run `SearchObject` against `DTEL` and check `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json`.
+</Field_Typing_Rule>
+
+<Function_Module_Rule>
+**MANDATORY** for every `UpdateFunctionModule` source emission: read [`../../common/function-module-rule.md`](../../common/function-module-rule.md).
+
+FM signature is stored inline in the `FUNCTION` statement source (SAP parses it on write and updates TFDIR/FUPARAREF automatically). There is no separate "parameters" endpoint. Every FM source MUST declare `IMPORTING / EXPORTING / CHANGING / TABLES / EXCEPTIONS` clauses directly between `FUNCTION {name}` and the first `.`. Never emit the placeholder `" You can use the template 'functionModuleParameter' ...` line, never use `*"*"Local Interface:` blocks as a substitute, never declare shadow locals like `lv_iv_xxx TYPE ...` to stand in for missing parameters.
+
+Remote-Enabled (RFC) flag is a separate concern — stored in TFDIR.FMODE, not in source. Currently requires manual SE37 Properties update; flag this in the completion report.
+</Function_Module_Rule>
+
 <Hybrid_Mode>
 **Confirm** (interactive):
 - Object name (enforce Z/Y prefix, max 30 chars, uppercase)
@@ -75,6 +93,8 @@ Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
 
 <Workflow_Steps>
 **MANDATORY**: Follow the step sequence defined in [`workflow-steps.md`](workflow-steps.md). It covers Step 1 (classify) → Step 2 (metadata) → Step 3 (pre-creation check) → Step 3.5 (version branch) → Step 4 / Step 4-ECC → Step 5 / Step 6 (standard flow only) → Step 7 (completion report, including the mandatory ECC message format).
+
+At Step 2 (metadata collection) — when the object belongs to a specific SAP module (MM table, SD structure, PS data element, …) — read `SAP_ACTIVE_MODULES` from `sap.env` / `config.json` and consult [`../../common/active-modules.md`](../../common/active-modules.md). If companion modules are active, proactively suggest integration fields (e.g., creating an MM CBO table in a landscape with PS active → suggest adding `PS_POSID` / `AUFNR`). Do NOT add silently — propose to user and let them accept/decline.
 </Workflow_Steps>
 
 <Naming_Convention_Enforcement>

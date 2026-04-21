@@ -7,35 +7,35 @@ Three MCP operation families (Screen, GUI Status, Text Element) dispatch through
 ```
 Pick RFC backend for Screen / GUI Status / Text Element ops:
   1) soap    — HTTPS via /sap/bc/soap/rfc (default, no extra install)
-               Requires the ICF node /default_host/sap/bc/soap/rfc to be active.
-  2) native  — Direct TCP via SAP NW RFC SDK (faster, binary protocol)
+  2) native  — Direct TCP via SAP NW RFC SDK (requires paid SDK + build tools)
+  3) gateway — Remote RFC Gateway middleware via HTTPS/JSON (central SDK host)
+  4) odata   — SAP OData v2 service ZMCP_ADT_SRV via HTTPS (SEGW + Gateway reg)
+  5) zrfc    — Custom ICF handler /sap/bc/rest/zmcp_rfc via HTTPS
+               Best when company blocks /sap/bc/soap/rfc AND OData Gateway is
+               hard (typical ECC). Needs neither SDK nor Gateway registration —
+               just one class + one SICF node (installed by Step 9d).
                Requires:
-                 • SAP NW RFC SDK 7.50+ downloaded from SAP Support Portal
-                 • Platform-specific libsapnwrfc.{dll,so,dylib} linkable at runtime
-                 • SAPNWRFC_HOME env var OR SDK in system lib path
-                 • Build toolchain (MSVC on Windows, gcc/clang on macOS/Linux)
-                 • Extra RFC credential block (below) in sap.env
-  3) gateway — Remote RFC Gateway middleware via HTTPS/JSON (no SDK on this host)
-               Best choice for enterprise deployments where IT ops runs one central
-               gateway and developers stay free of SDK install overhead.
-               Requires:
-                 • An already-running RFC Gateway reachable from this laptop
-                 • SAP_RFC_GATEWAY_URL and (optional) SAP_RFC_GATEWAY_TOKEN
-                 • SAP_USERNAME / SAP_PASSWORD / SAP_CLIENT are forwarded to the
-                   gateway per request (X-SAP-* headers) so the SAP audit log keeps
-                   the real developer identity.
-  4) odata   — SAP OData v2 service ZMCP_ADT_SRV via HTTPS (pure, no SDK, no middleware)
-               Requires:
-                 • ZCL_ZMCP_ADT_MPC/DPC/_EXT classes on SAP (installed by Step 9c)
-                 • /IWBEP/REG_SERVICE + /IWFND/MAINT_SERVICE registration (Basis)
-                 • SAP_RFC_ODATA_SERVICE_URL in sap.env
+                 • ZCL_MCP_RFC_HTTP_HANDLER class + SICF node active (Step 9d)
+                 • SAP_RFC_ZRFC_BASE_URL in sap.env
                  • Reuses SAP_USERNAME/PASSWORD/CLIENT as Basic auth
-               Best when company blocks /sap/bc/soap/rfc but allows OData Gateway.
-               See `docs/odata-backend.md` for the full setup walkthrough.
 ```
 
-- Accept `soap` / `native` / `gateway` / `odata` (or 1/2/3/4). Default `soap` if the user presses Enter.
-- Write the choice to `sap.env` as `SAP_RFC_BACKEND=soap`, `=native`, `=gateway`, or `=odata`.
+Full detail on soap/native/gateway/odata is in `docs/user-guide/CLIENT_CONFIGURATION.md`. The condensed option summary above is what you present to the user.
+
+- Accept `soap` / `native` / `gateway` / `odata` / `zrfc` (or 1/2/3/4/5). Default `soap` if the user presses Enter.
+- Write the choice to the **active profile's** env (`~/.sc4sap/profiles/<alias>/sap.env`, resolved from `<project>/.sc4sap/active-profile.txt`) as `SAP_RFC_BACKEND=soap|native|gateway|odata|zrfc`. Never write it to `<project>/.sc4sap/sap.env` — that file does not exist in multi-profile mode (decision §4.3 of the setup gap plan).
+
+### ⚠️ Backend-specific preflight — bootstrap order
+
+`soap` / `native` / `gateway` preflights run **in full** at this step (no backend objects installed on SAP yet, but these three don't need any).
+
+`odata` / `zrfc` preflights have a **chicken-and-egg**: their probes target `ZCL_ZMCP_ADT_*` (odata) / `ZCL_MCP_RFC_HTTP_HANDLER` (zrfc) + service/SICF nodes that are installed by **Step 9c/9d — which come AFTER Step 4bis**. On first-time setup those objects don't exist yet, so a 404 is expected, not a bug.
+
+Each backend section below has a "Bootstrap order note" block explaining:
+- **First-time setup**: record choice, skip active probe, emit deferred-verification banner, continue to Step 5. Real verification happens after Step 9c/9d via `/sc4sap:sap-doctor`.
+- **Re-run / reconfiguration**: full probe; failures are genuine.
+
+If the user is re-running setup after 9c/9d have already installed the backend objects, treat all probe failures as fatal.
 
 ## If the user chose `soap`
 
@@ -52,7 +52,7 @@ Run this preflight before Step 5:
 
 ## If the user chose `native`
 
-Collect these additional fields one at a time and append to `sap.env`:
+Collect these additional fields one at a time and append to the **active profile's** `sap.env` (`~/.sc4sap/profiles/<alias>/sap.env`):
 
 ```
 # --- Native RFC (only when SAP_RFC_BACKEND=native) ---
@@ -85,7 +85,7 @@ Then run the native preflight before Step 5:
 
 ## If the user chose `gateway`
 
-Collect the gateway fields one at a time and append to `sap.env`:
+Collect the gateway fields one at a time and append to the **active profile's** `sap.env` (`~/.sc4sap/profiles/<alias>/sap.env`):
 
 ```
 # --- Gateway RFC (only when SAP_RFC_BACKEND=gateway) ---
@@ -102,7 +102,7 @@ Then run the gateway preflight before Step 5:
 
 ## If the user chose `odata`
 
-Collect the OData fields one at a time and append to `sap.env`:
+Collect the OData fields one at a time and append to the **active profile's** `sap.env` (`~/.sc4sap/profiles/<alias>/sap.env`):
 
 ```
 # --- OData RFC (only when SAP_RFC_BACKEND=odata) ---
@@ -110,14 +110,55 @@ SAP_RFC_ODATA_SERVICE_URL=    # e.g. https://sap.company.com:44300/sap/opu/odata
 SAP_RFC_ODATA_CSRF_TTL_SEC=600  # CSRF token cache TTL in seconds, min 60
 ```
 
-Then run the OData preflight before Step 5:
+### ⚠️ Bootstrap order note (first-time vs re-run)
 
-1. Verify `ZCL_ZMCP_ADT_MPC_EXT` + `ZCL_ZMCP_ADT_DPC_EXT` exist on the SAP backend (installed by `odata-classes-install.md` — Step 9c). If missing, run Step 9c first.
+The OData preflight below **requires `ZCL_ZMCP_ADT_MPC_EXT` / `ZCL_ZMCP_ADT_DPC_EXT` + service registration to already exist on SAP**. These are installed by **Step 9c** — which happens AFTER Step 4bis in the wizard. So:
+
+- **First-time setup (fresh system)**: Step 9c backend objects do NOT exist yet. The metadata probe at 4bis WILL return 404. **That is expected** — record the choice, skip the active probe, emit a deferred-verification banner, and continue to Step 5. The `/sc4sap:sap-doctor` Layer 6.odata check (run after Step 9c completes) performs the real verification.
+- **Re-run / reconfiguration (Step 9c already done previously)**: Run the full probe below — failures are genuine.
+
+The preflight procedure itself detects the scenario: if step 1 fails with "classes missing" or step 2 returns 404 AND this is a fresh setup, treat as deferred (not a fatal error). If step 2 returns 200 but step 4 shows a 500, that IS a genuine bug (registration issue).
+
+### OData preflight procedure
+
+1. Verify `ZCL_ZMCP_ADT_MPC_EXT` + `ZCL_ZMCP_ADT_DPC_EXT` exist on the SAP backend (installed by `odata-classes-install.md` — Step 9c). **Fresh setup**: classes absent → emit `"OData backend not yet installed — will verify after Step 9c via /sc4sap:sap-doctor"` and skip the remaining probe steps. **Re-run**: classes absent → halt, tell user to run Step 9c.
 2. Metadata probe:
    ```bash
    curl -sSu $SAP_USERNAME:$SAP_PASSWORD \
      "$SAP_RFC_ODATA_SERVICE_URL/\$metadata?sap-client=$SAP_CLIENT"
    ```
-   Must return HTTP 200 with XML containing `ComplexType Name="DispatchResult"` and `FunctionImport Name="Dispatch"`. If 404, the service is not yet registered — go to Step 9c + the manual registration path in `docs/odata-backend.md`.
+   Must return HTTP 200 with XML containing `ComplexType Name="DispatchResult"` and `FunctionImport Name="Dispatch"`. If 404 on fresh setup → deferred. If 404 on re-run → halt, point to Step 9c + `docs/odata-backend.md` registration path.
 3. Tell the user: their `SAP_USERNAME` / `SAP_PASSWORD` are reused as Basic auth, `SAP_CLIENT` is appended as `?sap-client=<n>`. The client handles CSRF handshake automatically (GET `$metadata` with `X-CSRF-Token: Fetch` → cache token + cookie → use on POSTs).
 4. **IMPORTANT** — if the metadata probe returns 200 but POST FunctionImport calls return 500 "unknown internal server error", the backend `/IWBEP` service registration is missing. Run `/sc4sap:sap-doctor` Layer 6.odata for diagnosis, then follow the "Basis Team Request" template in `docs/odata-backend.md` — normal `/IWFND/MAINT_SERVICE` "Add Service" does not always populate the backend `/IWBEP` tables in all SAP releases; the standard fix is `/IWBEP/REG_SERVICE` which typically requires Basis authorization.
+
+## If the user chose `zrfc`
+
+Collect the ZRFC field and append to the **active profile's** `sap.env` (`~/.sc4sap/profiles/<alias>/sap.env`):
+
+```
+# --- ZRFC (only when SAP_RFC_BACKEND=zrfc) ---
+SAP_RFC_ZRFC_BASE_URL=        # e.g. https://sap.company.com:44300/sap/bc/rest/zmcp_rfc  (required)
+SAP_RFC_ZRFC_CSRF_TTL_SEC=600 # CSRF token cache TTL seconds, default 600, min 60
+```
+
+### ⚠️ Bootstrap order note (first-time vs re-run)
+
+The ZRFC preflight below **requires `ZCL_MCP_RFC_HTTP_HANDLER` + SICF node to already exist on SAP**. These are installed by **Step 9d** — which happens AFTER Step 4bis in the wizard. So:
+
+- **First-time setup (fresh system)**: Step 9d objects do NOT exist yet. The CSRF probe at 4bis WILL return 404. **That is expected** — record the choice, skip the active probe, emit a deferred-verification banner, and continue to Step 5. The `/sc4sap:sap-doctor` check (run after Step 9d completes) performs the real verification.
+- **Re-run / reconfiguration (Step 9d already done previously)**: Run the full probe below — failures are genuine.
+
+The preflight procedure itself detects the scenario: if step 1 fails with "handler class missing" or step 2 returns 404 AND this is a fresh setup, treat as deferred (not a fatal error). If step 2 returns 401 or non-empty 5xx, that IS a genuine bug regardless of setup phase.
+
+### ZRFC preflight procedure
+
+1. Verify `ZCL_MCP_RFC_HTTP_HANDLER` class exists on the SAP backend (installed by Step 9d). **Fresh setup**: class absent → emit `"ZRFC backend not yet installed — will verify after Step 9d via /sc4sap:sap-doctor"` and skip the remaining probe steps. **Re-run**: class absent → halt, tell user to run Step 9d.
+2. CSRF fetch probe:
+   ```bash
+   curl -sSu $SAP_USERNAME:$SAP_PASSWORD -H "X-CSRF-Token: Fetch" \
+     -o /dev/null -w "status=%{http_code} token=%header{x-csrf-token}\n" \
+     "$SAP_RFC_ZRFC_BASE_URL/dispatch?sap-client=$SAP_CLIENT"
+   ```
+   Must return `status=200` and a non-empty token. `404` on fresh setup → deferred. `404` on re-run → SICF node `/sap/bc/rest/zmcp_rfc` is not active; tell user to activate it in transaction `SICF` (right-click → Activate Service). `401` means Basic auth failed (genuine error regardless of phase).
+3. Tell the user: `SAP_USERNAME` / `SAP_PASSWORD` / `SAP_CLIENT` (from Step 4) are reused as Basic auth — no separate RFC user needed. The client handles CSRF handshake automatically (double-submit cookie, TTL cache).
+4. **Security note** — the handler uses a hardcoded deny list (e.g. `SXPG_CALL_SYSTEM`, `RFC_ABAP_INSTALL_AND_RUN`) on the `/call` endpoint. The two MCP endpoints `/dispatch` and `/textpool` map to fixed FMs and are not affected. To extend the deny list: edit `ZCL_MCP_RFC_HTTP_HANDLER->class_constructor` and re-transport (source-level control, not table-maintained).

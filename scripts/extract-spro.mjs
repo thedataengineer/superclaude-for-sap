@@ -20,13 +20,15 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { resolveArtifactBase, resolveSapEnvPath } from './lib/profile-resolve.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const CONFIGS_DIR = resolve(ROOT, 'configs');
-// Output to project-root .sc4sap/ (cwd), matching the convention used by
-// bridge/mcp-server.cjs and the block-forbidden-tables hook.
-const OUTPUT_DIR = resolve(process.cwd(), '.sc4sap');
+// Output under the active profile's artifact base (`.sc4sap/work/<alias>/`) in
+// multi-profile mode, or `.sc4sap/` in legacy mode. The shared resolver walks
+// `<cwd>/.sc4sap/active-profile.txt` to determine the right folder.
+const OUTPUT_DIR = resolveArtifactBase(process.cwd());
 // Single module → per-module file; multiple/all → merged file
 const isSingleModule = () => selectedModules.length === 1;
 const getOutputFile = () => isSingleModule()
@@ -53,30 +55,98 @@ function isValidTableName(name) {
   return typeof name === 'string' && TABLE_NAME_RE.test(name);
 }
 
-// Parse table names from spro.md
+// Resolve active SAP version (S4 | ECC | null) from the active profile's
+// sap.env (multi-profile) or the legacy project sap.env. Used to filter rows
+// in modules whose spro.md has a System column (e.g. MM) so that ECC-only
+// rows are skipped on S/4 and vice versa.
+function resolveSapVersion() {
+  if (process.env.SAP_VERSION) return process.env.SAP_VERSION.trim().toUpperCase();
+  const hit = resolveSapEnvPath(process.cwd());
+  const fallback = resolve(ROOT, '.sc4sap', 'sap.env');
+  const candidates = [];
+  if (hit) candidates.push(hit.path);
+  if (existsSync(fallback)) candidates.push(fallback);
+  for (const p of candidates) {
+    try {
+      const text = readFileSync(p, 'utf-8');
+      const m = text.match(/^\s*SAP_VERSION\s*=\s*(.+?)\s*$/m);
+      if (m) return m[1].replace(/^["']|["']$/g, '').trim().toUpperCase();
+    } catch { /* ignore */ }
+  }
+  return null;
+}
+const SAP_VERSION = resolveSapVersion();
+console.log(`[spro] SAP_VERSION: ${SAP_VERSION ?? '(unset — no System-column filtering)'}`);
+
+// Row matches the active system if:
+//   - no System column present (legacy 3-col layout), OR
+//   - System cell lists both ECC and S4 (universal), OR
+//   - SAP_VERSION is unset (can't filter → include), OR
+//   - cell contains a token matching SAP_VERSION.
+function systemMatches(systemCell) {
+  if (!systemCell) return true;
+  const tokens = systemCell
+    .split(/[\/,]/)
+    .map((s) => s.trim().toUpperCase())
+    .filter(Boolean);
+  if (tokens.length === 0) return true;
+  const hasEcc = tokens.includes('ECC');
+  const hasS4 = tokens.includes('S4') || tokens.includes('S4HANA') || tokens.includes('S/4');
+  if (hasEcc && hasS4) return true;
+  if (!SAP_VERSION) return true;
+  if (SAP_VERSION === 'ECC') return hasEcc;
+  if (SAP_VERSION === 'S4' || SAP_VERSION === 'S4HANA') return hasS4;
+  return tokens.includes(SAP_VERSION);
+}
+
+// Parse table names from spro.md.
+// Column layout is inferred from the most recent header row so modules can
+// use either 3-col (| Config | Table/View | Description |) or 4-col
+// (| Config | System | Table/View | Description |) tables without a hard-
+// coded index — previously the parser assumed column 2 was always the table
+// name, which on MM's 4-col layout captured 'System' and 'ECC' as tables.
 function parseTablesFromSproMd(modulePath) {
   const content = readFileSync(modulePath, 'utf-8');
   const tables = new Map(); // tableName -> description
   const lines = content.split('\n');
 
-  for (const line of lines) {
-    // Match markdown table rows: | Config Name | Table/View | Description |
-    const match = line.match(/^\|([^|]+)\|([^|]+)\|([^|]+)\|/);
-    if (!match) continue;
+  // Defaults matching the common 3-col layout (reset each time a header is seen).
+  let tableIdx = 1;
+  let systemIdx = -1;
+  let descIdx = 2;
 
-    const tableCol = match[2].trim();
-    const descCol = match[3].trim();
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+    if (!line.startsWith('|') || !line.endsWith('|')) continue;
+    const cells = line.slice(1, -1).split('|').map((c) => c.trim());
+    if (cells.length < 3) continue;
 
-    // Skip header rows
-    if (tableCol === 'Table/View' || tableCol.startsWith('---')) continue;
+    // Separator row: |---|---|---|
+    if (cells.every((c) => c === '' || /^:?-+:?$/.test(c))) continue;
 
-    // Handle entries like "T077D / TONR" — take first valid table name
-    // Skip transaction codes (VN01, KANK, KONK) and pure number ranges
-    const parts = tableCol.split('/').map(p => p.trim());
+    // Header row — recompute column roles.
+    const lower = cells.map((c) => c.toLowerCase());
+    const hdrTable = lower.findIndex((c) => c === 'table/view' || c === 'table');
+    const hdrDesc = lower.findIndex((c) => c === 'description');
+    if (hdrTable >= 0 && hdrDesc >= 0) {
+      tableIdx = hdrTable;
+      descIdx = hdrDesc;
+      systemIdx = lower.findIndex((c) => c === 'system');
+      continue;
+    }
+
+    const tableCol = cells[tableIdx] ?? '';
+    const descCol = cells[descIdx] ?? '';
+    const systemCol = systemIdx >= 0 ? (cells[systemIdx] ?? '') : '';
+
+    if (!systemMatches(systemCol)) continue;
+
+    // Handle entries like "T077D / TONR" — take first valid table name.
+    // Skip transaction codes (VN01, KANK, KONK) and pure number ranges.
+    const parts = tableCol.split('/').map((p) => p.trim());
     for (const part of parts) {
-      // Strip V_ prefix for the query — we'll query the base table
+      // Strip V_ prefix for the query — we'll query the base table.
       const raw = part.startsWith('V_') ? part.slice(2) : part;
-      // Skip if it looks like a transaction code (2-4 chars, no numbers pattern)
       if (/^[A-Z]{2,4}\d{2}$/.test(part)) continue; // e.g., VN01
       const tableName = raw.toUpperCase();
       if (!isValidTableName(tableName)) {
@@ -225,7 +295,7 @@ async function main() {
   mkdirSync(OUTPUT_DIR, { recursive: true });
   const output = {
     timestamp: new Date().toISOString(),
-    system: 'S4HANA',
+    system: SAP_VERSION ?? 'unknown',
     modules: moduleResults,
     errors,
     summary: {

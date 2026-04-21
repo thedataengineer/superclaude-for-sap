@@ -29,6 +29,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const cp = require('child_process');
 
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
@@ -69,12 +70,32 @@ function findMarketplacePluginJson() {
 }
 
 // --- 1. Resolve env file ---------------------------------------------------
+// Precedence (multi-profile 0.6.0+):
+//   1. <cwd>/.sc4sap/active-profile.txt → ${SC4SAP_HOME_DIR|~/.sc4sap}/profiles/<alias>/sap.env
+//   2. <cwd>/.sc4sap/sap.env                                   (legacy single-file layout)
+//   3. <plugin>/.sc4sap/sap.env                                (test scaffolding)
 
-const CWD_ENV = path.join(process.cwd(), '.sc4sap', 'sap.env');
+function resolveActiveProfileEnv(cwd) {
+  const pointer = path.join(cwd, '.sc4sap', 'active-profile.txt');
+  if (!fs.existsSync(pointer)) return null;
+  let alias;
+  try { alias = fs.readFileSync(pointer, 'utf8').trim(); } catch { return null; }
+  if (!alias) return null;
+  const homeDir = process.env.SC4SAP_HOME_DIR
+    ? process.env.SC4SAP_HOME_DIR
+    : path.join(os.homedir(), '.sc4sap');
+  const envPath = path.join(homeDir, 'profiles', alias, 'sap.env');
+  return fs.existsSync(envPath) ? envPath : null;
+}
+
+const CWD = process.cwd();
+const PROFILE_ENV = resolveActiveProfileEnv(CWD);
+const CWD_ENV = path.join(CWD, '.sc4sap', 'sap.env');
 const PLUGIN_ENV = path.join(PLUGIN_ROOT, '.sc4sap', 'sap.env');
-const ENV_FILE = fs.existsSync(CWD_ENV) ? CWD_ENV : PLUGIN_ENV;
+const ENV_FILE = PROFILE_ENV
+  || (fs.existsSync(CWD_ENV) ? CWD_ENV : PLUGIN_ENV);
 
-if (fs.existsSync(ENV_FILE)) {
+if (ENV_FILE && fs.existsSync(ENV_FILE)) {
   process.env.MCP_ENV_PATH = ENV_FILE;
   // Pull SC4SAP_MCP_AUTOBUILD from sap.env so users can toggle it there.
   // sap.env takes precedence over .mcp.json-injected process.env.
@@ -87,7 +108,9 @@ if (fs.existsSync(ENV_FILE)) {
     }
   } catch { /* ignore parse errors; fall back to process.env */ }
 } else {
+  const pointerPath = path.join(CWD, '.sc4sap', 'active-profile.txt');
   console.error('[sc4sap] Config not found. Looked in:');
+  console.error(`  - active-profile: ${pointerPath}${fs.existsSync(pointerPath) ? ' (pointer present, but profile env missing under ~/.sc4sap/profiles/<alias>/sap.env)' : ' (pointer missing)'}`);
   console.error(`  - ${CWD_ENV}`);
   console.error(`  - ${PLUGIN_ENV}`);
   console.error('[sc4sap] Run "/sc4sap:setup" in your project directory to configure SAP connection.');
@@ -182,8 +205,10 @@ if (!fs.existsSync(LAUNCHER)) {
 
 /**
  * Verify that vendor's production deps are physically present in node_modules.
- * Uses directory existence rather than require.resolve because modern packages
- * with `exports` maps may not expose a default entry resolvable from outside.
+ * Checks for the dep's package.json rather than just the directory: Claude Code's
+ * plugin-pack step on some setups leaves empty node_modules/<dep>/ stubs, which
+ * a plain fs.existsSync(dir) would treat as "installed" and skip the self-heal
+ * below (issue #27). package.json is the minimum marker of a real install.
  * Returns the first missing package name, or null if all present.
  */
 function findMissingDep() {
@@ -192,7 +217,7 @@ function findMissingDep() {
   if (!pkg || !pkg.dependencies) return null;
   const nm = path.join(VENDOR_DIR, 'node_modules');
   for (const dep of Object.keys(pkg.dependencies)) {
-    if (!fs.existsSync(path.join(nm, ...dep.split('/')))) return dep;
+    if (!fs.existsSync(path.join(nm, ...dep.split('/'), 'package.json'))) return dep;
   }
   return null;
 }
@@ -242,7 +267,7 @@ function listAllMissingDeps() {
   if (!pkg || !pkg.dependencies) return [];
   const nm = path.join(VENDOR_DIR, 'node_modules');
   return Object.keys(pkg.dependencies).filter(
-    (d) => !fs.existsSync(path.join(nm, ...d.split('/'))),
+    (d) => !fs.existsSync(path.join(nm, ...d.split('/'), 'package.json')),
   );
 }
 

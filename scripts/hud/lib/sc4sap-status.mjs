@@ -1,7 +1,13 @@
 // Lightweight sc4sap-specific status: SAP version, ABAP release, MCP build, sap.env presence.
 import { existsSync, readFileSync, statSync, readdirSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  resolveConfigJsonPath,
+  resolveSapEnvPath,
+  resolveArtifactBase,
+} from '../../lib/profile-resolve.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = resolve(__dirname, '..', '..', '..');
@@ -40,21 +46,24 @@ function firstExisting(paths) {
   return null;
 }
 
+// Resolve the active profile's config.json (pointer → profile) before falling
+// back to any legacy project-local or plugin-root config.
 export function readConfig(workspaceDir) {
-  const candidates = [
-    join(workspaceDir, '.sc4sap', 'config.json'),
-    ...ROOTS.map((r) => join(r, '.sc4sap', 'config.json')),
-  ];
-  const hit = firstExisting(candidates);
-  if (!hit) return null;
-  try { return JSON.parse(readFileSync(hit, 'utf8')); } catch { return null; }
+  const hit = resolveConfigJsonPath(workspaceDir);
+  if (hit) {
+    try { return JSON.parse(readFileSync(hit.path, 'utf8')); } catch { /* ignore */ }
+  }
+  const candidates = ROOTS.map((r) => join(r, '.sc4sap', 'config.json'));
+  const pluginHit = firstExisting(candidates);
+  if (!pluginHit) return null;
+  try { return JSON.parse(readFileSync(pluginHit, 'utf8')); } catch { return null; }
 }
 
+// True when the ACTIVE profile has an sap.env, or when a legacy project-local
+// sap.env exists, or when a plugin-root install snapshot has one.
 export function sapEnvPresent(workspaceDir) {
-  const candidates = [
-    join(workspaceDir, '.sc4sap', 'sap.env'),
-    ...ROOTS.map((r) => join(r, '.sc4sap', 'sap.env')),
-  ];
+  if (resolveSapEnvPath(workspaceDir)) return true;
+  const candidates = ROOTS.map((r) => join(r, '.sc4sap', 'sap.env'));
   return !!firstExisting(candidates);
 }
 
@@ -63,8 +72,11 @@ export function mcpInstalled() {
   return !!firstExisting(candidates);
 }
 
+// SPRO cache lives under the per-profile artifact base (`work/<alias>/`) in
+// multi-profile mode, or directly under `.sc4sap/` in legacy mode. The shared
+// resolver returns the correct base without us needing to know which.
 export function sproCacheAge(workspaceDir) {
-  const p = join(workspaceDir, '.sc4sap', 'spro-config.json');
+  const p = join(resolveArtifactBase(workspaceDir), 'spro-config.json');
   if (!existsSync(p)) return null;
   try {
     const ageMs = Date.now() - statSync(p).mtimeMs;
@@ -95,35 +107,114 @@ function readDotenv(path) {
 }
 
 // Resolve the pinned active transport (TRKORR + description) for HUD line 2.
-// Source: cwd/.sc4sap/config.json → activeTransport.{trkorr,description}.
-// Returns null when not pinned or unreadable.
+// Source priority: active-profile's config.json → legacy project config.json
+// → plugin-root snapshot. Returns null when not pinned or unreadable.
 export function activeTransport(workspaceDir) {
-  const candidates = [
-    join(workspaceDir, '.sc4sap', 'config.json'),
-    ...ROOTS.map((r) => join(r, '.sc4sap', 'config.json')),
-  ];
-  const hit = firstExisting(candidates);
-  if (!hit) return null;
+  const hit = resolveConfigJsonPath(workspaceDir);
+  if (hit) {
+    try {
+      const at = JSON.parse(readFileSync(hit.path, 'utf8')).activeTransport;
+      if (at && at.trkorr) return { trkorr: at.trkorr, description: at.description || null };
+    } catch { /* ignore */ }
+  }
+  const candidates = ROOTS.map((r) => join(r, '.sc4sap', 'config.json'));
+  const pluginHit = firstExisting(candidates);
+  if (!pluginHit) return null;
   try {
-    const at = JSON.parse(readFileSync(hit, 'utf8')).activeTransport;
+    const at = JSON.parse(readFileSync(pluginHit, 'utf8')).activeTransport;
     if (!at || !at.trkorr) return null;
     return { trkorr: at.trkorr, description: at.description || null };
   } catch { return null; }
 }
 
+// Resolve the active sc4sap profile for HUD line 2. Reads the project-local
+// pointer `<ws>/.sc4sap/active-profile.txt`, locates the user-level env file
+// at `$SC4SAP_HOME_DIR/profiles/<alias>/sap.env` (or `~/.sc4sap/profiles/...`),
+// and extracts SAP_TIER. Falls back to the legacy single-profile `sap.env` if
+// no pointer exists.
+//
+// Returns { alias, tier, readonly, legacy } or null if no profile data at all.
+export function activeProfile(workspaceDir) {
+  const pointer = join(workspaceDir, '.sc4sap', 'active-profile.txt');
+  let alias = null;
+  if (existsSync(pointer)) {
+    try {
+      const raw = readFileSync(pointer, 'utf8').trim();
+      if (raw.length > 0) alias = raw;
+    } catch { /* ignore */ }
+  }
+
+  const sc4sapHome = process.env.SC4SAP_HOME_DIR || join(homedir(), '.sc4sap');
+
+  let envPath;
+  let legacy;
+  if (alias) {
+    envPath = join(sc4sapHome, 'profiles', alias, 'sap.env');
+    legacy = false;
+  } else {
+    envPath = join(workspaceDir, '.sc4sap', 'sap.env');
+    legacy = true;
+  }
+
+  const env = readDotenv(envPath);
+  if (!env) {
+    // legacy path might live in plugin roots for cache installs
+    if (legacy) {
+      for (const r of ROOTS) {
+        const fallback = readDotenv(join(r, '.sc4sap', 'sap.env'));
+        if (fallback) {
+          const tier = normalizeTier(fallback.SAP_TIER);
+          return { alias: null, tier, readonly: tier !== 'DEV', legacy: true };
+        }
+      }
+    }
+    return null;
+  }
+
+  const tier = normalizeTier(env.SAP_TIER);
+  return { alias, tier, readonly: tier !== 'DEV', legacy };
+}
+
+function normalizeTier(value) {
+  const v = String(value || '').trim().toUpperCase();
+  if (v === 'DEV' || v === 'QA' || v === 'PRD') return v;
+  return 'DEV';
+}
+
 // Resolve system info (SID / client / user) for HUD line 2. Priority:
-//   1. cwd/.sc4sap/config.json → systemInfo.{sid,client,user}
+//   1. Active profile's config.json → systemInfo.{sid,client,user}
 //      (set by /sc4sap:setup after a successful GetSession)
-//   2. cwd/.sc4sap/sap.env → SAP_SID / SAP_CLIENT / SAP_USERNAME
-//   3. plugin root fallback (legacy installs)
+//   2. Active profile's sap.env → SAP_SID / SAP_CLIENT / SAP_USERNAME
+//   3. Legacy project config.json → systemInfo
+//   4. Legacy project sap.env → SAP_SID / SAP_CLIENT / SAP_USERNAME
+//   5. Plugin root fallback (legacy installs under cache/marketplaces)
 // Returns null if nothing is configured anywhere.
 export function systemInfo(workspaceDir) {
-  const candidates = [
-    join(workspaceDir, '.sc4sap'),
-    ...ROOTS.map((r) => join(r, '.sc4sap')),
-  ];
-  for (const dir of candidates) {
-    const cfgPath = join(dir, 'config.json');
+  // 1–2. Active profile via shared resolver
+  const cfgHit = resolveConfigJsonPath(workspaceDir);
+  if (cfgHit) {
+    try {
+      const cfg = JSON.parse(readFileSync(cfgHit.path, 'utf8'));
+      const si = cfg.systemInfo;
+      if (si && (si.sid || si.client || si.user)) {
+        return { sid: si.sid || null, client: si.client || null, user: si.user || null };
+      }
+    } catch { /* ignore */ }
+  }
+  const envHit = resolveSapEnvPath(workspaceDir);
+  if (envHit) {
+    const env = readDotenv(envHit.path);
+    if (env && (env.SAP_SID || env.SAP_CLIENT || env.SAP_USERNAME)) {
+      return {
+        sid: env.SAP_SID || null,
+        client: env.SAP_CLIENT || null,
+        user: env.SAP_USERNAME || null,
+      };
+    }
+  }
+  // 5. Plugin root fallback (for cache/marketplaces snapshot installs)
+  for (const r of ROOTS) {
+    const cfgPath = join(r, '.sc4sap', 'config.json');
     if (existsSync(cfgPath)) {
       try {
         const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
@@ -133,16 +224,13 @@ export function systemInfo(workspaceDir) {
         }
       } catch { /* ignore */ }
     }
-    const env = readDotenv(join(dir, 'sap.env'));
-    if (env) {
-      const hasAny = env.SAP_SID || env.SAP_CLIENT || env.SAP_USERNAME;
-      if (hasAny) {
-        return {
-          sid: env.SAP_SID || null,
-          client: env.SAP_CLIENT || null,
-          user: env.SAP_USERNAME || null,
-        };
-      }
+    const env = readDotenv(join(r, '.sc4sap', 'sap.env'));
+    if (env && (env.SAP_SID || env.SAP_CLIENT || env.SAP_USERNAME)) {
+      return {
+        sid: env.SAP_SID || null,
+        client: env.SAP_CLIENT || null,
+        user: env.SAP_USERNAME || null,
+      };
     }
   }
   return null;
