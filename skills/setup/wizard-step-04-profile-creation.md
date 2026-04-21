@@ -32,7 +32,7 @@ Enum via `AskUserQuestion`: `DEV` | `QA` | `PRD`. Remind the user:
 
 Tier is immutable once set (changing tier = remove + add).
 
-## 4.3 — Same-company meta-copy (conditional)
+## 4.3 — Same-company meta-copy (conditional acceleration, NOT default)
 
 If the chosen alias shares a `-`-segmented prefix with any existing profile (e.g., adding `KR-QA` while `KR-DEV` exists), offer to copy these fields from the sibling:
 
@@ -41,7 +41,7 @@ SAP_INDUSTRY, SAP_ACTIVE_MODULES, SAP_LANGUAGE, SAP_VERSION,
 ABAP_RELEASE, SAP_SYSTEM_TYPE, MCP_BLOCKLIST_PROFILE, namingConvention (config.json)
 ```
 
-Connection fields (host/client/user/password) are ALWAYS entered fresh. Default: yes, copy.
+Connection fields (host/client/user/password) are ALWAYS entered fresh. Default: **ask explicitly** (`yes, copy` / `no, enter fresh`). Do NOT auto-apply. Rationale: sharing a prefix is a naming convention, not a guarantee of system identity — the KR-DEV system may be S/4HANA while KR-PRD is still ECC during a migration window. When the user declines the copy, fall through to §4.4b which re-collects the three identity fields (SAP_VERSION / ABAP_RELEASE / SAP_INDUSTRY) fresh.
 
 ## 4.4 — Connection fields (ask one at a time, per SKILL.md interaction rule)
 
@@ -55,7 +55,19 @@ Connection fields (host/client/user/password) are ALWAYS entered fresh. Default:
 | `SAP_LANGUAGE` | 2-letter uppercase, default `EN` | |
 | `SAP_SYSTEM_TYPE` | `onprem` \| `cloud` \| `legacy` | |
 
-Copy `SAP_VERSION`, `ABAP_RELEASE`, `SAP_INDUSTRY` from Step 2. If a meta-copy was accepted at 4.3, do not re-ask those; otherwise inherit from Step 2.
+Go to §4.4b for the identity fields (`SAP_VERSION`, `ABAP_RELEASE`, `SAP_INDUSTRY`). Do NOT silently inherit from Step 2.
+
+## 4.4b — Identity fields (per-profile, NEVER silently inherited)
+
+`SAP_VERSION`, `ABAP_RELEASE`, `SAP_INDUSTRY` are **identity fields** — they drive version-specific table selection, ABAP syntax availability, and industry-aware consultant behavior. **Silent inheritance from Step 2 is a bug class**: a common failure mode is "wizard session refreshes profile A (S/4HANA) at Step 2, then creates profile B (ECC) at Step 4 with A's S4/816/tire values baked into B's config.json — persistent cross-profile corruption".
+
+Rules:
+
+1. **Meta-copy accepted at §4.3** → inherit from sibling profile's `sap.env`. Done.
+2. **Meta-copy declined at §4.3, OR no sibling exists** → ask the user fresh for this profile, using the same three sub-questions as Step 2 (`wizard-step-02-system-identification.md` §2a/2b/2c). Do NOT reuse values already collected at Step 2 for the active/first profile — those do not apply.
+3. **Refreshing an existing profile** (not creating a new one) → Step 2 values apply to that profile; no per-profile re-ask is needed here.
+
+The CLI enforces a deterministic guardrail: `sap-profile-cli.mjs add` **rejects** payloads where `version`, `abapRelease`, or `industry` are missing AND no `copyFrom` is given (exit 2). This catches any wizard misroute at write-time, regardless of which LLM executes the skill.
 
 ## 4.5 — Optional `SAP_DESCRIPTION`
 

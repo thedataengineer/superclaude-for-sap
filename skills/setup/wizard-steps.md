@@ -28,6 +28,8 @@ Verify Claude Code version compatibility (`claude --version`).
 
 Full procedure: **[`wizard-step-02-system-identification.md`](wizard-step-02-system-identification.md)**. Ask the three sub-questions one at a time; do not batch them. Values feed into the profile env at Step 4.
 
+> **Scope (0.6.0+ multi-profile)**: Step 2 values apply ONLY to the profile the wizard is currently operating on — i.e., the first profile being created OR the currently-active profile being refreshed. **When Step 0 routes to the "create another profile" branch (needsMigration=false AND profileCount≥1), the values collected here belong to the existing/active profile and MUST NOT be silently reused for the new profile.** Step 4 will re-collect SAP Version / ABAP Release / Industry per-profile unless a §4.3 meta-copy is explicitly accepted. The CLI (`sap-profile-cli.mjs add`) rejects payloads missing these three identity fields — this is the deterministic defense against cross-profile inheritance bugs.
+
 ## Step 3 — Install `abap-mcp-adt-powerup` MCP Server
 
 Clone (`github.com/babamba2/abap-mcp-adt-powerup.git`) and build the external MCP server into the **plugin root's** `vendor/abap-mcp-adt/` folder (typically `~/.claude/plugins/marketplaces/sc4sap/vendor/abap-mcp-adt/`), **NOT** the user's project directory.
