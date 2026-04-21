@@ -243,6 +243,47 @@ async function cmdAdd() {
     };
   }
 
+  // Identity-field guardrail (cross-profile corruption defense).
+  // sapVersion / abapRelease / industry drive version-specific table selection,
+  // ABAP syntax availability, and industry-aware agent behavior. Refuse to create
+  // a profile with empty identity fields — the wizard must collect them per-profile
+  // (or supply `copyFrom` explicitly). See wizard-step-04-profile-creation.md §4.4b.
+  const identityFields = [
+    ['version', 'SAP_VERSION'],
+    ['abapRelease', 'ABAP_RELEASE'],
+    ['industry', 'SAP_INDUSTRY'],
+  ];
+  const missingIdentity = [];
+  for (const [payloadKey, envKey] of identityFields) {
+    const fromPayload = payload[payloadKey] ? String(payload[payloadKey]).trim() : '';
+    const fromBase = base[envKey] ? String(base[envKey]).trim() : '';
+    if (!fromPayload && !fromBase) missingIdentity.push(payloadKey);
+  }
+  if (missingIdentity.length) {
+    die(
+      2,
+      `add: identity field(s) missing: ${missingIdentity.join(', ')}. ` +
+      `Supply via stdin payload or set copyFrom=<sibling-alias>. ` +
+      `Refusing to create "${alias}" with empty sapVersion/abapRelease/industry — ` +
+      `these drive version/industry-aware decisions. ` +
+      `See wizard-step-04-profile-creation.md §4.4b.`,
+    );
+  }
+
+  // Blocklist profile — kept in sync between config.json (L1 PreToolUse hook reads)
+  // and sap.env (L2 MCP server guard reads). Default `standard` per decision §12A
+  // when unspecified. Validate against the 4 accepted values.
+  const BLOCKLIST_VALID = ['strict', 'standard', 'minimal', 'custom'];
+  const blocklistProfile = payload.blocklistProfile
+    ? String(payload.blocklistProfile).trim()
+    : 'standard';
+  if (!BLOCKLIST_VALID.includes(blocklistProfile)) {
+    die(
+      2,
+      `add: invalid blocklistProfile "${blocklistProfile}" — must be one of: ${BLOCKLIST_VALID.join(' | ')}`,
+    );
+  }
+
   const service = String(payload.keychainService || KEYCHAIN_SERVICE_DEFAULT);
   const username = String(payload.username || '');
   const password = payload.password;
@@ -253,7 +294,12 @@ async function cmdAdd() {
       keychainWrite(service, account, String(password));
       passwordRef = `keychain:${service}/${account}`;
     } catch (e) {
-      die(5, `keychain write failed: ${e.message}`);
+      // Parity with cmdMigrate: fall back to plaintext when OS keychain is unavailable
+      // (matches wizard-step-04-profile-creation.md §4.6 documented behavior).
+      process.stderr.write(
+        `[add] WARNING: keychain unavailable (${e.message}); storing password as plaintext in new profile.\n`,
+      );
+      passwordRef = String(password);
     }
   }
 
@@ -271,14 +317,17 @@ async function cmdAdd() {
     SAP_ACTIVE_MODULES: payload.activeModules || base.SAP_ACTIVE_MODULES || '',
     SAP_TIER: tier,
     SAP_DESCRIPTION: payload.description || '',
+    MCP_BLOCKLIST_PROFILE: blocklistProfile,
   };
 
   mkdirSync(targetDir, { recursive: true });
   writeFileSync(join(targetDir, 'sap.env'), formatDotenv(env));
   const configJson = {
     sapVersion: env.SAP_VERSION,
+    abapRelease: env.ABAP_RELEASE,
     industry: env.SAP_INDUSTRY,
     activeModules: env.SAP_ACTIVE_MODULES.split(',').map((s) => s.trim()).filter(Boolean),
+    blocklistProfile,
     tier,
     createdAt: new Date().toISOString(),
   };

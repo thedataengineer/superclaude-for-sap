@@ -14,6 +14,30 @@ _No unreleased changes yet._
 
 ---
 
+## [0.6.2] - 2026-04-21
+
+Follow-up to 0.6.1 — cross-profile integrity + MCP-server legacy detection fixes found while adding a second SAP profile (ECC 7.40) in the same wizard session that was refreshing an S/4HANA profile.
+
+### Added
+- **ECC / BASIS < 7.50 Compatibility Matrix** in [`docs/FEATURES.md`](FEATURES.md) — 15 rows verified end-to-end on ECC 7.40 covering every MCP handler family (session/discovery, DDIC read/write, ABAP source R/W, CDS views, analysis, enhancements, transport, runtime, RAP/Behavior/Service/MetadataExt). Distinguishes ✅ full / ⚠️ partial / ❌ refused-with-clear-error / ℹ️ setup-dependent. Links to the canonical upstream matrix in `abap-mcp-adt-powerup/README.md`.
+- **Legacy auto-detection docs** — explicit rules: `SAP_SYSTEM_TYPE=legacy` OR `SAP_VERSION=ECC` OR `ABAP_RELEASE < 750` → MCP server routes through `AdtClientLegacy`. Depends on upstream `abap-mcp-adt-powerup` commit d08e576+ (2026-04-21).
+
+### Fixed
+- **`bridge/mcp-server.cjs` missed the active-profile pointer** — resolved env only from legacy `<project>/.sc4sap/sap.env` + `<plugin>/.sc4sap/sap.env`. Multi-profile projects (the 0.6.0 default) failed MCP handshake with `Config not found`. Bridge now reads `<cwd>/.sc4sap/active-profile.txt` first → resolves to `${SC4SAP_HOME_DIR|~/.sc4sap}/profiles/<alias>/sap.env`. Legacy paths retained as fallback. Error message when nothing resolves now surfaces the pointer path with a `(pointer missing / present but profile env missing)` annotation.
+- **Wizard identity fields inherited across profile boundaries (catastrophe-class bug)** — Step 2 (`SAP_VERSION` / `ABAP_RELEASE` / `SAP_INDUSTRY`) was collected once per wizard session and then reused for every profile created in that session. Refresh-S4 + add-ECC in one session silently persisted S4/816/tire into the new ECC profile's `config.json`, so consultant agents would suggest MATDOC/ACDOCA on an ECC backend. Fixed at three layers:
+  - `skills/setup/wizard-step-04-profile-creation.md` §4.3 — meta-copy is now opt-in, not the default.
+  - `skills/setup/wizard-step-04-profile-creation.md` new §4.4b — per-profile identity-field re-collection rule documented.
+  - `skills/setup/wizard-steps.md` Step 2 — scope note: values apply only to the profile currently under wizard.
+- **`sap-profile-cli.mjs cmdAdd` now has a deterministic guardrail** — rejects `add` payloads missing `version` / `abapRelease` / `industry` (unless `copyFrom=<sibling>` is given) with exit code 2. Independent of LLM behavior, the write path cannot persist an identity-empty profile. See wizard §4.4b.
+- **`cmdAdd` did not write `blocklistProfile` to `config.json` or `sap.env`** — L1 PreToolUse hook silently defaulted to `strict` when the user had chosen `minimal` at Step 12, causing `BKPF`-class reads to be blocked contrary to user intent. `cmdAdd` now accepts a `blocklistProfile` payload (validated against `strict|standard|minimal|custom`) and writes it to both `config.json` (L1 hook source) and `sap.env` as `MCP_BLOCKLIST_PROFILE` (L2 MCP-server guard source). L1 and L2 stay in sync from the first profile creation.
+- **`cmdAdd` omitted `abapRelease` from `config.json`** — Step 10 spec called for it; now included alongside `sapVersion` / `industry` / `activeModules` / `tier`.
+- **`cmdAdd` hard-exited when `@napi-rs/keyring` was unavailable** — skill doc promised a plaintext fallback (matching `cmdMigrate`). `cmdAdd` now emits a stderr warning and writes the plaintext password to the profile env, so headless / keyring-unavailable dev machines can still add profiles.
+
+### Upstream dependency
+- MCP server `abap-mcp-adt-powerup` commit **d08e576** (2026-04-21) — `detectLegacy()` uses version/release in addition to `SAP_SYSTEM_TYPE`; `hydrateSystemContextFromEnvFile` propagates `SAP_VERSION` / `ABAP_RELEASE` / `SAP_RFC_*` into `process.env`; `UpdateFunctionModule` defaults `transport_request` to `"local"` for `$TMP` objects. Pin is NOT bumped in this release; runtime changes are picked up via `git pull` + `npm run build` in the vendor dir or plugin reinstall.
+
+---
+
 ## [0.6.1] - 2026-04-21
 
 ### Added
