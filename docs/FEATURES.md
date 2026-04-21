@@ -351,6 +351,41 @@ Configure via `/sc4sap:setup` (Step 4) or `/sc4sap:sap-option modules`. Consumed
 - **S/4HANA Cloud (Public)** — **classical Dynpro forbidden**; redirects to RAP + Fiori Elements, `if_oo_adt_classrun`, or SALV-only. Full list in `common/cloud-abap-constraints.md`
 - **S/4HANA Cloud (Private)** — prefer CDS + AMDP + RAP + Business Partner APIs
 
+### ECC / BASIS < 7.50 — MCP Tool Compatibility Matrix
+
+On legacy systems the MCP server (`abap-mcp-adt-powerup`) automatically routes through `AdtClientLegacy` when any of the following is set on the active profile:
+
+- `SAP_VERSION=ECC` — always marks the profile as legacy
+- `ABAP_RELEASE` numeric `< 750` (e.g. `740`, `731`)
+- `SAP_SYSTEM_TYPE=legacy` — explicit override (back-compat)
+
+Legacy mode deliberately refuses a subset of endpoints that do not exist on BASIS < 7.50, returning a clear `"not supported on this SAP system"` message instead of a cryptic 404.
+
+Matrix verified on ECC 7.40 (BASIS 7.40, SAP_SYSTEM_TYPE=onprem, SAP_VERSION=ECC, ABAP_RELEASE=740):
+
+| Category | Tools | ECC 7.40 | Notes |
+|---|---|---|---|
+| Session, Search, Discovery | `GetSession`, `SearchObject`, `GetObjectInfo`, `GetObjectStructure`, `GetInactiveObjects` | ✅ | — |
+| Package read | `GetPackageContents`, `GetPackageTree` | ✅ | — |
+| Package metadata | `GetPackage` | ❌ | `/sap/bc/adt/packages` absent — use SE80/SE21 |
+| DDIC read | `GetTable`, `GetStructure`, `GetDataElement`, `GetDomain` | ❌ | `/sap/bc/adt/ddic/{tables,structures,dataelements,domains}` added in 7.50 |
+| DDIC write (classic) | `Create/Update/Delete` of `Table`, `Structure`, `DataElement`, `Domain` | ❌ | Same gap — use SE11 / or the **ECC $TMP helper-report workaround** in [`common/ecc-ddic-fallback.md`](../common/ecc-ddic-fallback.md) |
+| Classic view (`VIEW/DV`) | `GetView` for V_T001_CORE-style classic views | ❌ | Classic view endpoint 404 on ECC 7.40 |
+| CDS view (`DDLS/DF`) | `GetView`, `CreateView`, `UpdateView`, `DeleteView` | ✅ | `/sap/bc/adt/ddic/ddl/sources/` present from BASIS 7.40 SP05+; CDS DDL activates cleanly |
+| ABAP source | `Get/Create/Update/Delete` for Program, Class, Interface, Include, FunctionGroup, FunctionModule | ✅ | Full R/W; `UpdateFunctionModule` auto-defaults `transport_request` to `"local"` for $TMP objects |
+| Analysis | `GetAbapSemanticAnalysis`, `GetAbapAST` | ✅ | Client-side parse, no SAP call |
+| WhereUsed | `GetWhereUsed` | ⚠️ | Classic objects only — `TABL` target reports "Unsupported object type" |
+| Enhancements | `GetEnhancements`, `GetEnhancementSpot`, `GetEnhancementImpl` | ❌ | `/sap/bc/adt/enhancements` 404 on BASIS < 7.50 — use SE18 / SE19 / CMOD / SMOD |
+| Transport | `ListTransports`, `GetTransport`, `CreateTransport` | ✅ | — |
+| Runtime / Dumps | `RuntimeListDumps`, `RuntimeAnalyzeDump`, `RuntimeGetDumpById` | ✅ | ST22 via ADT |
+| Screen / GUI Status | `GetScreen`, `GetGuiStatus`, `GetTextElement` (+ Create/Update) | ℹ️ | RFC-dispatched — requires `SAP_RFC_BACKEND` preflight (soap / native / gateway / odata / zrfc) |
+| RAP / Behavior / Service / MetadataExt | all `*BehaviorDefinition`, `*BehaviorImplementation`, `*ServiceDefinition`, `*ServiceBinding`, `*MetadataExtension` | ❌ | S/4HANA-only — RAP stack does not exist on ECC |
+| Table contents | `GetTableContents`, `GetSqlQuery` | ℹ️ | Works, but gated per-profile by the data-extraction blocklist (see §Data Extraction Blocklist) |
+
+Legend: ✅ full · ⚠️ partial · ❌ refused with clear error (SAP platform limit) · ℹ️ works, but depends on prior setup / policy.
+
+Upstream reference (same matrix, MCP-server canonical view): [`abap-mcp-adt-powerup` README → Legacy (ECC / BASIS < 7.50) Compatibility Matrix](https://github.com/babamba2/abap-mcp-adt-powerup#legacy-ecc--basis--750-compatibility-matrix).
+
 ## SPRO Configuration Reference
 
 Built-in reference data for all 14 SAP modules under `configs/{MODULE}/`:
