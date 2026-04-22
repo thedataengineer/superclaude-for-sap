@@ -3,6 +3,14 @@
 All notable changes to **SuperClaude for SAP (sc4sap)** will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4] — 2026-04-22
+
+### Changed — Vendor pin bump
+
+- `scripts/build-mcp-server.mjs` `DEFAULT_PINNED_SHA` → `b41d4df546e2cccfa3f6693b656e16868b6facb6` (abap-mcp-adt-powerup **v4.8.1**, previously pinned at a pre-v4.8.0 SHA). npm installers of sc4sap 0.6.4 now receive the ECC DDIC write fallback vendored into the plugin.
+
+No other functional changes — 0.6.4 is a pure vendor-pin follow-up to 0.6.3.
+
 ## [0.6.3] — 2026-04-22
 
 ### Added — ECC DDIC write path via OData RFC fallback
