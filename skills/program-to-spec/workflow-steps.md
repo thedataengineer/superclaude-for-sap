@@ -3,7 +3,9 @@
 Referenced by `SKILL.md`. Follow these 6 steps (Step 0 through Step 5) whenever the skill runs.
 
 **Step 0 — Socratic interview** (see `Socratic_Scope_Narrowing` section in `SKILL.md`)
-Never skip unless the user supplies `object=...  depth=L2  format=md  lang=ko` style fully-qualified arguments.
+Default opener: issue ONE bundled `AskUserQuestion` call with the four standard questions — **Audience / Format / Depth / Language** — in that exact order, each single-select with the "(Recommended)" option first. This is MANDATORY whenever the target object is already present in `ARGUMENTS`; it replaces Rounds 2+3+5 in a single UI turn.
+Fall back to per-round questioning only when (a) the object is missing/ambiguous (run Round 1 first) or (b) the user picks L3/L4 in the bundle (run Round 4 scope-trimming after).
+Never skip entirely unless the user supplies `object=... depth=L2 format=md lang=ko` style fully-qualified arguments.
 
 **Step 1 — Inventory** (auto, parallel MCP calls)
 - `SearchObject` — confirm object + sub-type
@@ -44,7 +46,7 @@ Every Selection-Screen and every output Screen (Dynpro) / ALV must be rendered a
    - Reconstruct Selection-Screen from `PARAMETERS` / `SELECT-OPTIONS` / `SELECTION-SCREEN BLOCK` statements in the source.
    - Reconstruct ALV output from the field catalog (columns + widths + headings).
    - Show label + input box + F4-help marker `[▼]` + mandatory `*`.
-2. **Real Excel cell geometry** — **Excel output**. Built inside `screensSheet()` in the per-spec rich driver (Step 4) using fixed column widths + merged block-title rows + left/right-only borders on the frame interior + grey-fill input widgets + ALV grid with all-borders data cells. See the template header in `scripts/spec/rich-xlsx-template.mjs` for the full styles catalog.
+2. **Embedded PNG mockup (v8 PRIMARY PATH for Excel)** — **Excel output**. Selection Screen and ALV layout are rendered as SVG → PNG via `scripts/spec/screen-image-renderer.mjs` and embedded on the `Inputs & Screens` sheet through `build({ images })` in `rich-xlsx-template.mjs`. Driver calls `renderScreenImages({ selection, alv })` where `alv.maxRows` is **3 (absolute max 5)** — ALV images are mockups, not data dumps. When the rasterizer returns null (no headless Edge/Chrome), fall back to cell-border wireframes via `screenFrameRow / screenMerge` helpers — never silently omit the screens.
 3. **Mermaid diagram** (MD output only, when flow matters):
    - `flowchart TD` for screen-to-screen navigation (CALL SCREEN / LEAVE TO / SET SCREEN).
    - `classDiagram` for GUI Status menubar/toolbar/function-key mapping.
@@ -52,7 +54,7 @@ Every Selection-Screen and every output Screen (Dynpro) / ALV must be rendered a
 4. **Classical Dynpro** → include header line (short description, next-screen, cursor-pos) + flow-logic pseudo-code (`PBO` / `PAI` modules).
 5. **GUI Status** → render menubar / application toolbar / function keys as a short table (FKEY → FCODE → text) plus (in MD) an ASCII toolbar bar.
 
-Artifacts produced in this step are placed in the `Screens` section (MD) or `Screens` sheet (Excel). **If no screens exist** (pure class, FM, CDS, RAP without UI), skip this step silently.
+Artifacts produced in this step are placed in the `Inputs & Screens` section (MD §8) or `Inputs & Screens` sheet (Excel). The **Parameters table (§8.1) is always rendered** — for objects without UI (pure class, FM, CDS, RAP without screens), skip only the wireframe tiers (§8.2–§8.4) and keep the Parameters table.
 
 **Step 4 — Render**
 - **Markdown**: single `.md` with H2 sections per spec dimension, tables for selection-screen / tables / methods / exits.
@@ -66,16 +68,17 @@ Artifacts produced in this step are placed in the `Screens` section (MD) or `Scr
      - Default: `.sc4sap/specs/_drivers/{OBJECT}-{YYYYMMDD}.mjs`
      - If the user specified an absolute output directory (e.g. `C:\Users\...\Desktop\test`), put the driver next to the target xlsx — it makes cleanup obvious and avoids cluttering the project.
   2. **Fill the two TODO blocks** inside the copy, using the content produced by sap-analyst + sap-writer in Step 3:
-     - `SHEETS_DATA` — array of `{ name, rows: [[header...], [row...], ...] }` for text sheets (Overview, Selection Screen table, Data Model, Logic, Outputs, Authorization, Exceptions, plus L3+ sheets — Enhancements / Where-Used / Includes & Artifacts / Risk & PII).
-     - `screensSheet()` — build Selection-Screen + ALV using the styles catalog documented in the template header. **Never** place ASCII box-drawing characters (`┌─┐│└┘├┤┬┴┼`) inside data cells — they misalign across variable column widths. Use:
-       - Fixed-width columns tuned to ALV column content (`cols: [{min, max, width}, ...]`).
-       - Merged block-title rows with style 17 (bold + grey fill + top+left+right border).
-       - Interior frame rows with style 9 on column A (left border only) and style 10 on column R (right border only).
-       - Closing frame rows with style 15 (bottom+left) / 12 (bottom only) / 16 (bottom+right).
-       - Input fields as merged cells with style 6 (grey fill + all borders + center).
-       - ALV headers with style 4 (bold + grey + all borders + center).
-       - ALV data cells with style 5 (all borders + center); use style 20 (soft yellow) for cells that deserve highlight (e.g. "In Transit" status).
-       - Screen-flow diagram as style-21 boxes linked by plain-text arrows (" — F8 Execute → ").
+     - `SHEETS_DATA` — array of `{ name, rows: [[header...], [row...], ...] }` for text sheets (Overview, Data Model, Logic, Outputs, Authorization, Exceptions, plus L3+ sheets — Enhancements / Where-Used / Includes & Artifacts / Risk & PII). The Parameters table lives inside the `Inputs & Screens` sheet and is produced by `screensSheet()` (see below), not as an independent text sheet.
+     - `screensSheet()` — build the `Inputs & Screens` sheet in v8 order:
+       1. Row 1 — sheet title (style 2, merged A:Q).
+       2. Rows ~3–16 — left EMPTY (anchor for Selection PNG via `build({ images })`).
+       3. Rows ~19–31 — left EMPTY (anchor for ALV PNG).
+       4. Flow diagram (style-21 boxes + style-0 arrows) — informational, minimal formatting.
+       5. BAPI / Action mapping (style-18 cells, no fill).
+       6. Parameters table via `paramsBlock()` — grey header (style 4), bordered data (style 5).
+       7. **Yellow warning rows at the BOTTOM** — `⚠ Authority / Auth-check caveats` and `⚠ Data-volume / runtime caveats`, each style 20 (yellow) and merged A:Q. Readers scan top→bottom, so constraints come last.
+     - Per-spec driver MUST also import `renderScreenImages` from `screen-image-renderer.mjs`, build the `images` array, and pass it to `build(OUT_PATH, { images })`.
+     - **Never** place ASCII box-drawing characters (`┌─┐│└┘├┤┬┴┼`) inside data cells.
      - `OUT_PATH` — absolute path the user asked for (or the default `.sc4sap/specs/{object}-{YYYYMMDD}-{lang}.xlsx`).
   3. **Run the driver**:
      ```bash
@@ -83,6 +86,12 @@ Artifacts produced in this step are placed in the `Screens` section (MD) or `Scr
      ```
      The driver writes the xlsx and auto-opens it in the OS default handler (Excel / LibreOffice) — the built-in `openInDefault()` spawns `cmd.exe /c start "" <path>` on Windows, `open` on macOS, `xdg-open` on Linux, detached + `unref()`'d so Claude Code doesn't block.
   4. **Verify the artifact** — `ls` the output path; confirm file size > 0 and that the file is a valid zip (`unzip -l` should list `[Content_Types].xml`, `xl/styles.xml`, `xl/worksheets/sheet*.xml`).
+  4b. **No-truncation QA (MANDATORY)** — every cell's content must be fully visible in Excel at default zoom. Before deleting the driver:
+     - **Text sheets** — `textSheet()` already auto-measures with the v4 CJK-aware metric (`WIDTH_PADDING=6`, `WIDTH_MAX=100`, `WRAP_THRESHOLD=55`, `LINE_HEIGHT_PT=17`). Never tighten these. If a reviewer reports truncation, RAISE them.
+     - **`Inputs & Screens` sheet (`screensSheet()`)** — enforce the column-vs-content inequality for every non-merged cell and every merged block:
+         `visualWidth(text) + 2 ≤ (c1 - c0 + 1) × colWidth`
+       (v4 baseline: `colWidth = 14` for B..P.) For each cell you place with style `0 / 21 / 4 / 5 / 20` etc., check the rule. If a cell fails the inequality, EITHER merge it across more columns, OR shorten the label (e.g. `→` instead of `→ POST_GR` in arrow cells). Toolbar/button labels MUST live in ≥ 3-col merges.
+     - Spot-check by opening the xlsx and visually scanning every sheet; fix and re-run the driver if any cell is clipped.
   5. **Delete the driver** — the xlsx is the deliverable; the driver is scaffolding. Remove it with the Bash tool so the output directory stays clean.
      ```bash
      rm <driver>.mjs
@@ -91,19 +100,41 @@ Artifacts produced in this step are placed in the `Screens` section (MD) or `Scr
 
   **Zero external npm dependencies** — the template uses only `node:zlib` + `node:fs` + `node:child_process` + `node:os`. This exists because some SAP customer networks block `registry.npmjs.org`, so the plugin must work fully offline after `git clone`.
 
-  Sheets (same set regardless of writer):
+  Sheet order (MANDATORY — the template's `build()` forces `Inputs & Screens` to position 3; don't reorder in drivers):
   1. `Overview` — metadata, purpose, archetype
-  2. `Selection Screen` — parameters / select-options with datatype, required, default
-  3. `Data Model` — tables / CDS / structures accessed (R/W)
+  2. `Data Model` — tables / CDS / structures accessed (R/W)
+  3. **`Inputs & Screens`** — Parameters table + wireframes. ALWAYS position 3 so readers see what the user enters BEFORE diving into logic. Localise the sheet name (`입력 및 화면` for KO, `入力と画面` for JA) via the template's `INPUTS_SHEET_NAME` constant — do NOT name it the English `Inputs & Screens` on a KO/JA spec.
   4. `Logic` — numbered step list with line refs
-  5. `Outputs` — ALV field catalog / exporting params / OData fields
+  5. `Outputs` — ALV field catalog / exporting params / OData fields. **Column headers MUST be: `순서 | 필드 | 필드 설명 | 길이 | 편집 | 숨김 | 비고`** (do NOT use `헤더`/`폭` — those were the pre-2026-04-20 names).
   6. `Authorization` — S_TCODE, S_TABU_DIS, custom objects
   7. `Exceptions` — message/class + trigger condition
   8. `Enhancements` — BAdI / User Exit / BTE impacts (L3+)
   9. `Where-Used` — callers (L3+ if opted in)
   10. `Includes & Artifacts` — Screen / GUI Status / Text Element (L3+)
   11. `Risk & PII` — blocklist-relevant tables touched (L4)
-  12. `Screens` — **wireframe images** (ASCII + SVG for Selection-Screen, Dynpros, ALV layout, GUI Status), one screen per row with an embedded picture column
+
+  Color convention (v8 — grey + yellow palette, green retired):
+  - **Light grey (`#E7E6E6`)** — sheet title (row 1, style `2`) AND all section titles / header rows / frame-top block titles (styles `3 / 4 / 17 / 19 / 24`, all pointing at fill 2 in v8). Green fill (#E2EFDA) is retired — do NOT reintroduce.
+  - **Light sky blue (`#DDEBF7`)** — selection-screen input widgets in the cell-border fallback path (style `6`).
+  - **Soft yellow (`#FFF2CC`)** — style `20`, reserved for warning rows (Auth / Data-volume caveats) at the BOTTOM of the `Inputs & Screens` sheet. Do not sprinkle yellow elsewhere.
+  - Informational rows (Flow diagram, BAPI mapping) use NO fill beyond the optional grey header — keep them uncluttered since the embedded images carry the visual weight.
+
+  Border continuity (v7 — MANDATORY for `screensSheet()`):
+  - Use the module-level helpers (`screenFrameRow / screenCloseFrame / screenFullRow / screenSubtitleRow / screenMerge`) from the template; do NOT redefine them inline in drivers.
+  - Helpers set the style on EVERY cell of a merge range (v7 correction — v6 set only top-left, which caused Excel to drop the right/bottom edges of merged input boxes). Modern Excel suppresses interior dividers between identically-styled merged cells, so the outer rectangle renders cleanly.
+  - `screenSubtitleRow` is REQUIRED for every sub-title line INSIDE a frame section (e.g. `▼ 상단 정보 패널`, `▼ ALV 그리드`, `◆ 블록 B01`). It keeps col A/Q frame borders continuous across the sub-title row.
+  - Style 17 (frame-top) has ALL four borders — every title bar closes with a clean bottom line. Do NOT revert to TLR.
+  - After a mini-frame (top-info panel, toolbar row, flow diagram, toolbar→BAPI block), always call `screenCloseFrame` before starting the next section, so every frame has a visible bottom edge.
+
+  Selection-screen parameter-row alignment (MANDATORY — `screensSheet()`):
+  - Label: `B:E` (4 cols, merged, style 7)
+  - Low input: `F:H` (3 cols, merged, style 6 sky-blue)
+  - Dropdown `▼`: col `I` (single, style 0)
+  - Range separator `~`: col `J` (single, style 7) — ONLY when SELECT-OPTIONS with range
+  - High input: `K:M` (3 cols, merged, style 6 sky-blue) — ONLY when SELECT-OPTIONS with range
+  - Second dropdown `▼`: col `N` (single, style 0)
+  - Note / default annotation: `O:P` (2 cols, merged, style 0)
+  - EVERY range parameter MUST use these exact columns so the high box visually aligns across rows. If a param has a dynamic default (e.g. PO-date `당월1일~오늘`), it STILL uses F:H + J separator + K:M high — NEVER shift one column left.
 
 **Step 5 — Review loop**
 - Show a table of contents + first section inline.
