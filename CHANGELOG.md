@@ -3,6 +3,25 @@
 All notable changes to **SuperClaude for SAP (sc4sap)** will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.8] — 2026-04-24
+
+### Reverted — `<Main_Thread_Dispatch>` enforcement layer (0.6.7)
+
+Reverts the enforcement layer introduced in 0.6.7. The per-skill `model:` frontmatter returns to being a **declarative hint**; no active sub-dispatch is performed.
+
+**Why**: 2026-04-23 smoke validation (`.sc4sap/test-reports/enforcement-validation-20260423.md`) confirmed a Claude Code architectural limit — sub-dispatched `general-purpose` agents do not receive the `Agent`/`Task` spawn tool and do not have the `mcp__plugin_sc4sap_sap__*` MCP tools in their deferred-tool registry. The 0.6.7 design assumed a Sonnet sub-orchestrator could fan out to phase agents (`sap-code-reviewer`, `sap-stocker`, `sap-analyst`, …); empirically it cannot. 12/14 in-scope skills were functionally broken under 0.6.7; the 2 file-only skills that happened to work did so only by falling back to local file reads rather than live MCP calls.
+
+**What reverted**:
+- `common/main-thread-dispatch.md` — deleted (0.6.7 new file).
+- `common/model-routing-rule.md` — `§ Main-Thread Dispatch Enforcement` section removed; phase banner convention restored (single-dispatch skills no longer emit `phase=0 (bootstrap)`).
+- `docs/skill-model-architecture.md` — "Enforcement layer (v0.6.7+)" note removed.
+- `skills/*/SKILL.md` × 14 — `<Main_Thread_Dispatch>` block removed from `ask-consultant`, `sap-doctor`, `sap-option`, `mcp-setup`, `setup`, `deep-interview`, `trust-session`, `create-program`, `create-object`, `team`, `analyze-cbo-obj`, `analyze-code`, `analyze-symptom`, `compare-programs`.
+
+**What kept**:
+- Frontmatter `model:` fields remain on all 14 skills (including `deep-interview: haiku` and `team: sonnet` which were added in 0.6.7) — they serve as model-routing guidance for future redesign and for documentation readers, without runtime enforcement.
+
+**Operational impact**: users whose Claude Code session is on a larger model than a skill's declared target will see the skill run at session-model cost. This matches 0.6.6 and earlier behavior.
+
 ## [0.6.5] — 2026-04-22
 
 ### Changed — Publish workflow

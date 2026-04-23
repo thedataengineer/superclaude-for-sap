@@ -4,8 +4,6 @@ Per-skill / per-phase model allocation across the sc4sap plugin. This document i
 
 > **Scope**: all 12 user-facing skills + 16 agents. Companion planning docs, spec files, and per-phase rule files are not repeated here — see [`../skills/<name>/SKILL.md`](../skills) and [`../agents/`](../agents) for the primary sources. This doc summarizes the runtime model decisions they encode.
 
-> **Enforcement layer (v0.6.7+)**: the per-skill `model:` frontmatter is backed by an active sub-dispatch rule — see [`../common/main-thread-dispatch.md`](../common/main-thread-dispatch.md). When a session's main model differs from a skill's declared target, the skill sub-dispatches its body to `Agent(general-purpose, model=<target>, ...)` rather than silently running on the larger session model. 14 skills in scope; `program-to-spec` and `release` are excluded.
-
 ## 1. Three-Tier Model Strategy
 
 sc4sap runs on Claude's 4.x family:

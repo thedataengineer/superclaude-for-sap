@@ -9,15 +9,6 @@ model: sonnet
 
 Guided ABAP object creation workflow. Hybrid mode: confirms transport and package interactively, then auto-creates, writes initial code, and activates the object.
 
-<Main_Thread_Dispatch>
-Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `sonnet`** (matches this skill's frontmatter `model:`).
-
-**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch.
-
-**Interactive mitigation**: pass `name="create-object-runner"` to the `Agent()` call and use `SendMessage` for transport/package confirmation and implementation choice.
-
-**Nested phase dispatches**: the Sonnet orchestrator fans out to `sap-executor` (Opus override) for create + implement + activate, then `sap-writer` (Haiku) for the completion report — 3-level chains from main.
-</Main_Thread_Dispatch>
 
 <Purpose>
 sc4sap:create-object handles the full lifecycle of creating a new ABAP object: determining the right object type, confirming package and transport assignment, creating the object via MCP, generating a well-structured initial implementation, and activating it — all in one workflow.

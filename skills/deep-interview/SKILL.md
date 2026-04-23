@@ -9,13 +9,6 @@ model: haiku
 
 Follows OMC `deep-interview` pattern adapted for SAP. Conducts a structured Socratic interview to crystallize SAP development requirements before any code is written. Prevents wasted execution cycles on underspecified ABAP tasks.
 
-<Main_Thread_Dispatch>
-Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `haiku`** (matches this skill's frontmatter `model:`).
-
-**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch to avoid nested re-dispatch.
-
-**Interactive mitigation — MANDATORY**: this skill is a multi-round Socratic Q&A. Pass `name="deep-interview-runner"` to the `Agent()` call and use `SendMessage` for every user answer. Each answer must flow back into the runner's context so ambiguity scoring and question selection stay coherent across rounds.
-</Main_Thread_Dispatch>
 
 <Purpose>
 sc4sap:deep-interview asks targeted questions to resolve ambiguity in SAP requirements. It gates on a mathematical ambiguity threshold: only when requirements are sufficiently specified does it produce a validated spec file and offer to proceed to `/sc4sap:create-program` or `/sc4sap:create-object`.

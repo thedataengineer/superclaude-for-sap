@@ -9,15 +9,6 @@ model: sonnet
 
 Performs structured root cause analysis for SAP operational incidents by connecting to the live SAP system through MCP. Auto-collects evidence from dumps, system state, recent transports, and code call graphs before asking the user any question.
 
-<Main_Thread_Dispatch>
-Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `sonnet`** (matches this skill's frontmatter `model:`).
-
-**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch.
-
-**Interactive mitigation**: pass `name="analyze-symptom-runner"` to the `Agent()` call and use `SendMessage` for hypothesis-narrowing rounds and MCP-gap clarifications (clues the live system can't provide).
-
-**Nested phase dispatches**: the Sonnet orchestrator delegates per-round investigation to `sap-debugger` (Opus override) — 3-level chains from main.
-</Main_Thread_Dispatch>
 
 <Purpose>
 sc4sap:analyze-symptom is the first-line triage skill for SAP production incidents. Rather than bombarding the user with questions, it **directly investigates the SAP system through MCP** to gather evidence it can collect on its own. It then asks the user only about gaps that MCP cannot fill, narrows hypotheses to 2–3 categories, and produces SAP Note search keywords plus recommended next actions.

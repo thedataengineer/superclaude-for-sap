@@ -9,15 +9,6 @@ model: haiku
 
 Single entrypoint for asking a SAP module consultant agent an operational question. The skill auto-selects the right consultant(s) from the question text + project config, honors the configured SAP environment, and returns a faithful answer — no code generation, no object creation, just the consultant's judgment.
 
-<Main_Thread_Dispatch>
-Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `haiku`** (matches this skill's frontmatter `model:`).
-
-**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch to avoid nested re-dispatch.
-
-**Interactive mitigation**: pass `name="ask-consultant-runner"` to the `Agent()` call and use `SendMessage` for subsequent user follow-up questions on the same consultant thread.
-
-**Nested consultant dispatch**: the Haiku runner fans out to `sap-{module}-consultant` agents (Opus 4.7) for the actual answer — nested 2-level dispatch from the session's main-thread perspective.
-</Main_Thread_Dispatch>
 
 <Purpose>
 `/sc4sap:ask-consultant` is the "ask a human consultant" button inside Claude. Users hit it when they need SPRO guidance, business-process advice, configuration walkthroughs, integration touchpoints, localization rules, or BAdI / CMOD / append decisions — the kind of question normally answered by an SD / MM / FI / CO / PP / PS / PM / QM / TR / HCM / WM / TM / BW / Ariba / Basis consultant. The skill does NOT write code or change the SAP system; it reads config + consults the agent + returns the answer.

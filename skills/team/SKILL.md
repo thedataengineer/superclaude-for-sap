@@ -9,15 +9,6 @@ model: sonnet
 
 Follows OMC `team` pattern adapted for SAP. Coordinates multiple specialized SAP agents working in parallel on a shared task list using Claude Code native team mode.
 
-<Main_Thread_Dispatch>
-Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `sonnet`** (matches this skill's frontmatter `model:`).
-
-**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch.
-
-**Interactive mitigation**: pass `name="team-runner"` to the `Agent()` call and use `SendMessage` for team-composition confirmation and blocker resolution.
-
-**Nested phase dispatches**: the Sonnet orchestrator spawns N parallel specialist agents (sap-developer, sap-code-reviewer, sap-transport-manager, etc.) — up to 3 levels of nesting from main.
-</Main_Thread_Dispatch>
 
 <Purpose>
 sc4sap:team spins up N coordinated agents that divide and conquer a SAP development task. Each agent is assigned a role (sap-developer, sap-code-reviewer, sap-transport-manager, etc.) and works on its slice of the task list simultaneously, with results merged at the end.
