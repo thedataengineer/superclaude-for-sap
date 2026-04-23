@@ -3,6 +3,31 @@
 All notable changes to **SuperClaude for SAP (sc4sap)** will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.9] — 2026-04-24
+
+### Fixed — Keychain storage silently degraded to plaintext on git-clone installs
+
+Claude Code plugin installation is a **git clone**, not an `npm install`. `@napi-rs/keyring` was declared in `optionalDependencies`, but since end users receive only what is committed to the repo (and `node_modules/` is gitignored), the plugin shipped with no keyring module at all. At runtime `scripts/sap-profile-cli.mjs` → `loadKeyring()` → `require('@napi-rs/keyring')` failed silently, `keychainWrite()` threw `KeychainUnavailableError`, and `cmdAdd` caught the error and wrote `SAP_PASSWORD=<plaintext>` to `sap.env` with only a stderr warning that the setup wizard never surfaced. New profiles created via `/sc4sap:sap-option` therefore stored passwords in plaintext regardless of OS keychain support.
+
+**Fix — bundle keyring under `runtime-deps/`**:
+- `runtime-deps/keyring/package.json` — `createRequire` anchor.
+- `runtime-deps/keyring/node_modules/@napi-rs/keyring/` — JS wrapper (56 KB).
+- `runtime-deps/keyring/node_modules/@napi-rs/keyring-<platform>/` — native binaries for `win32-x64-msvc`, `darwin-x64`, `darwin-arm64`, `linux-x64-gnu` (combined ~4.3 MB).
+- `scripts/bundle-keyring.mjs` — idempotent `npm install` output → `runtime-deps/` copy, with `--check` to verify all 4 platform binaries are present.
+- `scripts/sap-profile-cli.mjs` — `loadKeyring()` now uses a `KEYRING_REQUIRE` anchored at `runtime-deps/keyring/package.json` so resolution goes through the committed bundle, not the plugin-root `node_modules/` (which is empty for end users).
+- `.gitignore` — negation rule `!runtime-deps/**/node_modules/**` so the bundle is tracked despite the global `node_modules/` ignore.
+- `.gitattributes` — NEW, `runtime-deps/** -text` + `*.node binary` so native binaries and package metadata survive cross-platform checkout without CRLF normalization.
+
+**Verified end-to-end**: `git checkout-index` to a tmp location (simulates a first-time user's machine with no `node_modules/` populated) → `node scripts/sap-profile-cli.mjs version` runs → `createRequire` at the bundle anchor resolves `@napi-rs/keyring` from `runtime-deps/keyring/node_modules/@napi-rs/keyring/index.js`. Separate 2026-04-23 verification confirmed the same chain delivers HTTP 200 on SAP OData `$metadata` with a keychain-referenced password on a live SAP system.
+
+**Bundle size**: 4.4 MB committed (Linux x64 binary dominates at 3.0 MB; Windows/macOS binaries each ~450–470 KB).
+
+**Post-install behaviour**: `/sc4sap:sap-option` and the setup wizard now store new profile passwords as `SAP_PASSWORD=keychain:<service>/<alias>/<user>` and write the plaintext into the OS-native credential store (Windows Credential Manager / macOS Keychain / libsecret), matching the design documented in `scripts/sap-profile-cli.mjs` since 0.6.0. Existing plaintext profiles remain functional; they can be migrated in-place by deleting and re-adding the profile after upgrading to 0.6.9.
+
+### Deferred — Stage 3-lite bundle integrity verification
+
+Design recorded in `.sc4sap/stage3-lite-bundle-integrity.md`. Adds an `integrity.json` sidecar under `runtime-deps/<module>/` populated from `package-lock.json`'s npm SHA-512 integrity field, plus `scripts/bundle-keyring.mjs --verify` which recomputes the hash of the bundled tarball contents and fails CI on mismatch. Out of scope for 0.6.9 so the keychain fix can ship immediately; will land in a follow-up patch.
+
 ## [0.6.8] — 2026-04-24
 
 ### Reverted — `<Main_Thread_Dispatch>` enforcement layer (0.6.7)
