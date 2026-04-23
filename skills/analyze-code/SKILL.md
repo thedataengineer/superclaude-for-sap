@@ -9,6 +9,16 @@ model: sonnet
 
 Reviews an ABAP object by delegating the heavy work (source read, structural/semantic/where-used analysis, 14-dimension rule matching) to `sap-code-reviewer` (Opus 4.7). The main thread only handles Socratic intake, report formatting, and the follow-up action menu — all on Haiku for cost efficiency.
 
+<Main_Thread_Dispatch>
+Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `sonnet`** (matches this skill's frontmatter `model:`).
+
+**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch.
+
+**Interactive mitigation**: pass `name="analyze-code-runner"` to the `Agent()` call and use `SendMessage` for Socratic intake (object path, scope) and the post-review action menu.
+
+**Nested phase dispatches**: the Sonnet orchestrator delegates the 14-dimension review to `sap-code-reviewer` (Opus), optional briefing render to `sap-writer` (Haiku), and user-selected fix execution to `sap-executor` (Sonnet) — up to 3-level chains from main.
+</Main_Thread_Dispatch>
+
 <Purpose>
 sc4sap:analyze-code provides a comprehensive, severity-rated ABAP code review backed by the AST, semantic analysis, and where-used data that only the live SAP system can produce. The flow is deliberately thin on the main thread: the reviewer agent owns context-heavy work so the skill orchestrator stays light.
 </Purpose>

@@ -9,6 +9,16 @@ model: sonnet
 
 Walks a CBO (Customer Business Object) package, inventories every project-built ABAP element (table, structure, data element, class, interface, function module, program, view, table type), detects which elements are **frequently reused inside the package**, infers each element's business purpose from its name/fields/descriptions, and persists the result to `.sc4sap/cbo/<MODULE>/<PACKAGE>/` for downstream skills (`program`, `program-to-spec`, `create-object`, `autopilot`) to consult before creating anything new.
 
+<Main_Thread_Dispatch>
+Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `sonnet`** (matches this skill's frontmatter `model:`).
+
+**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch.
+
+**Interactive mitigation**: pass `name="analyze-cbo-obj-runner"` to the `Agent()` call and use `SendMessage` for module/package selection and the optional Logic-heavy briefing decision.
+
+**Nested phase dispatches**: the Sonnet orchestrator delegates the heavy walk to `sap-stocker` (Sonnet), optionally to `sap-writer` (Haiku) for rich briefing — 3-level chains from main.
+</Main_Thread_Dispatch>
+
 <Purpose>
 Projects accumulate Z tables, Z data elements, Z function modules, and ZCL_ classes that encode domain logic. New development too often recreates near-duplicates because nobody has a compact inventory of what already exists. `analyze-cbo-obj` produces that inventory — once per package — and writes it to a file that later `sc4sap:` skills read automatically, so the next spec / program / object creation defaults to reusing proven CBO assets.
 </Purpose>

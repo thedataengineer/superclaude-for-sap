@@ -9,6 +9,14 @@ model: haiku
 
 Diagnoses the full SC4SAP stack: plugin installation, MCP server status, and live SAP system connectivity. Reports findings with actionable fixes for each issue found.
 
+<Main_Thread_Dispatch>
+Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `haiku`** (matches this skill's frontmatter `model:`).
+
+**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch to avoid nested re-dispatch.
+
+Non-interactive skill — diagnostic probes run autonomously and return a single PASS/FAIL/WARN report. No `SendMessage` continuation needed.
+</Main_Thread_Dispatch>
+
 <Purpose>
 sc4sap:sap-doctor runs a structured health check across three layers: the SC4SAP plugin itself, the mcp-abap-adt MCP server registration, and the live SAP system connection. It surfaces problems with clear remediation steps so you can get back to development quickly.
 </Purpose>

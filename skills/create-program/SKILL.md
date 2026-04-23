@@ -9,6 +9,16 @@ model: sonnet
 
 Core ABAP program creation skill. Generates a Main Program wrapped with conditional Includes following the sc4sap template convention. Supports both OOP (two-class split: Data + Screen/ALV) and Procedural (PERFORM) paradigms. Full pipeline: SAP version preflight → Socratic interview → planner → writer spec → user confirm → executor/qa/reviewer.
 
+<Main_Thread_Dispatch>
+Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `sonnet`** (matches this skill's frontmatter `model:`).
+
+**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch.
+
+**Interactive mitigation — MANDATORY**: pass `name="create-program-runner"` to the `Agent()` call and use `SendMessage` for all user interactions (Phase 1A module interview, Phase 1B program interview, Phase 3.5 execution-mode gate, Phase 4 blocker decisions, Phase 6 MAJOR-finding review). Without this the orchestrator loses state mid-pipeline.
+
+**Nested phase dispatches**: the Sonnet orchestrator fans out to phase-specific agents (sap-planner, sap-executor × N, sap-writer, sap-code-reviewer × 4 buckets, sap-qa-tester, sap-debugger) per `<Phase_Banner>` below — this produces 3-level dispatch chains from main's perspective (main → Sonnet orchestrator → phase agent).
+</Main_Thread_Dispatch>
+
 <Purpose>
 sc4sap:create-program is the flagship skill for creating new ABAP programs. It handles a wide range of purposes (Report, CRUD, ALV list, Batch, Interface). Before coding starts, it runs an internal Socratic interview to resolve ambiguity, then produces a confirmed spec, then orchestrates coding and QA agents to deliver activated, tested ABAP objects following sc4sap conventions.
 </Purpose>

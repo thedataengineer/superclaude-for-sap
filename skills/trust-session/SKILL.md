@@ -12,6 +12,16 @@ Session-scoped permission auto-approval. When a long-running parent skill enters
 
 **⚠️ This skill is NOT user-facing.** It exists only as a sub-routine of other skills. Direct `/sc4sap:trust-session` invocation by the user is rejected — see `<Standalone_Invocation_Refusal>` below.
 
+<Main_Thread_Dispatch>
+Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `haiku`** (matches this skill's frontmatter `model:`).
+
+**Primary path is the nested exception** — `/sc4sap:trust-session` is always called with `parent_skill=<name>` from a wrapper skill (create-program, setup, team, analyze-*, create-object). That invocation path MUST execute inline to avoid nested re-dispatch. Wrapping trust-session in its own sub-agent when the wrapper is already a Sonnet/Haiku sub-agent adds a pointless second hop.
+
+Standalone invocation (user types `/sc4sap:trust-session` directly) is rejected by `<Standalone_Invocation_Refusal>` below before dispatch logic becomes relevant.
+
+Non-interactive — no `SendMessage` continuation needed.
+</Main_Thread_Dispatch>
+
 <Purpose>
 Eliminate permission prompts for automated SAP pipelines by writing a wildcard allowlist to `.claude/settings.local.json` at session start, and by enforcing `mode: "dontAsk"` on every downstream `Agent` dispatch. Must ride on the authority of a parent skill so the user's permission grant is contextual, not blanket.
 </Purpose>

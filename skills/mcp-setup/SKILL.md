@@ -9,6 +9,14 @@ model: haiku
 
 Guides you through installing and configuring the `abap-mcp-adt-powerup` MCP server, which provides Claude Code with direct connectivity to your SAP system via ABAP Development Tools (ADT) REST APIs. The server exposes 150+ tools covering CRUD for ABAP objects (class, program, CDS, FM, table, etc.) plus runtime, transport, and data-preview operations.
 
+<Main_Thread_Dispatch>
+Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `haiku`** (matches this skill's frontmatter `model:`).
+
+**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch to avoid nested re-dispatch.
+
+Reference-doc skill — renders installation guide and optional `check` subcommand output. No interactive user turns after initial invocation.
+</Main_Thread_Dispatch>
+
 <Purpose>
 `abap-mcp-adt-powerup` is the bridge between Claude Code and your SAP system. Without it, no SC4SAP skills can read or write ABAP objects. This skill walks you through cloning, configuring, and registering the server so all MCP tools become available.
 </Purpose>

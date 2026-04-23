@@ -163,11 +163,35 @@ Skills that internally orchestrate **two or more phases** (e.g., `/sc4sap:create
 
 **When NOT to emit:**
 
-- Single-dispatch skills (`/sc4sap:ask-consultant`, `/sc4sap:trust-session`, `/sc4sap:sap-option`, `/sc4sap:sap-doctor`) — the `[Model: ...]` response prefix alone is sufficient.
 - Pure main-thread work inside a phase (no `Agent(...)` call).
+- `/sc4sap:program-to-spec` and `/sc4sap:release` — excluded from dispatch enforcement (see § Main-Thread Dispatch Enforcement below).
+
+**Single-dispatch skills still emit a bootstrap banner.** Per § Main-Thread Dispatch Enforcement below, skills like `/sc4sap:sap-option`, `/sc4sap:sap-doctor`, `/sc4sap:ask-consultant`, `/sc4sap:trust-session`, `/sc4sap:setup`, `/sc4sap:mcp-setup`, `/sc4sap:deep-interview` emit a `phase=0 (bootstrap)` banner before their sub-dispatch spawn. This is a spawn-latency UX mitigation, not a per-phase banner — only one emission per invocation.
 
 **Relationship to Response Prefix:**
 
 Response Prefix (§ above) is emitted **once per skill-triggered response** — aggregate view.
 Phase Banner is emitted **once per agent dispatch** — per-step view.
-Multi-phase skills use both.
+Multi-phase skills use both; single-dispatch skills use both (one bootstrap banner + aggregate prefix).
+
+## Main-Thread Dispatch Enforcement
+
+Per-skill `model:` frontmatter alone does NOT change the session's main model (see § Response Prefix — "does NOT change mid-session"). To make the declaration actually effective, skills sub-dispatch their body to an `Agent(general-purpose, model=<target>, …)` when the session's main model differs from the target.
+
+Full rule, procedure, sub-agent prompt template, interactive-mitigation via `SendMessage`, and spawn-latency mitigation via pre-emitted phase banner are in [`main-thread-dispatch.md`](main-thread-dispatch.md).
+
+### Skills in scope (14)
+
+| Target | Skills |
+|---|---|
+| **Haiku 4.5** | `/sc4sap:ask-consultant`, `/sc4sap:sap-doctor`, `/sc4sap:sap-option`, `/sc4sap:mcp-setup`, `/sc4sap:setup`, `/sc4sap:deep-interview`, `/sc4sap:trust-session` |
+| **Sonnet 4.6** | `/sc4sap:create-program`, `/sc4sap:create-object`, `/sc4sap:team`, `/sc4sap:analyze-cbo-obj`, `/sc4sap:analyze-code`, `/sc4sap:analyze-symptom`, `/sc4sap:compare-programs` |
+
+**Excluded**: `/sc4sap:program-to-spec` (separate development), `/sc4sap:release` (CTS risk-judgment retained on session model).
+
+### Interaction summary
+
+- Each in-scope SKILL.md includes a `<Main_Thread_Dispatch>` block pointing at `main-thread-dispatch.md`.
+- Enforcement triggers only when session main-model ≠ target.
+- Skills invoked as nested sub-routines (with `parent_skill=<name>` argument) execute inline — no re-dispatch.
+- Response Prefix becomes: `[Model: <session-main> · Dispatched: <target>×1 (<skill-name>-runner), <further dispatches...>]`.

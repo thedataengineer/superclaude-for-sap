@@ -9,6 +9,16 @@ model: haiku
 
 Use `/sc4sap:setup` as the unified setup and configuration entrypoint for SuperClaude for SAP.
 
+<Main_Thread_Dispatch>
+Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `haiku`** (matches this skill's frontmatter `model:`).
+
+**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch to avoid nested re-dispatch. Setup is typically user-facing (not nested), so this path is rare.
+
+**Interactive mitigation**: pass `name="setup-runner"` to the `Agent()` call and use `SendMessage` across the multi-step wizard (profile alias → tier → host → client → user → password → industry → modules → RFC backend → MCP install → handler install → hook registration → optional SPRO/customization extraction). Without this the wizard loses state between user turns.
+
+**Escalation interaction**: the Haiku runner still triggers the two Opus escalation paths (4bis RFC backend, steps 5-8 connect/test) documented in `<Error_Escalation_Paths>` below — those are dispatched FROM the runner, nested 2-level from main.
+</Main_Thread_Dispatch>
+
 <Response_Prefix>
 Every response triggered by this skill MUST begin with `[Model: <main-model> · Dispatched: <sub-summary>]` per [`../../common/model-routing-rule.md`](../../common/model-routing-rule.md) § Response Prefix Convention.
 </Response_Prefix>

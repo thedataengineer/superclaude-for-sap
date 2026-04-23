@@ -9,6 +9,14 @@ model: haiku
 
 Single entrypoint to **inspect live SAP state** and **edit the values stored in `.sc4sap/sap.env`** — the dotenv file that holds SAP connection credentials, TLS settings, and the `abap-mcp-adt-powerup` blocklist policy for row-extraction safety.
 
+<Main_Thread_Dispatch>
+Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `haiku`** (matches this skill's frontmatter `model:`).
+
+**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch to avoid nested re-dispatch.
+
+**Interactive mitigation**: pass `name="sap-option-runner"` to the `Agent()` call and use `SendMessage` for subsequent user turns (profile management flow, industry selection, and HUD-limits editing are multi-turn).
+</Main_Thread_Dispatch>
+
 <Purpose>
 `sap.env` is the single source of truth for per-user runtime configuration of the sc4sap MCP server. This skill also replaces the former `/sc4sap:hud` snapshot: before editing, it shows a compact status panel (system ID, client, user, inactive object count, active transport, blocklist profile) so the user can confirm which system they are about to change settings for.
 

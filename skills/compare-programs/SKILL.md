@@ -18,6 +18,16 @@ This skill crystallizes **why each variant exists** so a consultant can:
 - brief a handover or knowledge transfer without reading ABAP.
 </Purpose>
 
+<Main_Thread_Dispatch>
+Apply [`../../common/main-thread-dispatch.md`](../../common/main-thread-dispatch.md) with **target model = `sonnet`** (matches this skill's frontmatter `model:`).
+
+**Nested exception**: if invoked with `parent_skill=<name>` argument, execute inline — skip sub-dispatch.
+
+**Interactive mitigation**: pass `name="compare-programs-runner"` to the `Agent()` call and use `SendMessage` for program-selection intake (2-5 programs) and axis-of-comparison confirmation.
+
+**Nested phase dispatches**: the Sonnet orchestrator spawns N parallel `sap-code-reviewer` (Sonnet) for per-program facts, then `sap-analyst` (Opus) for classification + scoring, optional `sap-{module}-consultant` (Opus) fan-out, then `sap-writer` (Haiku) for final render — up to 3-level chains from main.
+</Main_Thread_Dispatch>
+
 <Response_Prefix>
 Every response triggered by this skill MUST begin with `[Model: <main-model> · Dispatched: <sub-summary>]` per [`../../common/model-routing-rule.md`](../../common/model-routing-rule.md) § Response Prefix Convention.
 </Response_Prefix>
