@@ -3,6 +3,26 @@
 All notable changes to **SuperClaude for SAP (sc4sap)** will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.11] — 2026-04-24
+
+### Added — `runtime-deps/` bundle integrity verification (offline, Stage 3-lite v1)
+
+The keyring bundle landed in 0.6.9 had no tamper detection — any modification to a committed `.node` binary (intentional or accidental) would go unnoticed. 0.6.11 closes that gap with an offline integrity check.
+
+- `runtime-deps/keyring/integrity.json` — new manifest. Per package, records the SHA-512 `npmIntegrity` copied verbatim from `package-lock.json` (provenance) plus per-file SHA-256 hashes in `ssri` format (tamper detection). Schema version 1, 5 packages, 19 files on initial generation.
+- `scripts/bundle-keyring.mjs` — two new subcommands:
+  - `--refresh-integrity` — regenerates `integrity.json` from the current bundle + `package-lock.json`. Run after any bundle update.
+  - `--verify` — offline SHA-256 re-hash and compare against the recorded manifest. Reports missing / unexpected files and hash mismatches individually. Exit codes: `0` pass, `7` manifest missing, `8` integrity failed.
+- `docs/bundle-integrity.md` — new maintainer doc covering the workflow, `--verify` semantics, what is and is not detected, and Stage 3-lite v2 (upstream re-verification) as deferred scope.
+
+End-to-end verified: clean `--verify` passes on 19 files across 5 packages; a single-byte tamper in `runtime-deps/keyring/node_modules/@napi-rs/keyring/index.js` is detected with exact expected-vs-actual SHA-256 diff; re-bundling restores the expected state.
+
+CI hook not auto-installed — the repo has no `.github/workflows/`. `docs/bundle-integrity.md` documents pre-commit / pre-push invocation until CI is wired.
+
+### Fixed — 0.6.9 CHANGELOG misstated bundled `@napi-rs/keyring` version
+
+The 0.6.9 release note said the bundled package was `@napi-rs/keyring@1.1.0`. The actual installed and committed version per `package-lock.json` was **`1.2.0`**; the 0.6.9 bundle bytes are unchanged, only the description was wrong. `integrity.json` records the correct `1.2.0` version and registry `resolved` URL for every entry.
+
 ## [0.6.10] — 2026-04-24
 
 Follow-up patch to 0.6.9. Three independent fixes + one missing implementation; no behavioural changes to the keychain bundle landed in 0.6.9.
