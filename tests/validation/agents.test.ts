@@ -30,7 +30,7 @@ describe('Agents Validation', () => {
       it('has valid frontmatter', () => {
         if (!existsSync(agentFile)) return;
         const content = readFileSync(agentFile, 'utf-8');
-        const match = content.match(/^---\n([\s\S]*?)\n---/);
+        const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
         expect(match, 'Missing frontmatter').toBeTruthy();
         const fm = match![1];
         expect(fm).toContain(`name: ${agent}`);

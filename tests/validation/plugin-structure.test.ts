@@ -10,9 +10,18 @@ describe('Plugin Structure Validation', () => {
     expect(existsSync(path)).toBe(true);
     const data = JSON.parse(readFileSync(path, 'utf-8'));
     expect(data.name).toBe('sc4sap');
-    expect(data.version).toBe('0.1.0');
+    const pkgVersion = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8')).version;
+    expect(data.version, 'plugin.json version must match package.json').toBe(pkgVersion);
     expect(data.skills).toBe('./skills/');
     expect(data.mcpServers).toBe('./.mcp.json');
+  });
+
+  it('marketplace.json version matches package.json', () => {
+    const mpPath = join(ROOT, '.claude-plugin', 'marketplace.json');
+    const mp = JSON.parse(readFileSync(mpPath, 'utf-8'));
+    const pkgVersion = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8')).version;
+    expect(mp.version, 'marketplace.json root version must match package.json').toBe(pkgVersion);
+    expect(mp.plugins[0].version, 'marketplace.json plugins[0].version must match package.json').toBe(pkgVersion);
   });
 
   it('marketplace.json exists and has required fields', () => {

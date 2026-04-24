@@ -55,13 +55,13 @@ describe('SPRO Config MD Files Validation', () => {
     });
   }
 
-  it('total config file count is 52', () => {
+  it('total config file count is 56', () => {
     let count = 0;
     for (const mod of MODULES) {
       for (const file of CONFIG_FILES) {
         if (existsSync(join(CONFIGS_DIR, mod, file))) count++;
       }
     }
-    expect(count).toBe(52);
+    expect(count).toBe(56);
   });
 });
