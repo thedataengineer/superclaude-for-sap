@@ -5,9 +5,10 @@ import { join } from 'path';
 const SKILLS_DIR = join(__dirname, '..', '..', 'skills');
 
 const EXPECTED_SKILLS = [
-  'setup', 'team', 'ralph', 'ralplan', 'ask', 'autopilot',
-  'deep-interview', 'mcp-setup', 'sap-doctor', 'sap-option', 'teams',
-  'release', 'create-object', 'analyze-code', 'analyze-symptom', 'program',
+  'analyze-cbo-obj', 'analyze-code', 'analyze-symptom', 'ask-consultant',
+  'compare-programs', 'create-object', 'create-program', 'deep-interview',
+  'mcp-setup', 'program-to-spec', 'release', 'sap-doctor',
+  'sap-option', 'setup', 'team', 'trust-session',
 ];
 
 describe('Skills Validation', () => {
@@ -29,7 +30,7 @@ describe('Skills Validation', () => {
       it('has valid frontmatter', () => {
         if (!existsSync(skillFile)) return;
         const content = readFileSync(skillFile, 'utf-8');
-        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
         expect(frontmatterMatch, 'Missing frontmatter delimiters').toBeTruthy();
         const fm = frontmatterMatch![1];
         expect(fm).toContain('name:');
