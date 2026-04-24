@@ -126,16 +126,20 @@ Spec generation only reads **source code + DDIC metadata + where-used** — neve
 </Data_Extraction_Safety>
 
 <Inputs_And_Screens_Rendering>
-Excel output — the **Selection Screen** and **ALV layout** on the `Inputs & Screens` sheet are rendered as **embedded PNG images** (not cell-border wireframes). Pipeline lives in `scripts/spec/screen-image-renderer.mjs` (SVG templates + headless Edge/Chrome rasterizer); `build()` in `rich-xlsx-template.mjs` consumes the PNG buffers via its `images` parameter.
+**Universal applicability (v8.1):** the image pipeline runs for **every xlsx spec** regardless of language (ko / en / ja / de / …) and depth (**L1 / L2 / L3 / L4**). Driver is language-agnostic — just populate `SELECTION_IMAGE_SPEC` / `ALV_IMAGE_SPEC` (+ optional `SHEET_TITLE`) constants at the top of the per-spec driver, and the template's internal `buildImages()` helper auto-imports `screen-image-renderer.mjs`, renders both PNGs, and embeds them via `build({ images })`. **No driver edits to the build call are required.**
 
-Mandatory rules (propagate to every per-spec driver):
+**Parallel rendering:** `renderScreenImages()` in `scripts/spec/screen-image-renderer.mjs` uses `Promise.all` to spawn two headless browsers concurrently — Selection + ALV rasterize in parallel. Wall-clock cost is ~3s for both (vs ~6s sequential on Windows/Edge). Each branch is independent: if one rasterize fails or hits the 30s timeout, its PNG becomes null and the template falls back to cell-border wireframe for **that section only** — the other PNG still embeds, spec still opens.
+
+**Fallback wireframe (auto):** when headless browser missing OR rasterize fails, `screensSheet()` in the template detects `hasSelectionImg` / `hasAlvImg` are false and draws cell-border wireframes from the same `SELECTION_IMAGE_SPEC` / `ALV_IMAGE_SPEC` via `renderSelectionWireframe` / `renderAlvWireframe` — readers always see the layout, never an empty sheet.
+
+Mandatory content rules (propagate to every per-spec driver):
 - **ALV sample rows ≤ 3** (up to 5 only when demonstrating lock / edit / mixed-status variants). Never dump more — the image is a mockup, not a data extract.
-- **Color palette = grey + yellow only**. Headers, title bars, table captions use **light grey** (fill 2). Yellow (fill 3 / style 20) is reserved for warning rows. Green fill is retired — do not reintroduce.
-- **Yellow warning rows MUST sit at the BOTTOM** of the `Inputs & Screens` sheet (Authority / Auth-check caveats, Data-volume / runtime caveats) — readers scan top→bottom; constraints come last.
-- **Informational rows** (Flow diagram, BAPI / Action mapping) above the Parameters table use minimal formatting — no heavy fills, no decorative borders.
-- **Fallback**: when rasterization returns null (no headless browser), degrade to legacy cell-border wireframes via `screenFrameRow` / `screenMerge` helpers — never silently omit the screens.
+- **Color palette = grey + yellow only**. Headers, title bars, table captions use **light grey** (fill 2). Yellow (fill 3 / style 20) is reserved for warning rows. Green fill is retired.
+- **Yellow warning rows MUST sit at the BOTTOM** of the `Inputs & Screens` sheet — readers scan top→bottom.
+- **Informational rows** (Flow diagram, BAPI / Action mapping) above the Parameters table use minimal formatting.
+- **Localise `SHEET_TITLE` + `INPUTS_SHEET_NAME`** for ko/ja specs — `build()` warns (no silent drop) if `images[].sheetName` drifts from the final workbook sheet name.
 
-Markdown output — unchanged: continue emitting ASCII wireframes inside fenced code blocks (MD renders them uniformly).
+Markdown output — unchanged: continue emitting ASCII wireframes inside fenced code blocks. ASCII wireframes never go in xlsx cells.
 </Inputs_And_Screens_Rendering>
 
 Task: {{ARGUMENTS}}
