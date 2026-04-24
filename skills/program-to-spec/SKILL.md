@@ -2,6 +2,7 @@
 name: sc4sap:program-to-spec
 description: Reverse-engineer an ABAP program into a Functional/Technical Specification artifact (Markdown or Excel). Socratic scope narrowing from "everything" to "only what the user needs".
 level: 2
+model: sonnet
 ---
 
 # SC4SAP Program → Specification
@@ -11,6 +12,12 @@ Reads an existing ABAP program (Report / Module Pool / FM Group / Class / CDS / 
 <Purpose>
 Turn legacy or unfamiliar ABAP objects into a reviewable Functional/Technical Spec for handover, documentation audit, AMS transition, refactoring preparation, or compliance artifacts. Unlike `analyze-code` (quality-focused), this skill is **documentation-focused**: it describes what the program DOES, not what's wrong with it.
 </Purpose>
+
+<Response_Prefix>Every response triggered by this skill MUST begin with `[Model: <main-model> · Dispatched: <sub-summary>]` per [`../../common/model-routing-rule.md`](../../common/model-routing-rule.md) § Response Prefix Convention.</Response_Prefix>
+
+<Phase_Banner>Multi-phase skill. Before each `Agent(...)` dispatch, emit `▶ phase=<id> (<label>) · agent=<name> · model=<Opus 4.7|Sonnet 4.6|Haiku 4.5>` per [`../../common/model-routing-rule.md`](../../common/model-routing-rule.md) § Phase Banner Convention.</Phase_Banner>
+
+<Team_Mode>**No teamMode integration.** program-to-spec targets a single object (one program / class / FM group / CDS / RAP BO) and performs read-only structural extraction — no cross-module synthesis, no authoring conflict, no incident triage. See [`../../docs/team-consultation-architecture.md`](../../docs/team-consultation-architecture.md) § 6 gating logic. Future extension: if a target's `GetWhereUsed` graph spans ≥ 2 modules AND user picks L3/L4 depth, Type A (module consultants annotating cross-module concerns in Step 3) could be added — not in current scope.</Team_Mode>
 
 <Use_When>
 - User says "program to spec", "reverse engineer", "make a spec", "document this program", "functional specification", "technical specification", "generate a specification"
@@ -26,6 +33,18 @@ Turn legacy or unfamiliar ABAP objects into a reviewable Functional/Technical Sp
 - User wants to **fix** the program → direct MCP `Update*` calls or re-run `/sc4sap:create-program`
 - Object does not exist yet
 </Do_Not_Use_When>
+
+<Session_Trust_Bootstrap>
+**MANDATORY — runs as Step 0a before any MCP call or user interaction.**
+
+Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:program-to-spec` to pre-grant MCP tool + file-op permissions (eliminates per-tool prompts during structural reads + screen rendering pipeline).
+
+- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- Otherwise run it and surface the one-line confirmation.
+- All `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
+
+Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
+</Session_Trust_Bootstrap>
 
 <Socratic_Scope_Narrowing>
 The interview is a **funnel**: every turn reduces the remaining decision space. Score remaining ambiguity 0–10 after each answer; stop when **≤3**.
@@ -84,6 +103,20 @@ The Markdown L2 skeleton and the Excel sheet-naming convention live in a compani
 **MUST read `spec-templates.md`** (in this skill folder) when rendering the artifact in Step 4.
 </Spec_Templates>
 
+<Agent_Composition>
+Per-step model allocation. Skill frontmatter pins the main thread to Sonnet; each `Agent(...)` carries its own model (frontmatter or explicit override).
+
+- **Main orchestrator (Sonnet 4.6)** — Steps 0, 1, 1.5, 2, 5: Socratic interview orchestration, object classification routing, CBO context preload, Step 5 review loop. State tracking across depth / format / language dimensions needs Sonnet headroom.
+- **Analysis (`sap-analyst` × 1, Opus 4.7, frontmatter)** — Step 3 primary dispatch: extracts business purpose, inputs, outputs, data sources (including CBO-annotated Z-references when `cbo-context.md` exists), main-logic narrative, authorization checks, error cases. One dispatch covers all narrative dimensions to keep context continuous.
+- **Rendering (`sap-writer` × 1)** — Step 3 second dispatch (or Step 4 render invocation):
+  - **L1 / L2 depth** → **Haiku 4.5** base (frontmatter). Pure templating from structured analyst output.
+  - **L3 / L4 depth** → **Sonnet 4.6** override (`model: "sonnet"`) — longer narrative + deeper cross-reference + stronger consistency requirement.
+  - **Excel output** → Haiku still sufficient (driver wiring is mechanical fill-in); depth-driven override above still applies.
+- **Audit verification (`sap-critic` × 1, Opus 4.7, frontmatter, conditional L4 only)** — Step 3 gate: verifies every claim in the rendered spec cross-references a concrete line range in source. Skip for L1 / L2 / L3.
+
+All Agent dispatches pass `mode: "dontAsk"` (trust-session granted in Step 0a).
+</Agent_Composition>
+
 <Output_Format>
 ```
 Spec generated: ZSDR_OPEN_ORDER_ALV
@@ -126,16 +159,20 @@ Spec generation only reads **source code + DDIC metadata + where-used** — neve
 </Data_Extraction_Safety>
 
 <Inputs_And_Screens_Rendering>
-Excel output — the **Selection Screen** and **ALV layout** on the `Inputs & Screens` sheet are rendered as **embedded PNG images** (not cell-border wireframes). Pipeline lives in `scripts/spec/screen-image-renderer.mjs` (SVG templates + headless Edge/Chrome rasterizer); `build()` in `rich-xlsx-template.mjs` consumes the PNG buffers via its `images` parameter.
+**Universal applicability (v8.1):** the image pipeline runs for **every xlsx spec** regardless of language (ko / en / ja / de / …) and depth (**L1 / L2 / L3 / L4**). Driver is language-agnostic — just populate `SELECTION_IMAGE_SPEC` / `ALV_IMAGE_SPEC` (+ optional `SHEET_TITLE`) constants at the top of the per-spec driver, and the template's internal `buildImages()` helper auto-imports `screen-image-renderer.mjs`, renders both PNGs, and embeds them via `build({ images })`. **No driver edits to the build call are required.**
 
-Mandatory rules (propagate to every per-spec driver):
+**Parallel rendering:** `renderScreenImages()` in `scripts/spec/screen-image-renderer.mjs` uses `Promise.all` to spawn two headless browsers concurrently — Selection + ALV rasterize in parallel. Wall-clock cost is ~3s for both (vs ~6s sequential on Windows/Edge). Each branch is independent: if one rasterize fails or hits the 30s timeout, its PNG becomes null and the template falls back to cell-border wireframe for **that section only** — the other PNG still embeds, spec still opens.
+
+**Fallback wireframe (auto):** when headless browser missing OR rasterize fails, `screensSheet()` in the template detects `hasSelectionImg` / `hasAlvImg` are false and draws cell-border wireframes from the same `SELECTION_IMAGE_SPEC` / `ALV_IMAGE_SPEC` via `renderSelectionWireframe` / `renderAlvWireframe` — readers always see the layout, never an empty sheet.
+
+Mandatory content rules (propagate to every per-spec driver):
 - **ALV sample rows ≤ 3** (up to 5 only when demonstrating lock / edit / mixed-status variants). Never dump more — the image is a mockup, not a data extract.
-- **Color palette = grey + yellow only**. Headers, title bars, table captions use **light grey** (fill 2). Yellow (fill 3 / style 20) is reserved for warning rows. Green fill is retired — do not reintroduce.
-- **Yellow warning rows MUST sit at the BOTTOM** of the `Inputs & Screens` sheet (Authority / Auth-check caveats, Data-volume / runtime caveats) — readers scan top→bottom; constraints come last.
-- **Informational rows** (Flow diagram, BAPI / Action mapping) above the Parameters table use minimal formatting — no heavy fills, no decorative borders.
-- **Fallback**: when rasterization returns null (no headless browser), degrade to legacy cell-border wireframes via `screenFrameRow` / `screenMerge` helpers — never silently omit the screens.
+- **Color palette = grey + yellow only**. Headers, title bars, table captions use **light grey** (fill 2). Yellow (fill 3 / style 20) is reserved for warning rows. Green fill is retired.
+- **Yellow warning rows MUST sit at the BOTTOM** of the `Inputs & Screens` sheet — readers scan top→bottom.
+- **Informational rows** (Flow diagram, BAPI / Action mapping) above the Parameters table use minimal formatting.
+- **Localise `SHEET_TITLE` + `INPUTS_SHEET_NAME`** for ko/ja specs — `build()` warns (no silent drop) if `images[].sheetName` drifts from the final workbook sheet name.
 
-Markdown output — unchanged: continue emitting ASCII wireframes inside fenced code blocks (MD renders them uniformly).
+Markdown output — unchanged: continue emitting ASCII wireframes inside fenced code blocks. ASCII wireframes never go in xlsx cells.
 </Inputs_And_Screens_Rendering>
 
 Task: {{ARGUMENTS}}

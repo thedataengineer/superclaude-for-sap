@@ -24,9 +24,11 @@
 // Zero npm dependencies — uses only node:zlib / node:fs / node:child_process.
 
 import { deflateRawSync } from 'node:zlib';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, existsSync, unlinkSync, readdirSync, rmdirSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { platform } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // =============================================================
 // ZIP + CRC32 (no external deps — XLSX is a zip of OOXML parts)
@@ -515,6 +517,75 @@ const SCREEN_PARAMS = [
 ];
 
 // =============================================================
+// TODO (per-spec): SHEET_TITLE — localised Inputs & Screens sheet title.
+//   Shown in row 1 (merged A:Q, grey style 2). Localise per spec language:
+//     KO → '입력 및 화면 · {OBJECT}'
+//     JA → '入力と画面 · {OBJECT}'
+//     EN → 'Inputs & Screens · {OBJECT}'
+// =============================================================
+const SHEET_TITLE = 'Inputs & Screens';
+
+// =============================================================
+// TODO (per-spec): SELECTION_IMAGE_SPEC — selection-screen field list.
+//   Consumed by BOTH paths:
+//     · Primary (image) — renderScreenImages() in screen-image-renderer.mjs
+//                         produces a PNG that overlays rows 3–16 at B3.
+//     · Fallback (wireframe) — when headless browser unavailable, the same
+//                         spec is rendered as cell-border wireframe by
+//                         renderSelectionWireframe() inside screensSheet().
+//   Leave `null` if the object has no selection screen (pure FM / Class /
+//   CDS / RAP without UI). The Parameters table below is still rendered.
+//
+//   Shape: { blockLabel, fields: [{...}], optionBlockLabel, optionFields: [{...}] }
+//     field:         { required?, label, name, range?, defaultLow?, defaultHigh?, note? }
+//     optionField:   { label, name, note? }
+// =============================================================
+const SELECTION_IMAGE_SPEC = null;
+// Example — REPLACE:
+// const SELECTION_IMAGE_SPEC = {
+//   blockLabel: '조회 조건',
+//   fields: [
+//     { required: true, label: '회사코드',   name: 'P_BUKRS',                              defaultLow: '1000'                     },
+//     { required: true, label: '구매조직',   name: 'S_EKORG', range: true,                 defaultLow: '1000', defaultHigh: '9999' },
+//     { required: true, label: '전표일자',   name: 'S_BUDAT', range: true,                 defaultLow: '당월1일', defaultHigh: '오늘' },
+//   ],
+//   optionBlockLabel: '옵션',
+//   optionFields: [
+//     { label: '테스트 모드', name: 'P_TEST', note: '(체크 시 DB 업데이트 생략)' },
+//   ],
+// };
+
+// =============================================================
+// TODO (per-spec): ALV_IMAGE_SPEC — output ALV layout spec.
+//   Consumed by both image path and wireframe fallback.
+//   maxRows capped at 5 (default 3) — ALV is a mockup, never a data dump.
+//   Leave `null` for non-ALV outputs (pure FM exporting structs, OData
+//   entity returns, etc.) — BAPI/Action table below will still show them.
+//
+//   Shape: { columns: [{...}], sampleRows: [{...}], maxRows? }
+//     column:        { name, header?, width?, align?, hotspot?, editable? }
+//     sampleRow:     { [colName]: value, _status?: '●'|'○'|'◉', _locked?: bool }
+// =============================================================
+const ALV_IMAGE_SPEC = null;
+// Example — REPLACE:
+// const ALV_IMAGE_SPEC = {
+//   columns: [
+//     { name: '_status', header: '',         width: 40                         },
+//     { name: 'EBELN',   header: '구매오더', width: 110, hotspot: true         },
+//     { name: 'EBELP',   header: '항목',     width: 50,  align: 'end'          },
+//     { name: 'MATNR',   header: '자재',     width: 140                         },
+//     { name: 'MENGE',   header: '수량',     width: 90,  align: 'end'          },
+//     { name: 'NETPR',   header: '단가',     width: 90,  align: 'end'          },
+//   ],
+//   sampleRows: [
+//     { _status: '◉', EBELN: '4500001234', EBELP: '10', MATNR: 'RAW-001', MENGE: '100', NETPR: '1,250.00' },
+//     { _status: '●', EBELN: '4500001234', EBELP: '20', MATNR: 'RAW-002', MENGE:  '50', NETPR:   '880.00' },
+//     { _status: '○', EBELN: '4500001235', EBELP: '10', MATNR: 'RAW-003', MENGE: '200', NETPR: '2,100.00' },
+//   ],
+//   maxRows: 3,
+// };
+
+// =============================================================
 // paramsBlock — append a "Parameters" table below existing sheet
 //   content (e.g. under the wireframes drawn in screensSheet).
 //
@@ -625,13 +696,134 @@ function screenMerge(cells, merges, row, c0, c1, style, value) {
 }
 
 // =============================================================
+// FALLBACK WIREFRAME RENDERERS (v8 — activated when headless browser
+// unavailable, so the same SELECTION_IMAGE_SPEC / ALV_IMAGE_SPEC still
+// produces a readable layout with cell-border wireframes).
+// =============================================================
+
+// Selection-screen wireframe, rendered as cell-border rows. Column layout
+// matches workflow-steps.md "Selection-screen parameter-row alignment":
+//   B:E label (style 7) · F:H low (style 6) · I ▼ (style 0)
+//   J ~ (style 7, range only) · K:M high (style 6, range only)
+//   N ▼ (range only) · O:P note (style 0)
+function renderSelectionWireframe(cells, merges, rowHeights, startRow, spec) {
+  const fields = spec.fields || [];
+  const optionFields = spec.optionFields || [];
+  const blockLabel = spec.blockLabel || '조회 조건';
+  let r = startRow;
+
+  // Block title bar — grey, all borders (style 17).
+  screenFullRow(cells, merges, r, `◆ ${blockLabel}`, 17);
+  rowHeights[r] = 20;
+  r++;
+
+  for (const f of fields) {
+    screenFrameRow(cells, r);  // col A / Q frame continuity
+    const prefix = f.required ? '* ' : '  ';
+    const label = `${prefix}${f.label || ''} (${f.name || ''})`;
+    screenMerge(cells, merges, r, 1, 4, 7, label);                     // B:E label
+    screenMerge(cells, merges, r, 5, 7, 6, f.defaultLow || '');        // F:H low input (sky blue)
+    cells[R(r - 1, 8)] = { v: '▼', s: 0 };                             // I dropdown
+    if (f.range) {
+      cells[R(r - 1, 9)] = { v: '~', s: 7 };                           // J range separator
+      screenMerge(cells, merges, r, 10, 12, 6, f.defaultHigh || '');   // K:M high input
+      cells[R(r - 1, 13)] = { v: '▼', s: 0 };                          // N dropdown
+    }
+    screenMerge(cells, merges, r, 14, 15, 0, f.note || '');            // O:P note
+    rowHeights[r] = 18;
+    r++;
+  }
+
+  // Optional checkbox block (if present).
+  if (optionFields.length) {
+    screenSubtitleRow(cells, merges, r, `◆ ${spec.optionBlockLabel || '옵션'}`, 17);
+    r++;
+    for (const f of optionFields) {
+      screenFrameRow(cells, r);
+      screenMerge(cells, merges, r, 1, 4, 7, `☐ ${f.label || ''} (${f.name || ''})`);
+      screenMerge(cells, merges, r, 5, 15, 0, f.note || '');
+      rowHeights[r] = 18;
+      r++;
+    }
+  }
+
+  screenCloseFrame(cells, r);
+  return r + 1;
+}
+
+// ALV-layout wireframe, rendered as cell-border rows. Columns distribute
+// evenly across B..P (15 cells of 14-unit width each = 210 units total).
+// Header = style 4 (grey bordered), data = style 5 (bordered).
+function renderAlvWireframe(cells, merges, rowHeights, startRow, spec) {
+  const columns = spec.columns || [];
+  const sampleRows = (spec.sampleRows || []).slice(0, Math.max(1, Math.min(spec.maxRows || 3, 5)));
+  let r = startRow;
+
+  // Title bar.
+  screenFullRow(cells, merges, r, '◆ ALV 그리드', 17);
+  rowHeights[r] = 20;
+  r++;
+
+  const layout = distributeAlvColumns(columns.length);
+  if (!layout.length) {
+    screenCloseFrame(cells, r);
+    return r + 1;
+  }
+
+  // Header row.
+  screenFrameRow(cells, r);
+  columns.forEach((c, i) => {
+    const [c0, c1] = layout[i];
+    screenMerge(cells, merges, r, c0, c1, 4, c.header || c.name || '');
+  });
+  rowHeights[r] = 20;
+  r++;
+
+  // Sample data rows — capped at maxRows (default 3, absolute max 5).
+  for (const row of sampleRows) {
+    screenFrameRow(cells, r);
+    columns.forEach((c, i) => {
+      const [c0, c1] = layout[i];
+      const v = row[c.name];
+      screenMerge(cells, merges, r, c0, c1, 5, v == null ? '' : String(v));
+    });
+    rowHeights[r] = 18;
+    r++;
+  }
+
+  screenCloseFrame(cells, r);
+  return r + 1;
+}
+
+// Distribute N columns across cells 1..15 (B:P). Returns [[c0,c1], ...].
+// Extra cells prepended to leading columns so widest-header columns (usually
+// placed first) get the extra real estate.
+function distributeAlvColumns(n) {
+  if (n <= 0) return [];
+  const total = 15;
+  const base = Math.floor(total / n);
+  const extra = total - base * n;
+  const out = [];
+  let c = 1;
+  for (let i = 0; i < n; i++) {
+    const width = base + (i < extra ? 1 : 0);
+    out.push([c, c + width - 1]);
+    c += width;
+  }
+  return out;
+}
+
+// =============================================================
 // screensSheet — Inputs & Screens sheet body (v8).
 //
 // V8 SHEET ORDER (TOP → BOTTOM)
 //   1. Sheet title                         style 2  (light grey, merged A:Q)
 //   2. Image anchor rows                   blank rows where PNGs overlay
-//        · Selection-screen image at B3   (spans ~14 rows)
-//        · ALV layout image at B19        (spans ~13 rows)
+//        · Selection-screen image at B3   (driver-supplied anchor)
+//        · ALV layout image at B{dyn}     (anchor row computed by build()
+//                                          from the selection PNG's real
+//                                          pixel height — legacy static
+//                                          B19 overflowed for >5 fields)
 //      Reserve those rows EMPTY in cells{}. buildImages() in build() lays
 //      the PNG on top via oneCellAnchor.
 //   3. Flow diagram (informational)        style 21 boxes, style 0 arrows
@@ -680,7 +872,12 @@ function screenMerge(cells, merges, row, c0, c1, style, value) {
 // RETURN SHAPE
 //   { cells, merges, cols, rowHeights }
 // =============================================================
-function screensSheet() {
+function screensSheet({
+  hasSelectionImg = false,
+  hasAlvImg = false,
+  alvStartRow = 19,        // Dynamically computed by build() from selection PNG height.
+  paramsStartRow = 49,     // Dynamically computed by build() from ALV PNG height.
+} = {}) {
   const cells = {};
   const merges = [];
   const cols = [
@@ -690,24 +887,41 @@ function screensSheet() {
   ];
   const rowHeights = { 1: 24 };
 
-  // Row 1 — sheet title (grey).
-  // screenFullRow(cells, merges, 1, '입력 및 화면 · {OBJECT}', 2);
+  // Row 1 — sheet title (always rendered, grey style 2, merged A:Q).
+  screenFullRow(cells, merges, 1, SHEET_TITLE, 2);
 
-  // Rows 3–16 — reserved for Selection image (anchor B3).
-  // Rows 19–31 — reserved for ALV image (anchor B19).
-  // Leave those rows EMPTY. The build({ images }) call overlays PNGs.
+  // Selection area — starts at row 3.
+  //   · PNG overlay when hasSelectionImg (leave cells blank so image is visible).
+  //   · Cell-border wireframe when SELECTION_IMAGE_SPEC present but no image.
+  //   · Blank when spec is null (object has no selection screen).
+  if (!hasSelectionImg && SELECTION_IMAGE_SPEC) {
+    renderSelectionWireframe(cells, merges, rowHeights, 3, SELECTION_IMAGE_SPEC);
+  }
 
-  // Rows 34+ — Flow diagram (optional, style 21 boxes / style 0 arrows).
-  // Rows 39+ — BAPI / Action mapping table (style 18 data, no fill).
+  // ALV area — starts at alvStartRow (dynamic; defaults to 19 for wireframe).
+  if (!hasAlvImg && ALV_IMAGE_SPEC) {
+    renderAlvWireframe(cells, merges, rowHeights, alvStartRow, ALV_IMAGE_SPEC);
+  }
+
+  // Flow diagram / BAPI mapping rows: drivers may add additional content
+  // between ALV and Parameters via a post-build edit.
 
   // Parameters table — grey header, full-bordered data rows.
-  let r = 49;
+  let r = paramsStartRow;
   r = paramsBlock(cells, merges, rowHeights, r, SCREEN_PARAMS);
 
-  // WARNINGS — MUST be the last content on the sheet (v8 rule).
-  // Emit yellow style-20 rows A:Q merged. Example:
-  //   screenFullRow(cells, merges, r + 1, '⚠ 보안 주의: …', 20);
-  //   screenFullRow(cells, merges, r + 2, '⚠ 데이터 범위: …', 20);
+  // WARNINGS — MUST be the last content on the sheet (v8 rule). Rendered
+  // automatically from the top-level WARNINGS constant so every spec that
+  // populates it gets consistent yellow bottom rows without driver copies
+  // needing to call screenFullRow(...) by hand. Empty WARNINGS = no rows.
+  if (Array.isArray(WARNINGS) && WARNINGS.length) {
+    r += 1;                 // one blank spacer row below Parameters
+    rowHeights[r] = 8;      // slim spacer so the warning block stays close
+    for (const msg of WARNINGS) {
+      r += 1;
+      screenFullRow(cells, merges, r, String(msg), 20);
+    }
+  }
 
   return { cells, merges, cols, rowHeights };
 }
@@ -723,6 +937,32 @@ const OUT_PATH = 'CHANGE_ME.xlsx';
 // Default is English so ASCII-only tooling reads cleanly.
 // =============================================================
 const INPUTS_SHEET_NAME = 'Inputs & Screens';
+
+// =============================================================
+// Spec language — drives the auto-derived legend text inside the
+// Selection / ALV PNGs produced by screen-image-renderer.mjs. Accepts
+// 'ko' | 'en' | 'ja'. Default is Korean because the template was first
+// shipped KO-only; English specs MUST set 'en' or they'll render with
+// Korean legend strings (필수 입력, 범위(LOW~HIGH), …).
+// =============================================================
+const SPEC_LANG = 'ko';
+
+// =============================================================
+// TODO (per-spec): WARNINGS — yellow-shaded caveat rows pinned to the
+//   BOTTOM of the Inputs & Screens sheet (v8 rule: constraints sit last).
+//
+//   These are program-specific, NOT boilerplate. Fill with the analyst's
+//   actual findings: auth gaps, data-volume risk, dependencies, PII, etc.
+//   An empty array means "no caveats to flag" — the template renders
+//   nothing and keeps the sheet clean.
+//
+//   Each entry is a single plain-text string (A:Q merged, style 20 yellow).
+//   Prefix with ⚠ so the row is scannable. Examples:
+//     '⚠ Authorization (GAP): No AUTHORITY-CHECK — add V_VBAK_VKO for row-level.'
+//     '⚠ Runtime: 4-way JOIN returns cartesian item×header rows; keep VKORG + date tight.'
+//     '⚠ PII: KNA1~NAME1 exposed in output; mask for non-SD audiences.'
+// =============================================================
+const WARNINGS = [];
 
 // =============================================================
 // Build + auto-open
@@ -754,9 +994,60 @@ function sanitizeSheetName(name, seenNames) {
 //   Anchor cell is on the target sheet (usually INPUTS_SHEET_NAME).
 //   Omit or pass [] → v8 degrades gracefully to cell-border wireframes.
 function build(outPath, { images = [] } = {}) {
+  // Pre-analyse image anchors so screensSheet() knows whether to skip the
+  // cell-border wireframe (image will overlay) or draw it (no image for
+  // that section, so readers still see the layout).
+  //
+  // Drivers hand us images with two sentinel anchors:
+  //   · 'B3'  → selection-screen PNG
+  //   · 'B19' → ALV layout PNG
+  // The B19 sentinel is the ORIGINAL (static) anchor from v8.0. We keep
+  // matching on it here because it's the contract with buildImages() /
+  // external drivers. The anchor is REWRITTEN below once we know the real
+  // selection image height.
+  const hasSelectionImg = images.some(img => (img.anchorCell || '').toUpperCase() === 'B3');
+  const hasAlvImg       = images.some(img => (img.anchorCell || '').toUpperCase() === 'B19');
+
+  // ── Dynamic anchor layout (v8.2 fix) ──────────────────────────
+  // The selection PNG height is a function of field count:
+  //   renderSelectionScreenSVG: h = 40 + N*24 + 60 + (M ? 24+M*24 : 0) + 60
+  // so it easily exceeds the 16-row (≈320 px @ default row height 15 pt)
+  // span that the legacy static anchor B3→B19 assumed. Anything beyond
+  // ~5 fields + 1 option (the smoke case, 328 px) spills into the B19
+  // anchor row and the later-drawn ALV image paints on top, visually
+  // cropping the bottom of the selection image.
+  // Fix: read each image's actual pixel height and place the ALV anchor
+  // (and the Parameters table below it) at computed rows so there is
+  // never any overlap, regardless of how many fields / option-fields the
+  // selection screen has.
+  const DEFAULT_ROW_PX = 20;     // Excel default row height (15 pt @ 96 DPI).
+  const IMG_GAP_PX = 20;         // One-row visual gap below each image.
+  const PARAMS_GAP_ROWS = 2;     // Breathing room between ALV block and Parameters table.
+  const selImg = images.find(img => (img.anchorCell || '').toUpperCase() === 'B3');
+  const alvImg = images.find(img => (img.anchorCell || '').toUpperCase() === 'B19');
+  // Rows the selection image (or wireframe) occupies, starting at row 3.
+  // If selection is absent we fall back to the legacy 16-row span so
+  // wireframe-only / alv-only specs keep their original layout.
+  const selRowsSpan = selImg ? Math.ceil((selImg.height + IMG_GAP_PX) / DEFAULT_ROW_PX) : 16;
+  const alvStartRow = 3 + selRowsSpan;
+  // Rows the ALV image (or wireframe) occupies.
+  const alvRowsSpan = alvImg ? Math.ceil((alvImg.height + IMG_GAP_PX) / DEFAULT_ROW_PX) : 13;
+  // Parameters table sits right under the ALV block with a small breathing
+  // gap — no lower clamp. The legacy row-49 minimum was reserving space for
+  // an optional flow-diagram / BAPI-mapping block between ALV and Params,
+  // but that region is not emitted by any current driver, so clamping
+  // produces a large blank stretch for every spec. Drivers that really need
+  // that reserve can widen PARAMS_GAP_ROWS or append content after build().
+  const paramsStartRow = alvStartRow + alvRowsSpan + PARAMS_GAP_ROWS;
+  // Rewrite ALV anchor in place so drawingXml() emits the computed cell.
+  if (alvImg) alvImg.anchorCell = `B${alvStartRow}`;
+
   const seen = new Set();
   const dataSheets = SHEETS_DATA.map(s => ({ name: sanitizeSheetName(s.name, seen), payload: textSheet(s.rows) }));
-  const inputsSheet = { name: sanitizeSheetName(INPUTS_SHEET_NAME, seen), payload: screensSheet() };
+  const inputsSheet = {
+    name: sanitizeSheetName(INPUTS_SHEET_NAME, seen),
+    payload: screensSheet({ hasSelectionImg, hasAlvImg, alvStartRow, paramsStartRow }),
+  };
   const insertAt = Math.min(2, dataSheets.length);
   const sheets = [
     ...dataSheets.slice(0, insertAt),
@@ -764,10 +1055,19 @@ function build(outPath, { images = [] } = {}) {
     ...dataSheets.slice(insertAt),
   ];
 
-  // Group images by sheet → one drawing part per sheet with images.
+  // Validate image sheetName against actual workbook sheets. Silent drop
+  // was a pre-v8 bug: drivers that localised INPUTS_SHEET_NAME (e.g.
+  // '입력 및 화면') but left images[].sheetName as 'Inputs & Screens'
+  // used to lose the PNGs with no log at all. Now we warn + skip that one
+  // image, and other sheets continue rendering normally.
+  const validSheetNames = new Set(sheets.map(s => s.name));
   const imagesBySheet = new Map();
   for (const img of images) {
     const key = img.sheetName || INPUTS_SHEET_NAME;
+    if (!validSheetNames.has(key)) {
+      console.warn(`[build] image sheetName "${key}" not in workbook sheets [${[...validSheetNames].join(', ')}] — image skipped. Did you localise INPUTS_SHEET_NAME but forget to update images[].sheetName?`);
+      continue;
+    }
     if (!imagesBySheet.has(key)) imagesBySheet.set(key, []);
     imagesBySheet.get(key).push(img);
   }
@@ -835,5 +1135,131 @@ function openInDefault(p) {
   child.unref();
 }
 
-build(OUT_PATH);
+// =============================================================
+// V8 AUTO-IMAGE PIPELINE
+//
+// Drivers DO NOT need to import renderScreenImages — just populate
+// SELECTION_IMAGE_SPEC / ALV_IMAGE_SPEC at the top of this file. This
+// helper calls into screen-image-renderer.mjs which renders Selection +
+// ALV as PNG IN PARALLEL (Promise.all → concurrent headless browsers).
+//
+// Universal applicability: this path runs for EVERY xlsx spec regardless
+// of language (ko/en/ja/de/…) and depth (L1/L2/L3/L4). The only hard
+// requirements are (a) format=xlsx and (b) at least one of the two specs
+// is populated.
+//
+// Returns an empty [] when either:
+//   · Both specs are null (object has no UI — e.g. pure FM / CDS / RAP
+//     without screens), OR
+//   · No headless browser is installed (Edge / Chrome / Chromium not
+//     found on PATH / standard install dirs).
+// In both cases screensSheet() auto-draws cell-border wireframes for
+// whichever SPEC is populated — readers still see the layout.
+// =============================================================
+async function buildImages() {
+  if (!SELECTION_IMAGE_SPEC && !ALV_IMAGE_SPEC) return [];
+  try {
+    // Resolve screen-image-renderer.mjs. Works whether this file runs in
+    // its original location (scripts/spec/...) OR was copied as a
+    // throwaway per-spec driver to .sc4sap/specs/_drivers/, to an absolute
+    // Desktop folder, or into a plugin cache. Search order:
+    //   (1) next to this file                       → in-place / plugin cache
+    //   (2) walk up + 'scripts/spec/...'            → driver under project root
+    //   (3) process.cwd() + 'scripts/spec/...'      → invocation from root
+    const hereDir = dirname(fileURLToPath(import.meta.url));
+    const candidates = [join(hereDir, 'screen-image-renderer.mjs')];
+    let cur = hereDir;
+    for (let i = 0; i < 8; i++) {
+      candidates.push(join(cur, 'scripts', 'spec', 'screen-image-renderer.mjs'));
+      const parent = dirname(cur);
+      if (parent === cur) break;
+      cur = parent;
+    }
+    candidates.push(join(process.cwd(), 'scripts', 'spec', 'screen-image-renderer.mjs'));
+    const rendererPath = candidates.find(p => existsSync(p));
+    if (!rendererPath) {
+      console.warn('[screen-images] screen-image-renderer.mjs not resolvable — falling back to wireframe. Searched:\n  - ' + candidates.slice(0, 5).join('\n  - '));
+      return [];
+    }
+    const { renderScreenImages } = await import(pathToFileURL(rendererPath).href);
+    const imgs = await renderScreenImages({
+      selection: SELECTION_IMAGE_SPEC,
+      alv: ALV_IMAGE_SPEC,
+      lang: SPEC_LANG,
+    });
+    const out = [];
+    if (imgs.selection) out.push({
+      sheetName: INPUTS_SHEET_NAME, anchorCell: 'B3',
+      pngBuffer: imgs.selection.pngBuffer,
+      width: imgs.selection.width, height: imgs.selection.height,
+    });
+    if (imgs.alv) out.push({
+      sheetName: INPUTS_SHEET_NAME, anchorCell: 'B19',
+      pngBuffer: imgs.alv.pngBuffer,
+      width: imgs.alv.width, height: imgs.alv.height,
+    });
+    if (!out.length) {
+      console.warn('[screen-images] headless browser unavailable — cell-border wireframe will be used instead');
+    }
+    return out;
+  } catch (err) {
+    console.warn('[screen-images] renderer error:', err?.message || err, '— falling back to wireframe');
+    return [];
+  }
+}
+
+const images = await buildImages();
+build(OUT_PATH, { images });
 openInDefault(OUT_PATH);
+
+// =============================================================
+// Self-cleanup (v8.3)
+//
+// The driver is SCAFFOLDING — once the xlsx is written and verified,
+// keeping the per-spec .mjs file around just clutters the repo and
+// confuses future readers into thinking it's part of the deliverable.
+// We self-delete at the end of a SUCCESSFUL run (build() didn't throw,
+// so OUT_PATH exists) to guarantee cleanup regardless of whether the
+// calling agent remembers to `rm` it.
+//
+// Safety guards:
+//   · Only runs if CLEANUP_AFTER_BUILD is true (set false for debugging
+//     a failed/weird render — then you can edit+rerun the same driver).
+//   · Only runs if OUT_PATH actually exists (build could have silently
+//     bailed — don't self-destruct without evidence of success).
+//   · Only deletes the driver FILE itself, plus its enclosing directory
+//     if that directory (a) is `_drivers`, (b) becomes empty after we
+//     remove the driver. We never rmdir a user-supplied absolute path
+//     like `C:\Users\me\Desktop\test\` even if it ends up empty.
+//   · Any error (file locked, permission, antivirus) is logged as warn
+//     and swallowed — the xlsx artifact still survives, user can rm
+//     the driver by hand.
+// =============================================================
+const CLEANUP_AFTER_BUILD = true;
+if (CLEANUP_AFTER_BUILD) {
+  try {
+    if (!existsSync(resolve(OUT_PATH))) {
+      console.warn('[cleanup] skipped: OUT_PATH not found on disk — keeping driver for debugging.');
+    } else {
+      const driverPath = fileURLToPath(import.meta.url);
+      const driverDir = dirname(driverPath);
+      unlinkSync(driverPath);
+      console.log(`[cleanup] removed driver: ${driverPath}`);
+      // Best-effort rmdir of the scaffolding folder when it only existed
+      // to hold this driver. Scope the cleanup to folders literally named
+      // `_drivers` so we never delete an arbitrary user directory.
+      if (driverDir.endsWith('_drivers') || driverDir.endsWith('\\_drivers') || driverDir.endsWith('/_drivers')) {
+        try {
+          const remaining = readdirSync(driverDir);
+          if (remaining.length === 0) {
+            rmdirSync(driverDir);
+            console.log(`[cleanup] removed empty _drivers folder: ${driverDir}`);
+          }
+        } catch { /* non-empty or race — leave it */ }
+      }
+    }
+  } catch (err) {
+    console.warn(`[cleanup] driver self-delete failed: ${err?.message || err}`);
+    console.warn(`[cleanup] remove the driver manually when convenient.`);
+  }
+}

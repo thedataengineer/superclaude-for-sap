@@ -20,7 +20,7 @@ Emit phase banner per `common/model-routing-rule.md` § Phase Banner Convention:
 Dispatch the reviewer with a **minimal prompt** — the agent reads everything itself:
 ```
 Agent({
-  subagent_type: "sap-code-reviewer",
+  subagent_type: "sc4sap:sap-code-reviewer",
   description: "ABAP review — <OBJECT_NAME>",
   prompt: """
     Review ABAP object <OBJECT_NAME> (type: <OBJECT_TYPE>).
@@ -48,6 +48,8 @@ The reviewer agent already has the full MCP tool set and rule-file protocols (se
 
 On `BLOCKED` from the reviewer, surface the reason verbatim and stop.
 
+**teamMode variant (Type B)** — after reviewer returns, if its findings include ≥ 1 business-alignment dimension (§ 1 / § 2 / § 13 per [`analysis-dimensions.md`](analysis-dimensions.md)) AND the object touches 2+ modules, activate Type B teamMode per [`team-mode.md`](team-mode.md) BEFORE Step 3. Consultants live-validate the reviewer's interpretation; the final report in Step 3 then carries "peer-validated" / "peer-refined" / "residual-divergence" annotations.
+
 ## Step 3 — Report (branching on reviewer's `complexity_hint`)
 
 Read the reviewer's `complexity_hint` (or compute it from severity counts if the field is missing: canned if `critical_count == 0 && total_findings < 10`, else briefing).
@@ -66,7 +68,7 @@ Triggered when `complexity_hint = "briefing"`. Emit banner:
 Dispatch:
 ```
 Agent({
-  subagent_type: "sap-writer",
+  subagent_type: "sc4sap:sap-writer",
   description: "ABAP review briefing — <OBJECT_NAME>",
   prompt: """
     Render a reader-facing briefing for the code review of <OBJECT_NAME> (language =

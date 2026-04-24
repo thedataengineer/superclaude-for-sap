@@ -38,7 +38,7 @@ For each program in `compared_objects`, emit phase banner:
 Dispatch shape (repeat per program, parallel in one message):
 ```
 Agent({
-  subagent_type: "sap-code-reviewer",
+  subagent_type: "sc4sap:sap-code-reviewer",
   model: "sonnet",   // override base Opus — facts-only extraction doesn't need Opus judgment
   description: "Facts — <PROG>",
   prompt: "<facts-extraction prompt per dispatch-prompts.md § Step 3>, target=<PROG>, type=<TYPE>",
@@ -62,7 +62,7 @@ Emit phase banner:
 Dispatch:
 ```
 Agent({
-  subagent_type: "sap-analyst",
+  subagent_type: "sc4sap:sap-analyst",
   description: "Compare — analyst synthesis",
   prompt: """
     Compare <N> programs across dimensions <active_dimensions>.
@@ -96,6 +96,8 @@ Agent({
 
 Triggered when the analyst returns `module_set` with ≥ 2 modules. For each distinct module, dispatch the matching consultant in parallel. Each returns 2–3 sentences from the module's operational perspective.
 
+**teamMode variant** — Step 4b always runs as Round 1 of Type A teamMode (Cross-Module Consultant Panel). If POSITIONs reveal an **ownership conflict** (same program claimed PRIMARY by 2+ modules), escalate to Rounds 2-3 per [`team-mode.md`](team-mode.md) § Rounds. No conflict → positions feed directly into Step 5 via `module_consultant_outputs`. Spawn shape below is the legacy single-shot; use the Round 1 spawn shape in `team-mode.md` § Round 1 (adds `team_name`, `name`, charter-file reference) when adopting teamMode.
+
 For each module in `module_set`:
 ```
 ▶ phase=4b (consultant-<MODULE>) · agent=sap-<module>-consultant · model=Opus 4.7
@@ -104,7 +106,7 @@ For each module in `module_set`:
 Dispatch shape:
 ```
 Agent({
-  subagent_type: "sap-<module>-consultant",   // frontmatter pins Opus 4.7
+  subagent_type: "sc4sap:sap-<module>-consultant",   // frontmatter pins Opus 4.7
   description: "<MODULE> angle on compared programs",
   prompt: """
     From a <MODULE> consultant's view, briefly explain (2–3 sentences each) which of these
@@ -129,7 +131,7 @@ Emit banner:
 Dispatch:
 ```
 Agent({
-  subagent_type: "sap-writer",
+  subagent_type: "sc4sap:sap-writer",
   description: "Render comparison report",
   prompt: """
     Render the comparison report using skills/compare-programs/report-template.md as the skeleton.
