@@ -361,6 +361,117 @@ export function alvLayoutMetrics({ columns = [], sampleRows = [], maxRows = 3 } 
 }
 
 // ──────────────────────────────────────────────────────────────
+// Multi-pane ALV (v10) — Split / Tabstrip / Sequence
+//
+// Many ABAP programs render two or more ALV grids on one screen:
+//   · Docking + Splitter container (top + bottom)        — ZMMR1001
+//   · Side-by-side grids                                 — comparison reports
+//   · Tabstrip pages each carrying their own grid        — multi-aspect viewers
+// A single-grid PNG can never capture the click-to-drill interaction
+// readers need to understand the program. v10 introduces composite ALV
+// rendering: each pane gets its own grid + title bar, panes are stacked
+// with an interaction caption + ↓ arrow between them so the user-visible
+// flow ("double-click row in top → bottom refreshes") is documented in
+// the image itself, not buried in prose elsewhere in the spec.
+//
+// Schema (within ALV_IMAGE_SPEC):
+//   {
+//     layout: 'split-vertical' | 'split-horizontal' | 'tabstrip',
+//     interaction: '상단 더블클릭 → 하단 갱신',  // caption between panes
+//     panes: [
+//       { title, columns, sampleRows, maxRows },             // populated pane
+//       { title, columns, sampleRows: [], placeholder },     // dynamic / empty pane
+//     ],
+//   }
+// Backward compat: when `panes` is absent the legacy single-pane shape
+// `{columns, sampleRows, maxRows}` continues to work.
+// ──────────────────────────────────────────────────────────────
+
+// Strip <?xml ?> + outer <svg ...> ... </svg> wrapper so the inner
+// content can be re-anchored inside a parent SVG via <g transform>.
+function extractInnerSvg(svgString) {
+  return svgString
+    .replace(/<\?xml[^>]*\?>\s*/, '')
+    .replace(/^<svg[^>]*>\s*/, '')
+    .replace(/<\/svg>\s*$/, '');
+}
+
+// Per-pane visual constants — kept here so multipaneAlvMetrics() and
+// renderMultipaneAlvSVG() stay in lockstep (any change to one MUST
+// change the other to keep the rasterizer viewport sized correctly).
+const PANE_TITLE_H   = 24;
+const PANE_GAP       = 8;
+const PANE_INTER_H   = 28;
+const PANE_PLACE_H   = 60;
+const PANE_PAD_TOP   = 10;
+const PANE_PAD_BOT   = 10;
+
+function paneIsEmpty(p) {
+  return !Array.isArray(p?.sampleRows) || p.sampleRows.length === 0;
+}
+function paneInnerMetrics(p) {
+  if (paneIsEmpty(p) && p.placeholder) return { width: 900, height: PANE_PLACE_H };
+  return alvLayoutMetrics({ columns: p.columns || [], sampleRows: p.sampleRows || [], maxRows: p.maxRows });
+}
+
+export function multipaneAlvMetrics({ panes = [] } = {}) {
+  if (!panes.length) return { width: 900, height: 100 };
+  let totalH = PANE_PAD_TOP;
+  let totalW = 900;
+  panes.forEach((p, i) => {
+    const m = paneInnerMetrics(p);
+    totalH += PANE_TITLE_H + m.height;
+    if (i < panes.length - 1) totalH += PANE_GAP + PANE_INTER_H;
+    if (m.width > totalW) totalW = m.width;
+  });
+  totalH += PANE_PAD_BOT;
+  return { width: totalW, height: totalH };
+}
+
+export function renderMultipaneAlvSVG({ layout = 'split-vertical', interaction = '', panes = [], lang = 'ko' } = {}) {
+  if (!panes.length) {
+    return renderAlvLayoutSVG({ columns: [], sampleRows: [], lang });
+  }
+  const { width: totalW, height: totalH } = multipaneAlvMetrics({ panes });
+
+  let cursorY = PANE_PAD_TOP;
+  const parts = [];
+  panes.forEach((p, i) => {
+    // Title bar (light grey + bold) — same palette as v8 grey headers.
+    parts.push(`<rect x="0" y="${cursorY}" width="${totalW}" height="${PANE_TITLE_H - 2}" fill="#E7E6E6" stroke="#888"/>`);
+    parts.push(`<text x="14" y="${cursorY + PANE_TITLE_H - 9}" font-weight="700" fill="#333">${xml(p.title || `Pane ${i + 1}`)}</text>`);
+    cursorY += PANE_TITLE_H;
+
+    // Pane body — actual grid OR placeholder box.
+    const m = paneInnerMetrics(p);
+    if (paneIsEmpty(p) && p.placeholder) {
+      parts.push(`<rect x="10" y="${cursorY}" width="${totalW - 20}" height="${m.height}" fill="#FAFAFA" stroke="#C8D4E2" stroke-dasharray="4,3"/>`);
+      parts.push(`<text x="${totalW / 2}" y="${cursorY + m.height / 2 + 4}" text-anchor="middle" fill="#888" font-style="italic">${xml(p.placeholder)}</text>`);
+    } else {
+      const innerSvg = renderAlvLayoutSVG({ columns: p.columns || [], sampleRows: p.sampleRows || [], maxRows: p.maxRows, lang });
+      parts.push(`<g transform="translate(0, ${cursorY})">${extractInnerSvg(innerSvg)}</g>`);
+    }
+    cursorY += m.height;
+
+    // Interaction caption + ↓ arrow between consecutive panes.
+    if (i < panes.length - 1) {
+      cursorY += PANE_GAP;
+      const caption = interaction
+        ? `↓ ${xml(interaction)}`
+        : `↓`;
+      parts.push(`<text x="${totalW / 2}" y="${cursorY + 18}" text-anchor="middle" font-size="12" fill="#1F5AA0" font-weight="600">${caption}</text>`);
+      cursorY += PANE_INTER_H;
+    }
+  });
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" font-family="Arial,sans-serif" font-size="12">
+<rect width="${totalW}" height="${totalH}" fill="#FFF"/>
+${parts.join('\n')}
+</svg>`;
+}
+
+// ──────────────────────────────────────────────────────────────
 // Rasterizer — headless Edge/Chrome/Chromium
 // ──────────────────────────────────────────────────────────────
 
@@ -599,8 +710,17 @@ export async function renderScreenImages({ selection, alv, lang = 'ko' } = {}) {
   if (alv) {
     tasks.push((async () => {
       try {
-        const svg = renderAlvLayoutSVG({ ...alv, lang });
-        const { width, height } = alvLayoutMetrics(alv);
+        // v10: when `panes` is supplied we route to the multipane composer
+        // (Split-ALV / Tabstrip / Sequence). Otherwise the legacy single-grid
+        // path renders unchanged. The shape detection happens here, not at
+        // the driver level, so existing per-spec drivers keep working as-is.
+        const isMultipane = Array.isArray(alv.panes) && alv.panes.length > 0;
+        const svg = isMultipane
+          ? renderMultipaneAlvSVG({ ...alv, lang })
+          : renderAlvLayoutSVG({ ...alv, lang });
+        const { width, height } = isMultipane
+          ? multipaneAlvMetrics(alv)
+          : alvLayoutMetrics(alv);
         const png = await rasterizeSvgToPng(svg, { width, height });
         if (png) out.alv = { pngBuffer: png, width, height };
       } catch { /* keep alv null → wireframe fallback */ }
