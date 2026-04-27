@@ -51,7 +51,7 @@ Phase 1 runs as **two sequential sub-phases** (1A then 1B) on every `sc4sap:crea
 3. **Business reason / pain point** — what current Gap, manual workaround, or compliance/regulatory requirement drives the request
 4. **Company-specific business rules** — deviations from SAP standard process (special pricing, custom statuses, local compliance, industry-specific calculations, etc.)
 5. **Reference assets** — existing CBO packages, prior Z programs, vendor add-ons to model after
-   - **If the user names a reference Z program**: consultant MAY invoke `program-to-spec` at depth **L1 (Overview only)** — extract Purpose / inputs / outputs / 1-paragraph flow — and **inline the summary into `module-interview.md`**. Do NOT produce a full spec.md artifact; this is a focused lookup, not a full spec generation run.
+   - **If the user names a reference Z program**: consultant MAY invoke `program-to-spec` at depth **L1 (Quick Spec)** — extract Purpose / inputs / outputs / main logic steps (numbered) — and **inline the summary into `module-interview.md`** (collapse the step list to 2–3 sentences if it runs long). Do NOT produce a full spec.md artifact; this is a focused lookup, not a full spec generation run.
 6. **Standard SAP solution screen** — consultant MUST propose at least one standard alternative (Fiori app, standard report/transaction, BAPI flow, CDS analytical query, embedded analytics) BEFORE agreeing to a custom build. User explicitly accepts/rejects each alternative; rejections are logged with reason.
 
 **Skip rule**: Skip Phase 1A only for pure technical utilities with zero business logic (e.g., generic string helper, file converter). Default behavior is "do not skip".

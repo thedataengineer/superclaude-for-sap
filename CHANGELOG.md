@@ -3,6 +3,18 @@
 All notable changes to **SuperClaude for SAP (sc4sap)** will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.13] — 2026-04-27
+
+### Fixed — vendor pin bumped to abap-mcp-adt-powerup 4.8.3 (resolves issue #43)
+
+`brokerFactory.js` in vendor 4.8.1 (commit `b41d4df`) read `SAP_PASSWORD` directly from `.env` and used the literal `keychain:<service>/<account>` reference string as the Basic Auth password — bypassing `profile.js`'s `resolveSecret()`. Every ADT tool call returned `Anmeldung fehlgeschlagen` for profiles using keychain-stored credentials. `ReloadProfile` did not help (broker session store cache survived `invalidateConnectionCache`). The upstream fix landed in 4.8.3 (`244928a`) — both Variant 2 (`createBrokerWithEnvFileStore`) and Variant 3 (`loadEnvFileIntoSessionStore`) now resolve `keychain:` references before seeding the session store.
+
+- `scripts/build-mcp-server.mjs` — `DEFAULT_PINNED_SHA` bumped from `b41d4df546e2cccfa3f6693b656e16868b6facb6` (4.8.1) to `244928a19b252e53e4105c550df0b891b1685de5` (4.8.3). 4.8.2 (transport handler hybrid read + parser + MIME fix) is also picked up by the bump.
+- Refresh path for existing installs: `node scripts/build-mcp-server.mjs --update`. Verifies HEAD matches the new SHA + reinstalls vendor `node_modules` (deps unchanged 4.8.1 → 4.8.3, but reinstall is idempotent and cheap).
+- Workaround documented in issue #43 (plaintext `SAP_PASSWORD` in `~/.sc4sap/profiles/<alias>/sap.env`) is no longer needed after the bump.
+
+Reported by @icharmi-byte. Verified locally on profile HKT-DEV.
+
 ## [0.6.12] — 2026-04-24
 
 ### Added — Phase 1B execution-style user choice (create-program, Type D gating)

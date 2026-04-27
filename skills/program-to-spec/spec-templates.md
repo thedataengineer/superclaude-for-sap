@@ -58,6 +58,6 @@ flowchart LR
 ## Excel — sheet naming convention
 
 Sheets named in chosen language; example labels (English):
-`Overview`, `Inputs & Screens`, `Data Model`, `Processing Logic`, `Output`, `Authorizations`, `Exceptions`, `Enhancement Points`, `Where-Used`, `Dependent Objects`, `Risk & PII`.
+`Overview`, `Inputs & Screens`, `Data Model`, `Processing Logic`, `Output`, `Authorizations`, `Exceptions`, `Enhancement Points`, `Dependent Objects`, `Where-Used`, `Risk`.
 
 The `Inputs & Screens` sheet (v8) is laid out top→bottom as: (1) sheet title, (2) Selection-Screen PNG anchored at B3, (3) ALV layout PNG anchored at B19 (≤ 3 sample rows, max 5), (4) Flow diagram, (5) BAPI / Action mapping, (6) Parameters table (`paramsBlock()` — datatype / required / default / description — always rendered), (7) yellow warning rows at the BOTTOM (Auth caveats + Data-volume caveats, style 20). Images are produced by `scripts/spec/screen-image-renderer.mjs` and embedded via `build({ images })`. Colors: grey + yellow only — green fill is retired. When no headless browser is available, degrade to cell-border wireframes via the `screen*` helpers in `rich-xlsx-template.mjs` — never silently omit the screens.

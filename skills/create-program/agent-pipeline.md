@@ -39,7 +39,7 @@ Phase 1 splits into **Phase 1A (Module Interview)** and **Phase 1B (Program Inte
   3. Business reason / pain point — current Gap, manual workaround, regulatory driver
   4. Company-specific business rules — deviations from SAP standard process
   5. Reference assets — existing CBO packages, prior Z programs, vendor add-ons
-     - When a reference Z program is named: consultant MAY invoke `sc4sap:program-to-spec` at depth **L1 (Overview only)** for that single object. Inline the Purpose / inputs / outputs / 1-paragraph flow into `module-interview.md`. Do NOT generate a full `spec.md` artifact for the reference object.
+     - When a reference Z program is named: consultant MAY invoke `sc4sap:program-to-spec` at depth **L1 (Quick Spec)** for that single object. Inline the Purpose / inputs / outputs / main logic steps into `module-interview.md` (collapse the step list to 2–3 sentences if it runs long). Do NOT generate a full `spec.md` artifact for the reference object.
   6. **Standard SAP solution screen (mandatory)** — consultant MUST propose at least one standard alternative (Fiori app, standard report/transaction, BAPI flow, CDS analytical query, embedded analytics) BEFORE agreeing to a custom build. Each rejection logged with reason.
 - **Skip rule**: Skip Phase 1A only for pure technical utilities with zero business logic (e.g., generic string helper, file converter). Default behavior is "do not skip".
 - **Gate**: business ambiguity ≤ 5%
