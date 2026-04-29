@@ -109,6 +109,11 @@ function normalize(raw) {
 // - If cache is stale or missing → do a bounded-timeout fetch.
 // - If fetch fails → write short-TTL error cache and return whatever stale data we had.
 export async function getUsage(workspaceDir) {
+  const provider = (process.env.PRISM_LLM_PROVIDER || 'anthropic').toLowerCase();
+  if (provider !== 'anthropic') {
+    return { t: Date.now(), ok: false, err: 'non-anthropic', data: null };
+  }
+
   const cached = readCache(workspaceDir);
   const now = Date.now();
   if (cached) {
