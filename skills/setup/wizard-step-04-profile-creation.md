@@ -110,7 +110,7 @@ Do not prompt for these at first-time setup unless the user is explicitly tighte
 
 | Key | Purpose | Default |
 |---|---|---|
-| `SC4SAP_MCP_AUTOBUILD` | Auto-rebuild vendor MCP server after plugin version bump | `1` |
+| `PRISM_MCP_AUTOBUILD` | Auto-rebuild vendor MCP server after plugin version bump | `1` |
 | `TLS_REJECT_UNAUTHORIZED` | Set to `0` for self-signed dev certs | unset |
 
 Both are optional; include as commented examples in the generated profile env only when the user explicitly asks.

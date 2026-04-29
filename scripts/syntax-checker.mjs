@@ -84,13 +84,13 @@ async function main() {
 
     let guidance;
     if (isAbapSyntaxError(error)) {
-      guidance = `[SC4SAP SYNTAX CHECK] ABAP error detected${objectLabel}. ` +
+      guidance = `[PRISM SYNTAX CHECK] ABAP error detected${objectLabel}. ` +
         `Run GetAbapSemanticAnalysis to get detailed syntax/semantic analysis. ` +
         `Common fixes: check spelling of types/variables, verify interface implementations, ` +
         `ensure all referenced objects exist and are active. ` +
         `After fixing, retry the operation.`;
     } else {
-      guidance = `[SC4SAP ERROR] MCP ABAP tool "${toolName}" failed${objectLabel}. ` +
+      guidance = `[PRISM ERROR] MCP ABAP tool "${toolName}" failed${objectLabel}. ` +
         `Consider running GetAbapSemanticAnalysis to check for underlying syntax issues. ` +
         `Also verify: (1) the object exists, (2) you have authorization, ` +
         `(3) the transport request is valid, (4) the object is not locked by another user.`;

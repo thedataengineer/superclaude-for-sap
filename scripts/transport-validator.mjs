@@ -118,7 +118,7 @@ async function main() {
         continue: true,
         hookSpecificOutput: {
           hookEventName: 'PreToolUse',
-          additionalContext: `[SC4SAP TRANSPORT CHECK] You are ${action} SAP object "${objectName}" without specifying a transport request. ` +
+          additionalContext: `[PRISM TRANSPORT CHECK] You are ${action} SAP object "${objectName}" without specifying a transport request. ` +
             `SAP policy requires all changes to be assigned to a transport. ` +
             `Please either: (1) specify a transport parameter, (2) use CreateTransport to create one first, ` +
             `or (3) use ListTransports to find an existing one. ` +

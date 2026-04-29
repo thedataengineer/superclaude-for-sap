@@ -5,7 +5,7 @@ level: 2
 model: sonnet
 ---
 
-# SC4SAP Program → Specification
+# PRISM Program → Specification
 
 Reads an existing ABAP program (Report / Module Pool / FM Group / Class / CDS / RAP) via MCP, runs structural + semantic + where-used analysis, then produces a Specification artifact in **Markdown** (`.md`) or **Excel** (`.xlsx`) format. Scope is **negotiated Socratically** — start wide, narrow on each turn, stop when the user's target granularity is confirmed.
 

@@ -5,7 +5,7 @@ level: 2
 model: haiku
 ---
 
-# SC4SAP Option
+# PRISM Option
 
 Single entrypoint to **inspect live SAP state** and **edit the values stored in `.prism/sap.env`** — the dotenv file that holds SAP connection credentials, TLS settings, and the `abap-mcp-adt-powerup` blocklist policy for row-extraction safety.
 

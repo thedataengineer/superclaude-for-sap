@@ -53,7 +53,7 @@ async function main() {
           continue: true,
           hookSpecificOutput: {
             hookEventName: 'PermissionRequest',
-            additionalContext: `[SC4SAP WARNING] Potentially dangerous command detected. Proceed with caution.`
+            additionalContext: `[PRISM WARNING] Potentially dangerous command detected. Proceed with caution.`
           }
         }));
         return;

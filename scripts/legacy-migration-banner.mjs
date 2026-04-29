@@ -11,7 +11,7 @@
  *   needsMigration =
  *     EXISTS <cwd>/.prism/sap.env
  *     AND NOT EXISTS <cwd>/.prism/active-profile.txt
- *     AND (no profiles in $SC4SAP_HOME_DIR/profiles/)
+ *     AND (no profiles in $PRISM_HOME_DIR/profiles/)
  *
  * Non-blocking. Silent on any other state (fresh install, already migrated,
  * error reading files). Fires once per session via SessionStart.
@@ -22,7 +22,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 function prismHome() {
-  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
+  return process.env.PRISM_HOME_DIR || join(homedir(), '.prism');
 }
 
 function hasAnyProfile() {

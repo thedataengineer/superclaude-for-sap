@@ -113,7 +113,7 @@ async function main() {
       continue: true,
       hookSpecificOutput: {
         hookEventName: 'PostToolUse',
-        additionalContext: `[SC4SAP ACTIVATION] ABAP object${objectLabel} was ${action}. ` +
+        additionalContext: `[PRISM ACTIVATION] ABAP object${objectLabel} was ${action}. ` +
           `Remember to activate it. Recommended workflow: ` +
           `(1) Run GetAbapSemanticAnalysis to check for syntax errors, ` +
           `(2) Use GetInactiveObjects to see all pending activations, ` +

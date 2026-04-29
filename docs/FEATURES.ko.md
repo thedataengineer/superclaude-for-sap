@@ -336,10 +336,10 @@ echo '{"tool_name":"mcp__abap__GetTableContents","tool_input":{"table":"BNKA"}}'
 
 **L4 서버측 집행** (모든 클라이언트 — 외부 스크립트 포함 — 차단):
 ```bash
-export SC4SAP_POLICY=on
-export SC4SAP_POLICY_PROFILE=strict
-export SC4SAP_BLOCKLIST_PATH=/path/to/prism/exceptions/table_exception.md
-export SC4SAP_ALLOW_TABLE=TAB1,TAB2  # 세션 긴급 면제 (로그됨)
+export PRISM_POLICY=on
+export PRISM_POLICY_PROFILE=strict
+export PRISM_BLOCKLIST_PATH=/path/to/prism/exceptions/table_exception.md
+export PRISM_ALLOW_TABLE=TAB1,TAB2  # 세션 긴급 면제 (로그됨)
 ```
 
 스키마/DDIC 메타데이터 (`GetTable`, `GetStructure`, `GetView`, `GetDataElement`, `GetDomain`)와 존재 체크는 계속 허용.

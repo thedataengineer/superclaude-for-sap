@@ -12,7 +12,7 @@
  *   1. Env file resolution (.prism/sap.env)
  *   2. Plugin version drift warning (cache vs marketplace plugin.json)
  *   3. Vendor launcher existence
- *      - Missing + SC4SAP_MCP_AUTOBUILD=1 → run build script then retry
+ *      - Missing + PRISM_MCP_AUTOBUILD=1 → run build script then retry
  *      - Missing + no opt-in            → exit(1) with remediation steps
  *   4. Vendor node_modules self-heal
  *      - Launcher present but production deps missing (Claude Code's plugin
@@ -71,7 +71,7 @@ function findMarketplacePluginJson() {
 
 // --- 1. Resolve env file ---------------------------------------------------
 // Precedence (multi-profile 0.6.0+):
-//   1. <cwd>/.prism/active-profile.txt → ${SC4SAP_HOME_DIR|~/.prism}/profiles/<alias>/sap.env
+//   1. <cwd>/.prism/active-profile.txt → ${PRISM_HOME_DIR|~/.prism}/profiles/<alias>/sap.env
 //   2. <cwd>/.prism/sap.env                                   (legacy single-file layout)
 //   3. <plugin>/.prism/sap.env                                (test scaffolding)
 
@@ -81,8 +81,8 @@ function resolveActiveProfileEnv(cwd) {
   let alias;
   try { alias = fs.readFileSync(pointer, 'utf8').trim(); } catch { return null; }
   if (!alias) return null;
-  const homeDir = process.env.SC4SAP_HOME_DIR
-    ? process.env.SC4SAP_HOME_DIR
+  const homeDir = process.env.PRISM_HOME_DIR
+    ? process.env.PRISM_HOME_DIR
     : path.join(os.homedir(), '.prism');
   const envPath = path.join(homeDir, 'profiles', alias, 'sap.env');
   return fs.existsSync(envPath) ? envPath : null;
@@ -97,14 +97,14 @@ const ENV_FILE = PROFILE_ENV
 
 if (ENV_FILE && fs.existsSync(ENV_FILE)) {
   process.env.MCP_ENV_PATH = ENV_FILE;
-  // Pull SC4SAP_MCP_AUTOBUILD from sap.env so users can toggle it there.
+  // Pull PRISM_MCP_AUTOBUILD from sap.env so users can toggle it there.
   // sap.env takes precedence over .mcp.json-injected process.env.
   try {
     const envText = fs.readFileSync(ENV_FILE, 'utf8');
-    const m = envText.match(/^\s*SC4SAP_MCP_AUTOBUILD\s*=\s*(.+?)\s*$/m);
+    const m = envText.match(/^\s*PRISM_MCP_AUTOBUILD\s*=\s*(.+?)\s*$/m);
     if (m) {
       const v = m[1].replace(/^["']|["']$/g, '').trim();
-      process.env.SC4SAP_MCP_AUTOBUILD = v;
+      process.env.PRISM_MCP_AUTOBUILD = v;
     }
   } catch { /* ignore parse errors; fall back to process.env */ }
 } else {
@@ -166,7 +166,7 @@ if (mpVer && mpVer !== cacheVer) {
 
 function attemptAutoBuild() {
   console.error('');
-  console.error('[prism] SC4SAP_MCP_AUTOBUILD=1 — running build-mcp-server.mjs...');
+  console.error('[prism] PRISM_MCP_AUTOBUILD=1 — running build-mcp-server.mjs...');
   console.error('  (this clones abap-mcp-adt-powerup and runs npm install, ~1 minute)');
   try {
     cp.execSync(`node "${BUILD_SCRIPT}"`, { stdio: 'inherit' });
@@ -192,9 +192,9 @@ if (!fs.existsSync(LAUNCHER)) {
   console.error('  Fix options:');
   console.error(`    1. node "${BUILD_SCRIPT}"`);
   console.error('    2. Run /prism:setup mcp');
-  console.error('    3. Set env SC4SAP_MCP_AUTOBUILD=1 and retry');
+  console.error('    3. Set env PRISM_MCP_AUTOBUILD=1 and retry');
 
-  if (process.env.SC4SAP_MCP_AUTOBUILD === '1') {
+  if (process.env.PRISM_MCP_AUTOBUILD === '1') {
     if (!attemptAutoBuild()) process.exit(1);
   } else {
     process.exit(1);

@@ -15,7 +15,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync, openSync,
 import { join } from 'path';
 import { readStdin } from './lib/stdin.mjs';
 
-const THRESHOLD = parseInt(process.env.SC4SAP_CONTEXT_GUARD_THRESHOLD || '75', 10);
+const THRESHOLD = parseInt(process.env.PRISM_CONTEXT_GUARD_THRESHOLD || '75', 10);
 const MAX_BLOCKS = 2;
 
 function isContextLimitStop(data) {
@@ -119,7 +119,7 @@ async function main() {
 
     console.log(JSON.stringify({
       decision: 'block',
-      reason: `[SC4SAP] Context usage at ${contextPercent}% (threshold: ${THRESHOLD}%). ` +
+      reason: `[PRISM] Context usage at ${contextPercent}% (threshold: ${THRESHOLD}%). ` +
         `Consider running /compact to free context space, or start a fresh session. ` +
         `Save important SAP object names and transport numbers to .prism/notepad.md before compacting.`
     }));

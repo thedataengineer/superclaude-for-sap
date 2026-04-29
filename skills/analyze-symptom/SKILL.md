@@ -5,7 +5,7 @@ level: 2
 model: sonnet
 ---
 
-# SC4SAP Analyze Symptom
+# PRISM Analyze Symptom
 
 Performs structured root cause analysis for SAP operational incidents by connecting to the live SAP system through MCP. Auto-collects evidence from dumps, system state, recent transports, and code call graphs before asking the user any question.
 

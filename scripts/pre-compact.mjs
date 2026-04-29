@@ -53,7 +53,7 @@ async function main() {
       }
 
       if (parts.length > 0) {
-        messages.push(`[SC4SAP CONTEXT PRESERVATION]\n${parts.join('\n')}`);
+        messages.push(`[PRISM CONTEXT PRESERVATION]\n${parts.join('\n')}`);
       }
     }
 

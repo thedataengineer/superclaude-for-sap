@@ -1,4 +1,4 @@
-# SC4SAP MCP Tool Catalog — Read operations
+# PRISM MCP Tool Catalog — Read operations
 
 Get / Read / List / Search handlers — schema, metadata, object introspection, and navigation. Part of [prism-mcp-tools.md](prism-mcp-tools.md).
 

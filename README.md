@@ -49,7 +49,7 @@ Prism for SAP transforms Claude Code into a full-stack SAP development assistant
 
 <p align="center">
   <a href="prism_unleashed.png">
-    <img src="prism_unleashed.png" alt="SC4SAP Unleashed" width="100%"/>
+    <img src="prism_unleashed.png" alt="PRISM Unleashed" width="100%"/>
   </a>
 </p>
 

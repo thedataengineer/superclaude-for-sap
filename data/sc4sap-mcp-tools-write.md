@@ -1,4 +1,4 @@
-# SC4SAP MCP Tool Catalog — Write operations
+# PRISM MCP Tool Catalog — Write operations
 
 Create / Update / Delete handlers for ABAP object lifecycle. Part of [prism-mcp-tools.md](prism-mcp-tools.md).
 

@@ -5,7 +5,7 @@ level: 2
 model: haiku
 ---
 
-# SC4SAP Setup
+# PRISM Setup
 
 Use `/prism:setup` as the unified setup and configuration entrypoint for Prism for SAP.
 
@@ -99,7 +99,7 @@ Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
 
 ## HUD Status Line
 
-The plugin ships a prism-branded status line that activates automatically on install (declared in `.claude-plugin/plugin.json` → `statusLine`). **Read `hud-statusline.md`** for the full specification, including displayed segments, environment variables (`SC4SAP_WEEKLY_LIMIT_USD`, `NO_COLOR`), performance characteristics, and how to disable it.
+The plugin ships a prism-branded status line that activates automatically on install (declared in `.claude-plugin/plugin.json` → `statusLine`). **Read `hud-statusline.md`** for the full specification, including displayed segments, environment variables (`PRISM_WEEKLY_LIMIT_USD`, `NO_COLOR`), performance characteristics, and how to disable it.
 
 ## Notes
 

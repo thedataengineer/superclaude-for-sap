@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PRESETS_PATH = path.join(__dirname, 'plan-presets.json');
 const SETTINGS_PATH = path.join(os.homedir(), '.claude', 'settings.json');
-const KEYS = ['SC4SAP_5H_LIMIT_USD', 'SC4SAP_WEEKLY_LIMIT_USD', 'SC4SAP_WEEKLY_EXTRA_LIMIT_USD'];
+const KEYS = ['PRISM_5H_LIMIT_USD', 'PRISM_WEEKLY_LIMIT_USD', 'PRISM_WEEKLY_EXTRA_LIMIT_USD'];
 
 function readJson(p, fallback) {
   if (!fs.existsSync(p)) return fallback;
@@ -77,9 +77,9 @@ if (!plan) {
 }
 
 const v = presets.plans[plan];
-settings.env.SC4SAP_5H_LIMIT_USD = String(v.fiveH);
-settings.env.SC4SAP_WEEKLY_LIMIT_USD = String(v.weekly);
-settings.env.SC4SAP_WEEKLY_EXTRA_LIMIT_USD = String(v.extra);
+settings.env.PRISM_5H_LIMIT_USD = String(v.fiveH);
+settings.env.PRISM_WEEKLY_LIMIT_USD = String(v.weekly);
+settings.env.PRISM_WEEKLY_EXTRA_LIMIT_USD = String(v.extra);
 writeJson(SETTINGS_PATH, settings);
 
 console.log(`✅ Applied plan "${plan}":`);

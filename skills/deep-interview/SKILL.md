@@ -5,7 +5,7 @@ level: 2
 model: haiku
 ---
 
-# SC4SAP Deep Interview
+# PRISM Deep Interview
 
 Follows OMC `deep-interview` pattern adapted for SAP. Conducts a structured Socratic interview to crystallize SAP development requirements before any code is written. Prevents wasted execution cycles on underspecified ABAP tasks.
 

@@ -6,7 +6,7 @@ internal: true
 model: haiku
 ---
 
-# SC4SAP Trust Session (Internal-Only)
+# PRISM Trust Session (Internal-Only)
 
 Session-scoped permission auto-approval. When a long-running parent skill enters its automated phases, every MCP `Create*` / `Update*` / `Delete*` call would otherwise trigger a "Allow this tool?" prompt. This skill pre-grants **all** required tool permissions so the parent pipeline proceeds uninterrupted.
 
@@ -65,7 +65,7 @@ Two-layer permission grant:
 **Layer 1 — `.claude/settings.local.json` allowlist** (project-local, persists). **Scope policy: SAP MCP handlers auto-approved; non-SAP operations kept prompt-gated**. Specifically:
 
 - **SAP MCP — allowed (enumerated, NOT wildcarded)**:
-  - **SC4SAP plugin namespace** (`mcp__plugin_prism_sap__`) — enumerate all `Get*` / `Read*` / `Create*` / `Update*` / `Delete*` / `List*` / `Search*` / `Runtime*` / `RunUnitTest` / `CreateTransport` / `ValidateServiceBinding` tools, **EXCEPT** `GetTableContents` and `GetSqlQuery`.
+  - **PRISM plugin namespace** (`mcp__plugin_prism_sap__`) — enumerate all `Get*` / `Read*` / `Create*` / `Update*` / `Delete*` / `List*` / `Search*` / `Runtime*` / `RunUnitTest` / `CreateTransport` / `ValidateServiceBinding` tools, **EXCEPT** `GetTableContents` and `GetSqlQuery`.
   - **Legacy ABAP ADT namespace** (`mcp__mcp-abap-adt__`) — same enumeration rule, same two exclusions.
   - Wildcards are forbidden in these two namespaces because they would silently include the two excluded tools.
 - **Sub-agent dispatch — allowed**:

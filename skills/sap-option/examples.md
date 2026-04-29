@@ -19,7 +19,7 @@ User: "Change SAP_PASSWORD"
 → prompt for new password (do not echo), validate non-empty, diff shows `*** → ***`, confirm, write backup, remind to reconnect.
 
 User: "Change the HUD weekly limit to $200"
-→ route to hud-limits.md flow, edit `~/.claude/settings.json` → `env.SC4SAP_WEEKLY_LIMIT_USD = 200`, preview diff, confirm, write, remind user to **restart Claude Code** (not just `/mcp`).
+→ route to hud-limits.md flow, edit `~/.claude/settings.json` → `env.PRISM_WEEKLY_LIMIT_USD = 200`, preview diff, confirm, write, remind user to **restart Claude Code** (not just `/mcp`).
 
 User: "5h limit 35, weekly 200, extra 100"
 → HUD flow, set all three at once, single diff, single confirmation, single write.

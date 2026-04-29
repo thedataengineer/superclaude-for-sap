@@ -336,10 +336,10 @@ echo '{"tool_name":"mcp__abap__GetTableContents","tool_input":{"table":"BNKA"}}'
 
 **L4 サーバー側施行** (すべてのクライアント — 外部スクリプト含む — をブロック):
 ```bash
-export SC4SAP_POLICY=on
-export SC4SAP_POLICY_PROFILE=strict
-export SC4SAP_BLOCKLIST_PATH=/path/to/prism/exceptions/table_exception.md
-export SC4SAP_ALLOW_TABLE=TAB1,TAB2  # セッション緊急免除 (ログ記録)
+export PRISM_POLICY=on
+export PRISM_POLICY_PROFILE=strict
+export PRISM_BLOCKLIST_PATH=/path/to/prism/exceptions/table_exception.md
+export PRISM_ALLOW_TABLE=TAB1,TAB2  # セッション緊急免除 (ログ記録)
 ```
 
 スキーマ/DDIC メタデータ (`GetTable`, `GetStructure`, `GetView`, `GetDataElement`, `GetDomain`) と存在チェックは引き続き許可。

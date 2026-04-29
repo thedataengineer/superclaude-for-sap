@@ -5,7 +5,7 @@ level: 4
 model: sonnet
 ---
 
-# SC4SAP Create Program
+# PRISM Create Program
 
 Core ABAP program creation skill. Generates a Main Program wrapped with conditional Includes following the prism template convention. Supports both OOP (two-class split: Data + Screen/ALV) and Procedural (PERFORM) paradigms. Full pipeline: SAP version preflight → Socratic interview → planner → writer spec → user confirm → executor/qa/reviewer.
 

@@ -68,8 +68,8 @@ async function main() {
     }
 
     const summary = messages.length > 0
-      ? `[SC4SAP Maintenance]\n${messages.join('\n')}`
-      : '[SC4SAP] Maintenance check complete. No issues found.';
+      ? `[PRISM Maintenance]\n${messages.join('\n')}`
+      : '[PRISM] Maintenance check complete. No issues found.';
 
     console.log(JSON.stringify({
       continue: true,

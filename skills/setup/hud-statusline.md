@@ -25,10 +25,10 @@ Restart Claude Code after install for the status line to appear.
 3. `MCP●  ENV●` — health dots: vendor MCP build, `sap.env` presence (green = OK, red = missing)
 4. `⚡ working` / `✓ idle` — agent activity indicator. Working when the session transcript was modified in the last 5 seconds, OR the last assistant message has tool_use blocks without matching tool_results (CC is waiting on a tool callback). Idle otherwise.
 5. `ctx 420K/1.00M 42%` — current context window usage from the latest assistant `usage` block
-6. `5h 42%` — rolling 5-hour block utilization from Anthropic's `/api/oauth/usage` endpoint (real utilization, not an estimate). Falls back to transcript-derived `$` cost vs `SC4SAP_5H_LIMIT_USD` when the API is unavailable.
+6. `5h 42%` — rolling 5-hour block utilization from Anthropic's `/api/oauth/usage` endpoint (real utilization, not an estimate). Falls back to transcript-derived `$` cost vs `PRISM_5H_LIMIT_USD` when the API is unavailable.
 7. `⏳ 2h 17m` — time remaining in the 5h block, computed from `five_hour.resets_at` when the API is reachable.
 8. `7d 87%` — rolling 7-day utilization from the same OAuth endpoint (`seven_day.utilization`). Falls back to transcript-derived weekly cost when the API is down.
-9. `+12% extra` — **only shown when weekly utilization exceeds 100%.** Equals `seven_day.utilization − 100`. In fallback mode, represents weekly-cost overage vs `SC4SAP_WEEKLY_EXTRA_LIMIT_USD`.
+9. `+12% extra` — **only shown when weekly utilization exceeds 100%.** Equals `seven_day.utilization − 100`. In fallback mode, represents weekly-cost overage vs `PRISM_WEEKLY_EXTRA_LIMIT_USD`.
 10. `Opus 4.6` — active model
 
 ## Performance
@@ -40,9 +40,9 @@ Restart Claude Code after install for the status line to appear.
 
 ## Environment variables
 
-- `SC4SAP_5H_LIMIT_USD=35` — 100% basis for the 5h block segment. Unset = show bare dollars instead of a percentage.
-- `SC4SAP_WEEKLY_LIMIT_USD=200` — 100% basis for the 7d segment. Unset = show bare dollars instead of a percentage.
-- `SC4SAP_WEEKLY_EXTRA_LIMIT_USD=100` — 100% basis for the `+extra` overage segment. Only consulted when weekly usage exceeds the base limit. Unset = show overage in bare dollars.
+- `PRISM_5H_LIMIT_USD=35` — 100% basis for the 5h block segment. Unset = show bare dollars instead of a percentage.
+- `PRISM_WEEKLY_LIMIT_USD=200` — 100% basis for the 7d segment. Unset = show bare dollars instead of a percentage.
+- `PRISM_WEEKLY_EXTRA_LIMIT_USD=100` — 100% basis for the `+extra` overage segment. Only consulted when weekly usage exceeds the base limit. Unset = show overage in bare dollars.
 - `NO_COLOR=1` — disable ANSI colors.
 
 ## Overriding / disabling

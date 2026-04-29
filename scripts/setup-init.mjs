@@ -37,7 +37,7 @@ async function main() {
     const notepadPath = join(directory, '.prism', 'notepad.md');
     if (!existsSync(notepadPath)) {
       try {
-        writeFileSync(notepadPath, `# SC4SAP Project Notepad
+        writeFileSync(notepadPath, `# PRISM Project Notepad
 
 ## Priority Context
 <!-- High-priority context that survives compaction -->
@@ -72,7 +72,7 @@ async function main() {
       continue: true,
       hookSpecificOutput: {
         hookEventName: 'SessionStart',
-        additionalContext: '[SC4SAP] Project initialized. .prism directory structure created.'
+        additionalContext: '[PRISM] Project initialized. .prism directory structure created.'
       }
     }));
   } catch (error) {

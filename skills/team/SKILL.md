@@ -5,7 +5,7 @@ level: 3
 model: sonnet
 ---
 
-# SC4SAP Team
+# PRISM Team
 
 Follows OMC `team` pattern adapted for SAP. Coordinates multiple specialized SAP agents working in parallel on a shared task list using Claude Code native team mode.
 

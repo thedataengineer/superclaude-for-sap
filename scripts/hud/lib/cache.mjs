@@ -9,11 +9,11 @@ import { homedir } from 'os';
 // happens to run in, including unrelated third-party projects.
 //
 // Resolution order:
-//   1. SC4SAP_HUD_CACHE_DIR  — explicit override (power users, tests)
-//   2. ${SC4SAP_HOME_DIR|~/.prism}/hud-cache  — default (matches profile layout)
+//   1. PRISM_HUD_CACHE_DIR  — explicit override (power users, tests)
+//   2. ${PRISM_HOME_DIR|~/.prism}/hud-cache  — default (matches profile layout)
 export function hudCacheDir() {
-  if (process.env.SC4SAP_HUD_CACHE_DIR) return process.env.SC4SAP_HUD_CACHE_DIR;
-  const home = process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
+  if (process.env.PRISM_HUD_CACHE_DIR) return process.env.PRISM_HUD_CACHE_DIR;
+  const home = process.env.PRISM_HOME_DIR || join(homedir(), '.prism');
   return join(home, 'hud-cache');
 }
 

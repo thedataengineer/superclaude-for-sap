@@ -15,9 +15,9 @@ import { probeMcpState } from './lib/mcp-probe.mjs';
 // Fallback USD limits when the OAuth usage API is unreachable (no token, offline,
 // API KO, etc.). When the API works, these are ignored — we just render the real
 // utilization percentages Anthropic reports.
-const FIVEH_LIMIT_USD  = Number(process.env.SC4SAP_5H_LIMIT_USD        || 0);
-const WEEKLY_LIMIT_USD = Number(process.env.SC4SAP_WEEKLY_LIMIT_USD    || 0);
-const WEEKLY_EXTRA_USD = Number(process.env.SC4SAP_WEEKLY_EXTRA_LIMIT_USD || 0);
+const FIVEH_LIMIT_USD  = Number(process.env.PRISM_5H_LIMIT_USD        || 0);
+const WEEKLY_LIMIT_USD = Number(process.env.PRISM_WEEKLY_LIMIT_USD    || 0);
+const WEEKLY_EXTRA_USD = Number(process.env.PRISM_WEEKLY_EXTRA_LIMIT_USD || 0);
 
 async function readStdinJson(maxMs = 300) {
   return new Promise((resolve) => {
@@ -40,12 +40,12 @@ function segment(label, value, labelColor = color.gray) {
 
 // Locale detection for the context-capacity warning line.
 // Priority:
-//   1. SC4SAP_HUD_LANG       — explicit override (e.g. `ko`, `ja`, `en`)
+//   1. PRISM_HUD_LANG       — explicit override (e.g. `ko`, `ja`, `en`)
 //   2. OS locale env vars     — LC_ALL / LANG / LANGUAGE
 //   3. Intl.DateTimeFormat    — Node.js-resolved system locale
 //   4. 'en' fallback
 function detectHudLang() {
-  const explicit = (process.env.SC4SAP_HUD_LANG || '').trim().toLowerCase();
+  const explicit = (process.env.PRISM_HUD_LANG || '').trim().toLowerCase();
   if (explicit) return explicit.slice(0, 2);
   const sysEnv = process.env.LC_ALL || process.env.LANG || process.env.LANGUAGE || '';
   if (sysEnv) {

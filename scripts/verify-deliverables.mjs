@@ -99,7 +99,7 @@ async function main() {
         continue: true,
         hookSpecificOutput: {
           hookEventName: 'SubagentStop',
-          additionalContext: `[SC4SAP DELIVERABLE CHECK]\n${warnings.join('\n')}`
+          additionalContext: `[PRISM DELIVERABLE CHECK]\n${warnings.join('\n')}`
         }
       }));
     } else {

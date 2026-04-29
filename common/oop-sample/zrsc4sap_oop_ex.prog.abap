@@ -1,6 +1,6 @@
 *&---------------------------------------------------------------------*
 *& Sample Report Program Template
-*& Program  : ZRSC4SAP_OOP_EX
+*& Program  : ZRPRISM_OOP_EX
 *& Author   : SVT_00005
 *& Date     : 2026-04-03
 *& S/4HANA  : 2025 Release
@@ -9,18 +9,18 @@
 *&            
 *&            
 *&---------------------------------------------------------------------*
-REPORT ZRSC4SAP_OOP_EX.
+REPORT ZRPRISM_OOP_EX.
 
 
-INCLUDE ZRSC4SAP_OOP_EXT.
-INCLUDE ZRSC4SAP_OOP_EXS.
-INCLUDE ZRSC4SAP_OOP_EXC.
-INCLUDE ZRSC4SAP_OOP_EXA.
-INCLUDE ZRSC4SAP_OOP_EXE.
-INCLUDE ZRSC4SAP_OOP_EXO.
-INCLUDE ZRSC4SAP_OOP_EXI.
-INCLUDE ZRSC4SAP_OOP_EXF.
-INCLUDE ZRSC4SAP_OOP_EXTST. "Test Class
+INCLUDE ZRPRISM_OOP_EXT.
+INCLUDE ZRPRISM_OOP_EXS.
+INCLUDE ZRPRISM_OOP_EXC.
+INCLUDE ZRPRISM_OOP_EXA.
+INCLUDE ZRPRISM_OOP_EXE.
+INCLUDE ZRPRISM_OOP_EXO.
+INCLUDE ZRPRISM_OOP_EXI.
+INCLUDE ZRPRISM_OOP_EXF.
+INCLUDE ZRPRISM_OOP_EXTST. "Test Class
 
 
 *&---------------------------------------------------------------------*

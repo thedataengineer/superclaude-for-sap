@@ -4,7 +4,7 @@ description: CTS Transport Release workflow — list, validate, release, and con
 level: 3
 ---
 
-# SC4SAP Release
+# PRISM Release
 
 Full CTS (Change and Transport System) transport release workflow. Hybrid mode: confirms transport selection interactively, then auto-executes validation and release steps.
 

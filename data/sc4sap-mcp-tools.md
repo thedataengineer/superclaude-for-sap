@@ -1,4 +1,4 @@
-# SC4SAP MCP Tool Catalog (abap-mcp-adt-powerup)
+# PRISM MCP Tool Catalog (abap-mcp-adt-powerup)
 
 Index of MCP handlers exposed by the `abap-mcp-adt-powerup` server under the `mcp__plugin_prism_sap__` namespace. Tool identifiers are split by operation class — consult the partial files linked below.
 

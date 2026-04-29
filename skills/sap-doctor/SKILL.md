@@ -1,17 +1,17 @@
 ---
 name: prism:sap-doctor
-description: Diagnose SC4SAP plugin health, MCP server connectivity, and SAP system connection (renamed from `doctor` to avoid conflict with Claude Code's built-in `/doctor`)
+description: Diagnose PRISM plugin health, MCP server connectivity, and SAP system connection (renamed from `doctor` to avoid conflict with Claude Code's built-in `/doctor`)
 level: 2
 model: haiku
 ---
 
-# SC4SAP Doctor
+# PRISM Doctor
 
-Diagnoses the full SC4SAP stack: plugin installation, MCP server status, and live SAP system connectivity. Reports findings with actionable fixes for each issue found.
+Diagnoses the full PRISM stack: plugin installation, MCP server status, and live SAP system connectivity. Reports findings with actionable fixes for each issue found.
 
 
 <Purpose>
-prism:sap-doctor runs a structured health check across three layers: the SC4SAP plugin itself, the mcp-abap-adt MCP server registration, and the live SAP system connection. It surfaces problems with clear remediation steps so you can get back to development quickly.
+prism:sap-doctor runs a structured health check across three layers: the PRISM plugin itself, the mcp-abap-adt MCP server registration, and the live SAP system connection. It surfaces problems with clear remediation steps so you can get back to development quickly.
 </Purpose>
 
 <Response_Prefix>
@@ -41,7 +41,7 @@ Always show the ACTIVE version first and explicitly exclude it from deletion. If
 
 <Output_Format>
 ```
-SC4SAP Doctor Report
+PRISM Doctor Report
 ====================
 Plugin Health       [PASS]  v0.2.2 (cache matches marketplace)
 MCP Server          [PASS]  plugin:prism:sap responding, bridge preflight OK
@@ -59,7 +59,7 @@ Fix: Activate ZCL_S4SAP_CM_ALV, or re-run /prism:setup wizard step 9b
 Second example — connectivity failure gating Layer 4:
 
 ```
-SC4SAP Doctor Report
+PRISM Doctor Report
 ====================
 Plugin Health       [PASS]  v0.2.2
 MCP Server          [FAIL]  plugin:prism:sap not responding
@@ -84,7 +84,7 @@ Fix: Run /prism:mcp-setup to install and register plugin:prism:sap
 - Missing config -> run `/prism:setup` wizard
 - Authorization errors -> display required authorization objects (S_DEVELOP, S_TRANSPRT)
 - Stale cache ≥ 500 MB -> `/prism:sap-doctor --prune` to preview, then `/prism:sap-doctor --prune --yes` to delete
-- All pass -> "SC4SAP is healthy. System: {SID} Client: {client} User: {user}"
+- All pass -> "PRISM is healthy. System: {SID} Client: {client} User: {user}"
 </Remediation_Routing>
 
 Task: {{ARGUMENTS}}

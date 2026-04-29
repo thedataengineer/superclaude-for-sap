@@ -444,10 +444,10 @@ echo '{"tool_name":"mcp__abap__GetTableContents","tool_input":{"table":"BNKA"}}'
 
 **L4 server-side enforcement** (stops any client — including external scripts):
 ```bash
-export SC4SAP_POLICY=on
-export SC4SAP_POLICY_PROFILE=strict
-export SC4SAP_BLOCKLIST_PATH=/path/to/prism/exceptions/table_exception.md
-export SC4SAP_ALLOW_TABLE=TAB1,TAB2  # session emergency exemption (logged)
+export PRISM_POLICY=on
+export PRISM_POLICY_PROFILE=strict
+export PRISM_BLOCKLIST_PATH=/path/to/prism/exceptions/table_exception.md
+export PRISM_ALLOW_TABLE=TAB1,TAB2  # session emergency exemption (logged)
 ```
 
 Schema/DDIC metadata (`GetTable`, `GetStructure`, `GetView`, `GetDataElement`, `GetDomain`) and existence checks remain allowed.

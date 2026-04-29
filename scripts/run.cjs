@@ -27,7 +27,7 @@ const child = execFile('node', ['--experimental-vm-modules', resolved, ...args],
   if (error) {
     // Hook scripts should not block the user's workflow on failure
     // Log the error but exit cleanly
-    if (process.env.SC4SAP_DEBUG) {
+    if (process.env.PRISM_DEBUG) {
       console.error(`[prism] Script error: ${error.message}`);
     }
   }

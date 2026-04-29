@@ -32,7 +32,7 @@ async function main() {
 
     // Inject SAP development context reminder
     messages.push(`<system-reminder>
-[SC4SAP] Prism for SAP is active. SAP development standards enforced:
+[PRISM] Prism for SAP is active. SAP development standards enforced:
 - Custom objects require Z/Y prefix
 - All changes must be assigned to transport requests
 - Objects must be activated after creation/modification

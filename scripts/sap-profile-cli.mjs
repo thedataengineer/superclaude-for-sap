@@ -24,7 +24,7 @@
  *   purge [--all]     — permanently delete .trash entries > 7 days old
  *   migrate           — read JSON from stdin: {alias, tier} → convert
  *                       <cwd>/.prism/sap.env into
- *                       $SC4SAP_HOME_DIR/profiles/<alias>/ and archive source
+ *                       $PRISM_HOME_DIR/profiles/<alias>/ and archive source
  *   detect-legacy     — print JSON with legacy detection state (for
  *                       SessionStart banner)
  *   keychain-set      — read JSON from stdin: {service, account, password}
@@ -71,7 +71,7 @@ const CLI_VERSION = '1.0.0';
 const MULTI_PROFILE_SINCE = '0.6.0';
 
 function prismHome() {
-  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
+  return process.env.PRISM_HOME_DIR || join(homedir(), '.prism');
 }
 function profilesDir() {
   return join(prismHome(), 'profiles');

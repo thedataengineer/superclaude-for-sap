@@ -5,7 +5,7 @@ level: 2
 model: sonnet
 ---
 
-# SC4SAP Compare Programs
+# PRISM Compare Programs
 
 Reads 2–5 ABAP programs that implement the **same business scenario** but in **different variants**, analyzes them across 10 business dimensions, and emits a side-by-side Markdown comparison targeted at **functional consultants** (not developers).
 

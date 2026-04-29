@@ -6,7 +6,7 @@
 //
 // Resolution order for config.json and sap.env:
 //   1. <workspace>/.prism/active-profile.txt → <alias>
-//      → $SC4SAP_HOME_DIR/profiles/<alias>/{sap.env, config.json}
+//      → $PRISM_HOME_DIR/profiles/<alias>/{sap.env, config.json}
 //      (fallback: ~/.prism/profiles/<alias>/...)
 //   2. Legacy: <workspace>/.prism/{sap.env, config.json}
 //
@@ -18,7 +18,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 export function prismHome() {
-  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
+  return process.env.PRISM_HOME_DIR || join(homedir(), '.prism');
 }
 
 export function profilesDir() {

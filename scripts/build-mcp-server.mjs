@@ -11,7 +11,7 @@
  *   - DEFAULT_PINNED_SHA below is the only vendor revision prism installs. Bump
  *     it (and document the change in release notes) when shipping a vetted vendor
  *     upgrade; end users pick up the new vendor on the next prism update.
- *   - Override with env SC4SAP_MCP_ADT_PIN=<40-hex SHA> for maintainer testing.
+ *   - Override with env PRISM_MCP_ADT_PIN=<40-hex SHA> for maintainer testing.
  *   - npm is invoked with --ignore-scripts so a compromised transitive dep cannot
  *     run arbitrary code at install time. `npm run build` is still invoked
  *     explicitly because the vendor launcher must be built.
@@ -38,10 +38,10 @@ const DEFAULT_PINNED_SHA = '9fc6da6bf1b056edd29179edbc812e69f80c5363';
 // accidental branch name like "main".
 const SHA_RE = /^[0-9a-f]{40}$/;
 const PINNED_SHA = (() => {
-  const override = process.env.SC4SAP_MCP_ADT_PIN;
+  const override = process.env.PRISM_MCP_ADT_PIN;
   if (!override) return DEFAULT_PINNED_SHA;
   if (!SHA_RE.test(override)) {
-    console.error(`[prism] SC4SAP_MCP_ADT_PIN must be a 40-hex commit SHA (got ${JSON.stringify(override)}).`);
+    console.error(`[prism] PRISM_MCP_ADT_PIN must be a 40-hex commit SHA (got ${JSON.stringify(override)}).`);
     process.exit(1);
   }
   console.warn(`[prism] WARNING: using override pin ${override} (default is ${DEFAULT_PINNED_SHA}).`);

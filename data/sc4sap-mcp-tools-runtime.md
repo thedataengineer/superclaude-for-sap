@@ -1,4 +1,4 @@
-# SC4SAP MCP Tool Catalog — Runtime operations
+# PRISM MCP Tool Catalog — Runtime operations
 
 Runtime diagnostics (dump / profiler), unit test execution, and service binding validation. Part of [prism-mcp-tools.md](prism-mcp-tools.md).
 

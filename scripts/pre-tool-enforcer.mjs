@@ -65,7 +65,7 @@ function generateMessage(toolName, todoStatus) {
 }
 
 async function main() {
-  if (process.env.DISABLE_SC4SAP === '1') {
+  if (process.env.DISABLE_PRISM === '1') {
     console.log(JSON.stringify({ continue: true }));
     return;
   }

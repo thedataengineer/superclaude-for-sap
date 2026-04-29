@@ -3,9 +3,9 @@
 HUD usage-limit env vars are **not** part of `sap.env` — Claude Code only exposes env vars declared under `~/.claude/settings.json` → `env` to the statusline subprocess. This skill manages them there.
 
 **Managed keys (all optional; unset = HUD shows bare `$`):**
-- `SC4SAP_5H_LIMIT_USD`           — dollar basis for the 5h block percentage (100% at this value).
-- `SC4SAP_WEEKLY_LIMIT_USD`       — dollar basis for the 7d percentage (100% at this value).
-- `SC4SAP_WEEKLY_EXTRA_LIMIT_USD` — dollar basis for the `+extra` overage segment (shown only when weekly > base).
+- `PRISM_5H_LIMIT_USD`           — dollar basis for the 5h block percentage (100% at this value).
+- `PRISM_WEEKLY_LIMIT_USD`       — dollar basis for the 7d percentage (100% at this value).
+- `PRISM_WEEKLY_EXTRA_LIMIT_USD` — dollar basis for the `+extra` overage segment (shown only when weekly > base).
 
 **Plan preset shortcut (preferred):** if the user says "my plan is X" / "apply pro plan" / "set up max20x" etc., run:
 
@@ -30,9 +30,9 @@ where `<plan>` ∈ `pro` | `max5x` | `max20x` | `team` | `api` (aliases in `plan
 **Example:**
 ```
 Current HUD limits (~/.claude/settings.json → env):
-  SC4SAP_5H_LIMIT_USD            = 35
-  SC4SAP_WEEKLY_LIMIT_USD        = 200
-  SC4SAP_WEEKLY_EXTRA_LIMIT_USD  = (unset)
+  PRISM_5H_LIMIT_USD            = 35
+  PRISM_WEEKLY_LIMIT_USD        = 200
+  PRISM_WEEKLY_EXTRA_LIMIT_USD  = (unset)
 
 Which to change?
 > weekly extra = 100

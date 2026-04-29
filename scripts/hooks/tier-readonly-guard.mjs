@@ -8,7 +8,7 @@
  *
  * Resolution:
  *   1. Walk up from cwd to find `.prism/active-profile.txt`.
- *   2. If found, read `$SC4SAP_HOME_DIR/profiles/<alias>/sap.env` (falls back
+ *   2. If found, read `$PRISM_HOME_DIR/profiles/<alias>/sap.env` (falls back
  *      to `~/.prism/profiles/<alias>/sap.env`) and extract `SAP_TIER`.
  *   3. If no pointer is found, fall back to `<projectDir>/.prism/sap.env`
  *      (legacy single-profile mode) and extract `SAP_TIER` (default DEV).
@@ -35,7 +35,7 @@ const RUNTIME_EXEC = new Set([
 const QA_ALLOW = new Set(['RunUnitTest']);
 
 function prismHome() {
-  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
+  return process.env.PRISM_HOME_DIR || join(homedir(), '.prism');
 }
 
 function walkUpForProject(start) {

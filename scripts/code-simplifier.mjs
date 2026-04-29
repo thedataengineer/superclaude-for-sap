@@ -55,7 +55,7 @@ async function main() {
       continue: true,
       hookSpecificOutput: {
         hookEventName: 'Stop',
-        additionalContext: '[SC4SAP] Code simplifier is enabled. Consider reviewing recently modified ABAP objects for clean code compliance before releasing transports.'
+        additionalContext: '[PRISM] Code simplifier is enabled. Consider reviewing recently modified ABAP objects for clean code compliance before releasing transports.'
       }
     }));
   } catch (error) {

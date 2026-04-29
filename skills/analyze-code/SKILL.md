@@ -5,7 +5,7 @@ level: 2
 model: sonnet
 ---
 
-# SC4SAP Analyze Code
+# PRISM Analyze Code
 
 Reviews an ABAP object by delegating the heavy work (source read, structural/semantic/where-used analysis, 14-dimension rule matching) to `sap-code-reviewer` (Opus 4.7). The main thread only handles Socratic intake, report formatting, and the follow-up action menu — all on Haiku for cost efficiency.
 

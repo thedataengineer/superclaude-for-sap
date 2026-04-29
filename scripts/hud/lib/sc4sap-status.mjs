@@ -132,14 +132,14 @@ export function activeTransport(workspaceDir) {
 // Resolve the active prism profile for HUD line 2. Walks up from
 // `workspaceDir` (via the shared resolver) looking for the nearest
 // `.prism/active-profile.txt`; locates the user-level env file at
-// `$SC4SAP_HOME_DIR/profiles/<alias>/sap.env` (or `~/.prism/profiles/...`),
+// `$PRISM_HOME_DIR/profiles/<alias>/sap.env` (or `~/.prism/profiles/...`),
 // and extracts SAP_TIER. Falls back to the legacy single-profile `sap.env`
 // if no pointer exists.
 //
 // Returns { alias, tier, readonly, legacy } or null if no profile data at all.
 export function activeProfile(workspaceDir) {
   const alias = readActiveAlias(workspaceDir);
-  const prismHome = process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
+  const prismHome = process.env.PRISM_HOME_DIR || join(homedir(), '.prism');
 
   let envPath;
   let legacy;

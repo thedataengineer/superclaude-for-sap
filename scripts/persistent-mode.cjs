@@ -132,7 +132,7 @@ async function main() {
           continue: true,
           hookSpecificOutput: {
             hookEventName: 'Stop',
-            additionalContext: `[SC4SAP] Ralph loop reached max iterations (${maxIterations}). Stopping.`
+            additionalContext: `[PRISM] Ralph loop reached max iterations (${maxIterations}). Stopping.`
           }
         }));
         return;
@@ -147,7 +147,7 @@ async function main() {
     // Block the stop and continue
     console.log(JSON.stringify({
       decision: 'block',
-      reason: `[SC4SAP] ${activeMode} mode is active. The boulder never stops. ` +
+      reason: `[PRISM] ${activeMode} mode is active. The boulder never stops. ` +
         `Continue until all tasks complete. ` +
         `Use "cancelprism" or "stopprism" to end the mode.`
     }));

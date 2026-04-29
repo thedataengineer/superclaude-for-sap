@@ -5,8 +5,8 @@ Detailed diagnostic checklist for `prism:sap-doctor`. Referenced from `SKILL.md`
 Run all checks in order. Report PASS / FAIL / WARN for each.
 
 **Layer 1 - Plugin Health**
-- [ ] SC4SAP plugin directory exists and is readable
-- [ ] Read **plugin version** from `<plugin>/.claude-plugin/plugin.json` → `version`; display as `SC4SAP plugin vX.Y.Z`
+- [ ] PRISM plugin directory exists and is readable
+- [ ] Read **plugin version** from `<plugin>/.claude-plugin/plugin.json` → `version`; display as `PRISM plugin vX.Y.Z`
 - [ ] Compare cache vs marketplace `plugin.json` versions. If mismatch, surface the drift and advise `/reload-plugins` + Claude Code restart (same signal Layer 2 emits — keep both so Layer 1 catches it even when MCP is offline)
 - [ ] Skill files present in `skills/` directory (expected skill list from marketplace `plugin.json` manifest)
 - [ ] Config file exists at `.prism/config.json` with `sapVersion`, `abapRelease`, `industry` keys

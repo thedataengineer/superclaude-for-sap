@@ -5,7 +5,7 @@ level: 2
 model: sonnet
 ---
 
-# SC4SAP Analyze CBO Objects
+# PRISM Analyze CBO Objects
 
 Walks a CBO (Customer Business Object) package, inventories every project-built ABAP element (table, structure, data element, class, interface, function module, program, view, table type), detects which elements are **frequently reused inside the package**, infers each element's business purpose from its name/fields/descriptions, and persists the result to `.prism/cbo/<MODULE>/<PACKAGE>/` for downstream skills (`program`, `program-to-spec`, `create-object`, `autopilot`) to consult before creating anything new.
 

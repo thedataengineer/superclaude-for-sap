@@ -5,7 +5,7 @@ level: 3
 model: sonnet
 ---
 
-# SC4SAP Create Object
+# PRISM Create Object
 
 Guided ABAP object creation workflow. Hybrid mode: confirms transport and package interactively, then auto-creates, writes initial code, and activates the object.
 
