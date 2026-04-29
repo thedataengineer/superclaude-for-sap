@@ -8,7 +8,7 @@
         "PRISM_MCP_AUTOBUILD": "1",
         "PRISM_LLM_PROVIDER": "openai",
         "PRISM_LLM_BASE_URL": "http://localhost:11434/v1",
-        "PRISM_LLM_MODEL": "qwen3:8b"
+        "PRISM_LLM_MODEL": "llama3:8b"
       }
     }
   }
