@@ -17,7 +17,7 @@ Turn legacy or unfamiliar ABAP objects into a reviewable Functional/Technical Sp
 
 <Phase_Banner>Multi-phase skill. Before each `Agent(...)` dispatch, emit `▶ phase=<id> (<label>) · agent=<name> · model=<Opus 4.7|Sonnet 4.6|Haiku 4.5>` per [`../../common/model-routing-rule.md`](../../common/model-routing-rule.md) § Phase Banner Convention.</Phase_Banner>
 
-<Team_Mode>**No teamMode integration.** program-to-spec targets a single object (one program / class / FM group / CDS / RAP BO) and performs read-only structural extraction — no cross-module synthesis, no authoring conflict, no incident triage. See [`../../docs/team-consultation-architecture.md`](../../docs/team-consultation-architecture.md) § 6 gating logic. Future extension: if a target's `GetWhereUsed` graph spans ≥ 2 modules AND user picks L3/L4 depth, Type A (module consultants annotating cross-module concerns in Step 3) could be added — not in current scope.</Team_Mode>
+<Team_Mode>**No teamMode integration.** program-to-spec targets a single object (one program / class / FM group / CDS / RAP BO) and performs read-only structural extraction — no cross-module synthesis, no authoring conflict, no incident triage. See [`../../docs/team-consultation-architecture.md`](../../docs/team-consultation-architecture.md) § 6 gating logic. Future extension: if a target's `GetWhereUsed` graph spans ≥ 2 modules AND user picks L4 depth, Type A (module consultants annotating cross-module concerns in Step 3) could be added — not in current scope.</Team_Mode>
 
 <Use_When>
 - User says "program to spec", "reverse engineer", "make a spec", "document this program", "functional specification", "technical specification", "generate a specification"
@@ -56,7 +56,7 @@ Issue ONE `AskUserQuestion` call with these four questions in this exact order �
 |---|--------|----------|-----------------------------|
 | 1 | Audience | Who is the primary audience for the spec? | Both (Recommended) · Functional · Technical |
 | 2 | Format | Which output format? | Markdown (Recommended) · Excel · Both |
-| 3 | Depth | What depth of detail? | L2 Standard (Recommended) · L1 Overview · L3 Deep Technical · L4 Audit-grade |
+| 3 | Depth | What depth of detail? | L2 Standard (Recommended) · L1 Quick Spec · L3 Deep Technical · L4 Audit-grade |
 | 4 | Language | Output language? | Korean · English · Japanese (order follows user's current language — promote the matching one to first with "(Recommended)") |
 
 **Round 1 — Target object (only if ARGUMENTS did not supply it)**
@@ -71,18 +71,21 @@ Issue ONE `AskUserQuestion` call with these four questions in this exact order �
 **Round 3 — Depth (pick one)** *(covered by the default opener)*
 | Depth | Contains |
 |-------|----------|
-| **L1 — Overview** | Purpose, inputs, outputs, 1-paragraph flow |
-| **L2 — Standard Spec** (default) | L1 + inputs & screens, data model, main logic steps, authorizations, outputs, exceptions |
-| **L3 — Deep Technical** | L2 + every subroutine/method signature, SQL inventory, BAdI/exit list, where-used, performance notes |
-| **L4 — Audit-grade** | L3 + line-level cross-references, risk register, data-privacy mapping (PII tables touched), transport history |
+| **L1 — Quick Spec** | Purpose, inputs, outputs, **main logic steps** (numbered; for Module Pool includes PBO/PAI module flow) |
+| **L2 — Standard Spec** (default) | L1 + inputs & screens, data model, authorizations, outputs, exceptions, **every subroutine / method signature** |
+| **L3 — Deep Technical** | L2 + SQL inventory, BAdI / exit list, performance notes |
+| **L4 — Audit-grade** | L3 + line-level cross-references, **where-used** (scope: main object + screens × `Z*` / `Y*` callers), risk register, transport history |
 
 **Round 4 — Scope trimming (only if L3/L4)**
 Ask ONE narrowing question per turn until ambiguity ≤3:
-- "Include internal FORMs/methods or public surface only?"
 - "Include unit tests inventory?"
 - "Include generated artifacts (Screens / GUI Status / Text Elements)?"
-- "Include `GetWhereUsed` callers? (expensive for popular objects)"
 - "Cover all includes or just main?"
+
+**Where-Used scope (L4 only — fixed default, no interactive prompt)**
+- Target = main program / class / FM-group / CDS / RAP-BO object **+ each of its screens** (T1+Screen).
+- Caller filter = customer namespace `Z*` / `Y*` only (S2). Standard SAP and add-on namespaces are excluded.
+- The rendered `Where-Used` section MUST repeat this scope in its header so reviewers know what was (and wasn't) searched.
 
 **Round 5 — Output location**
 - Default: `.sc4sap/specs/{object_name}-{YYYYMMDD}-{lang}.{md|xlsx}`
@@ -131,7 +134,7 @@ Top-level summary:
 
 Next options:
   • "Regenerate as Excel"
-  • "Extend to L3 with Where-used"
+  • "Extend to L4 with Where-used"
   • "Add an English version"
 ```
 </Output_Format>
@@ -155,7 +158,7 @@ Next options:
 </Related_Skills>
 
 <Data_Extraction_Safety>
-Spec generation only reads **source code + DDIC metadata + where-used** — never `GetTableContents` / `GetSqlQuery`. No row data is extracted. The blocklist hook is respected if the user asks for sample data (refuse and document the request in the `Risk & PII` sheet instead).
+Spec generation only reads **source code + DDIC metadata + where-used** — never `GetTableContents` / `GetSqlQuery`. No row data is extracted. The blocklist hook is respected if the user asks for sample data (refuse and document the request in the `Risk` sheet instead).
 </Data_Extraction_Safety>
 
 <Inputs_And_Screens_Rendering>

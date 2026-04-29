@@ -26,7 +26,8 @@ Never skip entirely unless the user supplies `object=... depth=L2 format=md lang
   - RAP: `Read BehaviorDefinition` + `Read BehaviorImplementation` + `Read ServiceDefinition` + `Read ServiceBinding`
 - Screens / GUI Status / Text Elements (if report / module pool): `GetScreensList`, `GetGuiStatusList`, `GetTextElement`
 - Structural: `GetAbapAST`, `GetAbapSemanticAnalysis`
-- Impact (only if L3/L4 + user opted in): `GetWhereUsed`, `GetEnhancements`, `GetEnhancementSpot`
+- Enhancements (L3+): `GetEnhancements`, `GetEnhancementSpot`
+- Where-Used (L4 only — fixed scope): `GetWhereUsed` against the main object **plus each screen**; filter callers to customer namespace `Z*` / `Y*` only. Skip standard SAP and add-on namespaces.
 
 **Step 2 — Classify** (auto)
 - Object archetype: ALV report / batch job / BDC / FM wrapper / CDS view / RAP BO / enhancement impl / utility class
@@ -77,10 +78,10 @@ Artifacts produced in this step are placed in the `Inputs & Screens` section (MD
      - Default: `.sc4sap/specs/_drivers/{OBJECT}-{YYYYMMDD}.mjs`
      - If the user specified an absolute output directory (e.g. `C:\Users\...\Desktop\test`), put the driver next to the target xlsx — it makes cleanup obvious and avoids cluttering the project.
   2. **Fill the TODO blocks** inside the copy, using the content produced by sap-analyst + sap-writer in Step 3:
-     - `SHEETS_DATA` — array of `{ name, rows: [[header...], [row...], ...] }` for text sheets (Overview, Data Model, Logic, Outputs, Authorization, Exceptions, plus L3+ sheets — Enhancements / Where-Used / Includes & Artifacts / Risk & PII). The Parameters table lives inside the `Inputs & Screens` sheet and is produced by `screensSheet()` (see below), not as an independent text sheet.
+     - `SHEETS_DATA` — array of `{ name, rows: [[header...], [row...], ...] }` for text sheets (Overview, Data Model, Logic, Outputs, Authorization, Exceptions, plus L3 sheets — Enhancements / Includes & Artifacts; plus L4 sheets — Where-Used / Risk). The Parameters table lives inside the `Inputs & Screens` sheet and is produced by `screensSheet()` (see below), not as an independent text sheet.
      - `SCREEN_PARAMS` — Parameters table rows (field / type / required / default / description). Always populated even when the object has no selection screen (pure FM / Class / CDS / RAP).
      - `SELECTION_IMAGE_SPEC` (new in v8.1) — selection-screen field list. Drives BOTH the PNG image path AND the cell-border wireframe fallback. Leave `null` for objects without a selection screen. Shape: `{ blockLabel, fields: [{ required?, label, name, range?, note? }], optionBlockLabel?, optionFields?: [{ label, name, note? }] }`. NOTE (v8.3): `defaultLow` / `defaultHigh` are silently ignored inside the input-box graphic — the field name already labels the box, and stuffing "BOM" / "1000" / "오늘" inside just adds visual noise. Put any default value either in the `note` field (rendered to the right of the row) or in the Parameters table below. The label column also auto-widens to fit the longest label, so long English names like `Distribution Channel (S_VTWEG)` no longer collide with the input box.
-     - `ALV_IMAGE_SPEC` (new in v8.1) — ALV layout spec. Same dual-purpose (image + wireframe). Leave `null` for non-ALV outputs. Shape: `{ columns: [{ name, header?, width?, align?, hotspot?, editable? }], sampleRows: [{ [colName]: value, _status?, _locked? }], maxRows?: 3 }`. maxRows capped at 5, default 3. NOTE (v8.3): the ALV legend under the table is **auto-derived from the actual spec** — Hotspot line only if any column has `hotspot: true`, Editable line only if any column has `editable: true`, traffic-light line only if a `_status` column exists (or any sampleRow sets `_status`). Do NOT describe features the program does not have; the renderer omits inapplicable legend items automatically.
+     - `ALV_IMAGE_SPEC` (v8.1, multi-pane in v10) — ALV layout spec. Two shapes accepted: **(legacy single-grid)** `{ columns, sampleRows, maxRows }` — same as before; **(multi-pane v10)** `{ layout: 'split-vertical' | 'split-horizontal' | 'tabstrip', interaction: '상단 더블클릭 → 하단 갱신', panes: [{ title, columns, sampleRows, maxRows }, ...] }` for Split-ALV / Tabstrip / Sequence layouts. Use multi-pane whenever a Docking + Splitter container hosts ≥2 grids OR a tabstrip carries different grids per page — single-grid PNG cannot capture the click-to-drill flow. **Every pane MUST carry realistic `sampleRows`** showing what the user sees AFTER the trigger fires (e.g. for ZMMR1001's bottom pane: the MAKTX/WERKS/MEINS/MTART row that appears after double-clicking a top-pane MATNR). The `interaction` caption above the pane explains WHEN/HOW it appears; the populated rows show WHAT appears. **Do not leave panes empty with placeholder text** — readers can't infer the layout/columns from prose, and the spec loses gradient. `placeholder` field exists ONLY as a last-resort affordance for grids whose content is genuinely unrenderable (popup variants, variable BAdI output) — prefer 1-2 sample rows + a `subtitle` like `'예시: 상단 HALB-001234 클릭 시'` over `placeholder`. maxRows capped at 5, default 3. NOTE (v8.3): the legend under each grid is auto-derived from that pane's spec — Hotspot/Editable/traffic-light items only render when applicable.
      - `SHEET_TITLE` (new in v8.1) — localised row-1 title of `Inputs & Screens` sheet (e.g. `'입력 및 화면 · ZMM_0001'` for KO, `'入力と画面 · ZMM_0001'` for JA).
      - `INPUTS_SHEET_NAME` — localised workbook tab name (e.g. `'입력 및 화면'` for KO). Must stay ≤ 31 chars (xlsx limit).
      - `SPEC_LANG` (new in v8.3) — output language for the auto-derived legends inside the PNG mockups. One of `'ko' | 'en' | 'ja'`; defaults to `'ko'`. An English-language spec MUST set `'en'` or the bottom legends will render as `필수 입력 · ▼ 복수 선택 · ~ 범위(LOW~HIGH)` even though the surrounding prose is English.
@@ -118,9 +119,9 @@ Artifacts produced in this step are placed in the `Inputs & Screens` section (MD
   6. `Authorization` — S_TCODE, S_TABU_DIS, custom objects
   7. `Exceptions` — message/class + trigger condition
   8. `Enhancements` — BAdI / User Exit / BTE impacts (L3+)
-  9. `Where-Used` — callers (L3+ if opted in)
-  10. `Includes & Artifacts` — Screen / GUI Status / Text Element (L3+)
-  11. `Risk & PII` — blocklist-relevant tables touched (L4)
+  9. `Includes & Artifacts` — Screen / GUI Status / Text Element (L3+)
+  10. `Where-Used` — callers (L4 only · scope: main object + screens × `Z*` / `Y*` namespace)
+  11. `Risk` — blocklist-relevant tables touched, runtime / data-volume caveats (L4)
 
   Color convention (v8 — grey + yellow palette, green retired):
   - **Light grey (`#E7E6E6`)** — sheet title (row 1, style `2`) AND all section titles / header rows / frame-top block titles (styles `3 / 4 / 17 / 19 / 24`, all pointing at fill 2 in v8). Green fill (#E2EFDA) is retired — do NOT reintroduce.
