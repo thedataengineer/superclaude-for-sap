@@ -5,7 +5,10 @@
       "args": ["${CLAUDE_PLUGIN_ROOT}/bridge/mcp-server.cjs"],
       "env": {
         "CLAUDE_PLUGIN_ROOT": "${CLAUDE_PLUGIN_ROOT}",
-        "PRISM_MCP_AUTOBUILD": "1"
+        "PRISM_MCP_AUTOBUILD": "1",
+        "PRISM_LLM_PROVIDER": "openai",
+        "PRISM_LLM_BASE_URL": "http://localhost:11434/v1",
+        "PRISM_LLM_MODEL": "qwen3:8b"
       }
     }
   }
