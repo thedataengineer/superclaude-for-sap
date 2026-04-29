@@ -3,6 +3,24 @@
 All notable changes to **SuperClaude for SAP (sc4sap)** will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.14] — 2026-04-29
+
+### Added — ECC DDIC read + classic BAdI lookup (server-side bridge FMs)
+
+Vendor pin bumped to abap-mcp-adt-powerup `4.8.4` (`9fc6da6`). Adds 4 new ECC-only ADT capabilities that legacy ECC 7.40 does not expose natively:
+
+- `GetTable` / `GetStructure` / `GetDataElement` / `GetDomain` now return full definitions on ECC via OData FunctionImports → server-side RFCs (`ZMCP_ADT_DDIC_TABL_READ`, `_DTEL_READ`, `_DOMA_READ`). `TABL_READ` covers both Table and Structure (TABL/STRU share the TABL DDIC category).
+- `GetBadiImplementations` — new read-only handler that finds Z/Y implementations of a classic BAdI definition via `ZMCP_ADT_DDIC_BADI` (SXS_ATTR-based). Returns `kind=classic` with implementation list (`impl_name`, `impl_class`, `package`, `methods_redefined`) or `kind=unknown` for kernel BAdIs / non-existent definitions.
+
+Server-side ABAP source (DEV-only, function group `ZMCP_ADT_UTILS`, `$TMP`) is bundled under `abap/`:
+
+- `abap/zmcp_adt_ddic_tabl_read_ecc.abap`
+- `abap/zmcp_adt_ddic_dtel_read_ecc.abap`
+- `abap/zmcp_adt_ddic_doma_read_ecc.abap`
+- `abap/zmcp_adt_ddic_badi_ecc.abap`
+
+`scripts/build-mcp-server.mjs` — `DEFAULT_PINNED_SHA` bumped from `244928a19b252e53e4105c550df0b891b1685de5` (4.8.3) to `9fc6da6bf1b056edd29179edbc812e69f80c5363` (4.8.4). Refresh path for existing installs: `node scripts/build-mcp-server.mjs --update`.
+
 ## [0.6.13] — 2026-04-27
 
 ### Fixed — vendor pin bumped to abap-mcp-adt-powerup 4.8.3 (resolves issue #43)
