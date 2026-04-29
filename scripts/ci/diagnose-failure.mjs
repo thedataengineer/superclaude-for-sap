@@ -26,9 +26,10 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { complete } from '../lib/llm-client.mjs';
 
-const API_KEY = process.env.ANTHROPIC_API_KEY;
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+const API_KEY = process.env.PRISM_LLM_API_KEY || process.env.ANTHROPIC_API_KEY;
+const MODEL = process.env.PRISM_LLM_MODEL || process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
 const LOG_PATH = process.env.CI_LOG_PATH;
 const OUTPUT_PATH = process.env.OUTPUT_PATH;
 const RUN_URL = process.env.RUN_URL || '';
@@ -171,37 +172,21 @@ userParts.push(
 );
 userParts.push('```\n' + logExcerpt + '\n```');
 
-const requestBody = JSON.stringify({
-  model: MODEL,
-  max_tokens: MAX_OUTPUT_TOKENS,
-  system: SYSTEM_PROMPT,
-  messages: [{ role: 'user', content: userParts.join('\n\n') }],
-});
-
-let response;
+let diagnosis;
 try {
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: requestBody,
+  diagnosis = await complete({
+    model: MODEL,
+    max_tokens: MAX_OUTPUT_TOKENS,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userParts.join('\n\n') }],
   });
-  if (!r.ok) {
-    const errText = await r.text();
-    throw new Error(`HTTP ${r.status}: ${errText.slice(0, 400)}`);
-  }
-  response = await r.json();
 } catch (e) {
-  writeOutput(stubDiagnosis(`Claude API call failed — ${String(e).slice(0, 300)}`));
+  writeOutput(stubDiagnosis(`LLM API call failed — ${String(e).slice(0, 300)}`));
   process.exit(1);
 }
 
-const diagnosis = response?.content?.[0]?.text;
 if (!diagnosis || typeof diagnosis !== 'string') {
-  writeOutput(stubDiagnosis('Claude API returned no text content'));
+  writeOutput(stubDiagnosis('LLM API returned no text content'));
   process.exit(1);
 }
 
