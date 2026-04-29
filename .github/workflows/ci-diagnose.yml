@@ -1,11 +1,11 @@
 name: CI diagnose
 
 # Runs AFTER the main CI workflow completes. If CI failed, invokes the
-# Anthropic API to produce a structured diagnosis of the failure, posts it
-# as a comment on the originating PR, and uploads it as an artifact.
+# LLM API to produce a structured diagnosis of the failure, posts it
+# as a comment on the originating PR (if configured), and uploads it as an artifact.
 #
-# For the comment step to work, the repo must have a secret named
-# ANTHROPIC_API_KEY. Add at:
+# For the diagnosis step to work, the repo must have a secret named
+# PRISM_LLM_API_KEY (or ANTHROPIC_API_KEY). Add at:
 #   Repo → Settings → Secrets and variables → Actions → New repository secret
 #
 # Security note: workflow_run always executes using the workflow definition
@@ -72,9 +72,10 @@ jobs:
           fi
           echo "number=$pr" >> "$GITHUB_OUTPUT"
 
-      - name: Ask Claude to diagnose
+      - name: Ask LLM to diagnose
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PRISM_LLM_API_KEY: ${{ secrets.PRISM_LLM_API_KEY || secrets.ANTHROPIC_API_KEY }}
+          PRISM_LLM_MODEL: ${{ vars.PRISM_LLM_MODEL || vars.ANTHROPIC_MODEL }}
           CI_LOG_PATH: /tmp/ci-diagnose/fail.log
           OUTPUT_PATH: /tmp/ci-diagnose/diagnose.md
           RUN_URL: ${{ github.event.workflow_run.html_url }}
