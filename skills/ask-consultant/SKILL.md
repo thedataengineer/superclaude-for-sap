@@ -1,5 +1,5 @@
 ---
-name: sc4sap:ask-consultant
+name: prism:ask-consultant
 description: Direct operational Q&A with a SAP module consultant agent. Auto-routes the question to the matching sap-{module}-consultant and answers against the configured SAP environment (version, industry, country, active modules).
 level: 2
 model: haiku
@@ -11,7 +11,7 @@ Single entrypoint for asking a SAP module consultant agent an operational questi
 
 
 <Purpose>
-`/sc4sap:ask-consultant` is the "ask a human consultant" button inside Claude. Users hit it when they need SPRO guidance, business-process advice, configuration walkthroughs, integration touchpoints, localization rules, or BAdI / CMOD / append decisions — the kind of question normally answered by an SD / MM / FI / CO / PP / PS / PM / QM / TR / HCM / WM / TM / BW / Ariba / Basis consultant. The skill does NOT write code or change the SAP system; it reads config + consults the agent + returns the answer.
+`/prism:ask-consultant` is the "ask a human consultant" button inside Claude. Users hit it when they need SPRO guidance, business-process advice, configuration walkthroughs, integration touchpoints, localization rules, or BAdI / CMOD / append decisions — the kind of question normally answered by an SD / MM / FI / CO / PP / PS / PM / QM / TR / HCM / WM / TM / BW / Ariba / Basis consultant. The skill does NOT write code or change the SAP system; it reads config + consults the agent + returns the answer.
 </Purpose>
 
 <Response_Prefix>
@@ -30,22 +30,22 @@ When module routing produces ≥ 2 consultants, Step 4 doubles as teamMode Round
 - User says "ask consultant", "ask {module}", "consultant", "SD 컨설턴트", "MM 컨설턴트", "물어봐", "자문", "consult", etc.
 - User has an operational / configuration question that does NOT require code generation or MCP writes.
 - User needs cross-module advice that fans out to 2-3 consultants.
-- User wants to sanity-check a config choice before running `/sc4sap:create-program`.
+- User wants to sanity-check a config choice before running `/prism:create-program`.
 </Use_When>
 
 <Do_Not_Use_When>
-- User wants to create code / objects — use `/sc4sap:create-program` or `/sc4sap:create-object`.
-- User wants to analyze a runtime error — use `/sc4sap:analyze-symptom`.
-- User wants to review existing code quality — use `/sc4sap:analyze-code`.
+- User wants to create code / objects — use `/prism:create-program` or `/prism:create-object`.
+- User wants to analyze a runtime error — use `/prism:analyze-symptom`.
+- User wants to review existing code quality — use `/prism:analyze-code`.
 - User wants IMG customizing table data extraction — refuse per `common/data-extraction-policy.md`.
 </Do_Not_Use_When>
 
 <Session_Trust_Bootstrap>
 **MANDATORY — runs as Step 0 before the consultant dispatch.**
 
-Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:ask-consultant` so the consultant agent's read-only MCP calls (`SearchObject`, `GetTable`, `GetPackage`, `GetWhereUsed`, etc.) proceed without prompting.
+Invoke `/prism:trust-session` with `parent_skill=prism:ask-consultant` so the consultant agent's read-only MCP calls (`SearchObject`, `GetTable`, `GetPackage`, `GetWhereUsed`, etc.) proceed without prompting.
 
-- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- If `.prism/session-trust.log` already has a line within the last 24h, skip silently.
 - All downstream `Agent` dispatches MUST pass `mode: "dontAsk"`.
 
 Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
@@ -54,8 +54,8 @@ Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
 <Environment_Context>
 **MANDATORY — the consultant answers against the project's configured SAP environment, not generic best-practice.** Before dispatching, load:
 
-- `.sc4sap/config.json` → `sapVersion` (ECC / S4 On-Prem / S4 Cloud Public / S4 Cloud Private), `abapRelease`, `industry`, `country`, `activeModules`
-- `.sc4sap/sap.env` → `SAP_URL`, `SAP_CLIENT`, `SAP_LANGUAGE`, `SAP_INDUSTRY`, `SAP_COUNTRY`, `SAP_ACTIVE_MODULES` (as fallback)
+- `.prism/config.json` → `sapVersion` (ECC / S4 On-Prem / S4 Cloud Public / S4 Cloud Private), `abapRelease`, `industry`, `country`, `activeModules`
+- `.prism/sap.env` → `SAP_URL`, `SAP_CLIENT`, `SAP_LANGUAGE`, `SAP_INDUSTRY`, `SAP_COUNTRY`, `SAP_ACTIVE_MODULES` (as fallback)
 
 Pass these to the consultant via the dispatch prompt so its answer reflects the actual landscape. If any key is missing, ask the user before dispatching — do NOT let the consultant invent assumptions.
 
@@ -90,7 +90,7 @@ Per-step model allocation (skill frontmatter pins the main thread to Haiku; Agen
    Dispatch shape:
    ```
    Agent({
-     subagent_type: "sc4sap:sap-<module>-consultant",   // frontmatter already pins claude-opus-4-7
+     subagent_type: "prism:sap-<module>-consultant",   // frontmatter already pins claude-opus-4-7
      description: "<MODULE> consultation — <topic>",
      prompt: <user question + environment context + expected format>,
      mode: "dontAsk"
@@ -105,7 +105,7 @@ Per-step model allocation (skill frontmatter pins the main thread to Haiku; Agen
    Dispatch shape:
    ```
    Agent({
-     subagent_type: "sc4sap:sap-writer",
+     subagent_type: "prism:sap-writer",
      model: "sonnet",   // override base Haiku — synthesis needs light reasoning
      description: "Cross-module synthesis — <modules>",
      prompt: """
@@ -127,7 +127,7 @@ Per-step model allocation (skill frontmatter pins the main thread to Haiku; Agen
    ```
    **teamMode variant**: if Round 1 POSITIONs diverged (per [`team-rounds.md`](team-rounds.md) § Divergence check), do NOT run the legacy synthesis above — follow [`team-rounds.md`](team-rounds.md) Rounds 2-3 then [`team-mode.md`](team-mode.md) § Synthesis (task-list–driven writer dispatch).
    On single-consultant case: SKIP Step 5 entirely — main thread (Haiku) just forwards the consultant's answer to Step 6.
-6. **Return & follow-up** — present the final answer (single-consultant: verbatim; multi-consultant: synthesis output as the body + per-module subsections). Offer follow-up paths: `/sc4sap:create-program` (if the answer leads to a new build), `/sc4sap:program-to-spec` (if user wants the existing asset documented), `/sc4sap:analyze-code` (if quality review needed). (Haiku · main thread)
+6. **Return & follow-up** — present the final answer (single-consultant: verbatim; multi-consultant: synthesis output as the body + per-module subsections). Offer follow-up paths: `/prism:create-program` (if the answer leads to a new build), `/prism:program-to-spec` (if user wants the existing asset documented), `/prism:analyze-code` (if quality review needed). (Haiku · main thread)
 
 **No writes**: this skill never calls `Create*` / `Update*` / `Delete*` / `Activate*` / `CreateTransport`. If the consultant's answer suggests a change, the user must run a separate creation / modification skill.
 
@@ -147,9 +147,9 @@ Return the consultant's answer verbatim, prefixed with the consultant identity a
 
 ---
 💡 Next steps (optional):
-- /sc4sap:create-program — if this leads to a new build
-- /sc4sap:program-to-spec — to document an existing asset
-- /sc4sap:analyze-code — to review existing code
+- /prism:create-program — if this leads to a new build
+- /prism:program-to-spec — to document an existing asset
+- /prism:analyze-code — to review existing code
 ```
 
 For multi-module dispatches, the `🧭 Consultant` line lists all names, the body leads with the sap-writer synthesis (Sonnet) — shared points, disagreements, cross-module summary — followed by one verbatim subsection per consultant.
@@ -161,9 +161,9 @@ Dispatch-summary examples in the prefix:
 </Output_Format>
 
 <Related_Skills>
-- `/sc4sap:deep-interview` — use before ask-consultant if the question is too vague to route.
-- `/sc4sap:compare-programs` — complementary when the consultant's answer references existing variants.
-- `/sc4sap:analyze-cbo-obj` — complementary when the consultant's answer depends on knowing what custom assets already exist.
+- `/prism:deep-interview` — use before ask-consultant if the question is too vague to route.
+- `/prism:compare-programs` — complementary when the consultant's answer references existing variants.
+- `/prism:analyze-cbo-obj` — complementary when the consultant's answer depends on knowing what custom assets already exist.
 </Related_Skills>
 
 <MCP_Tools_Used>

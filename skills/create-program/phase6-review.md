@@ -1,6 +1,6 @@
 # Phase 6 — Code Review (MANDATORY, Unconditional)
 
-This file is the authoritative checklist for the Phase 6 review step of `/sc4sap:create-program`. SKILL.md references this file — do not duplicate the content there.
+This file is the authoritative checklist for the Phase 6 review step of `/prism:create-program`. SKILL.md references this file — do not duplicate the content there.
 
 ## Purpose
 
@@ -20,7 +20,7 @@ Delegate to `sap-code-reviewer`. Pass:
 - The list of object names created in Phase 4 (with type: PROG/I, PROG/P, DYNP, CUAD, etc.)
 - The transport number
 - The path to `spec.md`
-- A reminder to write the review log to `.sc4sap/program/{PROG}/review.md`
+- A reminder to write the review log to `.prism/program/{PROG}/review.md`
 
 **Execution strategy — 4-bucket parallel (Sonnet) + Opus escalation**: see [`phase6-buckets.md`](./phase6-buckets.md) for the authoritative bucket split, parallel dispatch rules, finding classification (PASS / MINOR / MAJOR), and the Sonnet→Opus escalation ladder. The checklist below remains the source of truth for WHAT is checked; buckets only govern HOW the checks are distributed.
 
@@ -119,7 +119,7 @@ Core (clean-code.md, both paradigms):
 - [ ] No commented-out code, no debug statements (`BREAK-POINT`, `MESSAGE 'TEST'`)
 
 Paradigm = OOP → load `clean-code-oop.md` and check:
-- [ ] **Main program structure matches `../../common/oop-sample/zrsc4sap_oop_ex.prog.abap`** — REPORT statement, INCLUDE order, event block layout, two-class bootstrap (`go_data = NEW lcl_data( )` / `go_alv = NEW lcl_alv( go_data )`). Any structural deviation must be justified in `spec.md`; otherwise MAJOR finding.
+- [ ] **Main program structure matches `../../common/oop-sample/zrprism_oop_ex.prog.abap`** — REPORT statement, INCLUDE order, event block layout, two-class bootstrap (`go_data = NEW lcl_data( )` / `go_alv = NEW lcl_alv( go_data )`). Any structural deviation must be justified in `spec.md`; otherwise MAJOR finding.
 - [ ] Classes `FINAL` unless designed for inheritance; members `PRIVATE` by default
 - [ ] Methods do one thing, ≤ 30 lines, single abstraction level, ≤ 3 IMPORTING parameters
 - [ ] Methods return one value (`RETURNING` over `EXPORTING`); no boolean input parameters

@@ -1,6 +1,6 @@
 # SPRO Lookup Protocol
 
-**MANDATORY for all sc4sap consultant agents and any skill that needs SAP Customizing / IMG data.**
+**MANDATORY for all prism consultant agents and any skill that needs SAP Customizing / IMG data.**
 
 When you need SAP Customizing information for a module, resolve the lookup in this order. Steps 2 and 3 are typically combined — the static docs tell you *which table to look at*, the live MCP call tells you *what the customer actually configured*.
 
@@ -8,14 +8,14 @@ When you need SAP Customizing information for a module, resolve the lookup in th
 
 ### 1. Local SPRO Cache (preferred — short-circuits everything below)
 
-Check for `.sc4sap/spro-config.json` at the project root.
+Check for `.prism/spro-config.json` at the project root.
 
 - If present:
   - Load the file and use `modules.{MODULE}` for the target module
   - Surface the cache timestamp in your reasoning/output (e.g., "config snapshot: 2026-04-13T…")
   - **Do NOT call MCP** to re-fetch tables that already exist in the cache
   - If the user question targets a module that is missing from the cached `modules` map, fall through to Steps 2+3 for that module only
-- Module-specific cache files `.sc4sap/spro-config-{MODULE}.json` are also acceptable if the merged file is absent
+- Module-specific cache files `.prism/spro-config-{MODULE}.json` are also acceptable if the merged file is absent
 
 Per-module populated keys typically include: customizing tables, view contents, timestamp, extraction source.
 
@@ -66,15 +66,15 @@ question about SAP customizing
 
 ## Setup Awareness
 
-- The cache is populated by `/sc4sap:setup spro` (optional step during setup)
-- If the cache is missing, you MAY recommend the user run `/sc4sap:setup spro` after the current task — but do not block the current task on it
+- The cache is populated by `/prism:setup spro` (optional step during setup)
+- If the cache is missing, you MAY recommend the user run `/prism:setup spro` after the current task — but do not block the current task on it
 - Treat a stale cache (> 90 days, or user-indicated customizing change) as a prompt to suggest refresh, but still prefer it over live query unless the user explicitly opts out
 
 ## Agent Integration Checklist
 
 Every consultant agent's `<Reference_Data>` section MUST list:
 
-1. Local SPRO Cache (`.sc4sap/spro-config.json` → `modules.{MODULE}`) — **priority 1**
+1. Local SPRO Cache (`.prism/spro-config.json` → `modules.{MODULE}`) — **priority 1**
 2. Static reference (`configs/{MODULE}/spro.md` etc.) — to identify table/view candidates
 3. Live MCP (`GetTableContents` / `GetView`) — to read customer values, chained from Step 2
 4. Pointer to this protocol: `common/spro-lookup.md`

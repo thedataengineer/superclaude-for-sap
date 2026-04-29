@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Persistent Mode Hook (Stop)
- * Minimal continuation enforcer for sc4sap modes.
+ * prism Persistent Mode Hook (Stop)
+ * Minimal continuation enforcer for prism modes.
  * Adapted from OMC persistent-mode.cjs.
  *
  * Supported modes: ralph, autopilot
@@ -50,7 +50,7 @@ function writeJsonFile(path, data) {
 const SESSION_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,255}$/;
 
 function getStatePath(directory, modeName, sessionId) {
-  const stateDir = join(directory, '.sc4sap', 'state');
+  const stateDir = join(directory, '.prism', 'state');
   if (sessionId && SESSION_ID_PATTERN.test(sessionId)) {
     return join(stateDir, 'sessions', sessionId, `${modeName}-state.json`);
   }
@@ -149,7 +149,7 @@ async function main() {
       decision: 'block',
       reason: `[SC4SAP] ${activeMode} mode is active. The boulder never stops. ` +
         `Continue until all tasks complete. ` +
-        `Use "cancelsc4sap" or "stopsc4sap" to end the mode.`
+        `Use "cancelprism" or "stopprism" to end the mode.`
     }));
   } catch (error) {
     console.log(JSON.stringify({ continue: true, suppressOutput: true }));

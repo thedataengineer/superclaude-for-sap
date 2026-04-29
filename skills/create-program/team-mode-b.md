@@ -27,7 +27,7 @@ Executor writes code via `CreateClass` / `UpdateClass` / `CreateFunctionModule` 
 
 1. Generate `team_name` = `create-program-p4-<PROG>-<YYYYMMDD-HHMMSS>`.
 2. `TeamCreate`; write `00-charter.md` with:
-   - invoked_by: `/sc4sap:create-program Phase 4 Wave <N>`
+   - invoked_by: `/prism:create-program Phase 4 Wave <N>`
    - members: `sap-executor-tm`, `sap-<module>-consultant` × N
    - environment (omit null fields)
    - program: `<PROG>` from Phase 1B
@@ -88,7 +88,7 @@ Overrides standard Phase 4 prefix:
 ## Cleanup
 
 1. Shutdown all team members via `SendMessage({type:"shutdown_request", reason:"Wave <N> teamMode complete"})` (structured JSON object, per protocol).
-2. Keep task directories (audit trail cross-referenced from `.sc4sap/program/<PROG>/phase4-team-audit/`).
+2. Keep task directories (audit trail cross-referenced from `.prism/program/<PROG>/phase4-team-audit/`).
 
 ## Prototype notes
 

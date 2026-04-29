@@ -4,8 +4,8 @@ Companion to `multi-profile-design.md`. Sequences work across the three layers s
 
 **Layers**:
 - **L3** — seven `@babamba2/*` npm packages (`mcp-abap-adt-clients`, `mcp-abap-connection`, `mcp-abap-adt-auth-broker`, `mcp-abap-adt-auth-providers`, `mcp-abap-adt-auth-stores`, `mcp-abap-adt-header-validator`, `mcp-abap-adt-interfaces`, `mcp-abap-adt-logger`). Consumed as npm dependencies.
-- **L2** — `@babamba2/abap-mcp-adt-powerup` (MCP server at `~/.claude/plugins/marketplaces/abap-mcp-adt-powerup`; depends on all L3 packages)
-- **L1** — `sc4sap` plugin (skills, hooks, HUD; depends on L2)
+- **L2** — `abap-mcp-adt-powerup` (MCP server at `~/.claude/plugins/marketplaces/abap-mcp-adt-powerup`; depends on all L3 packages)
+- **L1** — `prism` plugin (skills, hooks, HUD; depends on L2)
 
 Each phase lists **deliverables**, **verification**, and **blocking dependencies**.
 
@@ -20,7 +20,7 @@ L2 already ships the infrastructure needed for hot-swapping SAP connections. **N
 - `src/lib/utils.ts` — existing reset functions (lines 794/818/835/859) clear `cachedConnection` / `cachedConfigSignature` and call `notifyConnectionResetListeners()`. Config is read directly from `process.env.SAP_URL` etc. (line 1869), so overwriting `process.env.*` + firing the reset is sufficient.
 - `src/server/ConnectionContext.ts` + `docs/architecture/CONNECTION_ISOLATION.md` — session-isolated multi-tenant infra (HTTP transport). Orthogonal to this feature but confirms the codebase is already multi-connection aware.
 
-**Implication**: `ReloadProfile` is a thin MCP tool that (a) loads env from `~/.sc4sap/profiles/{alias}/sap.env`, (b) resolves keychain references, (c) overwrites `process.env.*`, (d) calls an existing reset function. Keychain resolution is the only genuinely new code; it lives in L2 (near the env loader), not in any L3 package.
+**Implication**: `ReloadProfile` is a thin MCP tool that (a) loads env from `~/.prism/profiles/{alias}/sap.env`, (b) resolves keychain references, (c) overwrites `process.env.*`, (d) calls an existing reset function. Keychain resolution is the only genuinely new code; it lives in L2 (near the env loader), not in any L3 package.
 
 Phase 0 below is accordingly collapsed to a single keychain utility. Phase 1 focuses on the tool wiring and guard.
 
@@ -36,7 +36,7 @@ Goal: add password-from-keychain support in the MCP server. No L3 package modifi
 | 0.2 | L2 | Add `@napi-rs/keyring` as an optional dependency (declare in `optionalDependencies`, same pattern as `node-rfc`). |
 | 0.3 | L2 | Unit tests under `src/__tests__/lib/secrets.test.ts` covering: plain-string passthrough, `keychain:` parse, missing keychain entry, @napi-rs/keyring unavailable. |
 
-**Verification**: `npm test` green (requires npm install for @napi-rs/keyring — ASK USER before running). `resolveSecret("plain")` returns `"plain"`. `resolveSecret("keychain:sc4sap/KR-DEV/DEV")` resolves against the OS keychain.
+**Verification**: `npm test` green (requires npm install for @napi-rs/keyring — ASK USER before running). `resolveSecret("plain")` returns `"plain"`. `resolveSecret("keychain:prism/KR-DEV/DEV")` resolves against the OS keychain.
 
 **Dependencies**: none.
 
@@ -48,7 +48,7 @@ Goal: server can load a user-level profile, hot-reload it via a new `ReloadProfi
 
 | # | Layer | Deliverable |
 |---|---|---|
-| 1.1 | L2 | `src/lib/profile.ts` — `loadActiveProfile(): { alias, envVars, tier }`. Resolution order: `{cwd}/.sc4sap/active-profile.txt` → `~/.sc4sap/profiles/{alias}/sap.env`. Fallback to legacy `{cwd}/.sc4sap/sap.env` if active-profile.txt is absent. Calls `resolveSecret()` for `SAP_PASSWORD`. Logs which path won. |
+| 1.1 | L2 | `src/lib/profile.ts` — `loadActiveProfile(): { alias, envVars, tier }`. Resolution order: `{cwd}/.prism/active-profile.txt` → `~/.prism/profiles/{alias}/sap.env`. Fallback to legacy `{cwd}/.prism/sap.env` if active-profile.txt is absent. Calls `resolveSecret()` for `SAP_PASSWORD`. Logs which path won. |
 | 1.2 | L2 | `src/lib/profile.ts` — `applyProfile(loaded)`: clear existing `SAP_*` keys from `process.env`, set new keys, cache `SAP_TIER` in a module-level variable `activeTierRef`. |
 | 1.3 | L2 | On server startup (`src/server/launcher.ts` or equivalent), call `loadActiveProfile()` + `applyProfile()` BEFORE any connection is created. Keeps existing `.env` behavior intact when no profile system is in use. |
 | 1.4 | L2 | `ReloadProfile` MCP tool — no args, returns `{ ok, alias, host, client, tier, readonly }`. Calls `loadActiveProfile()` + `applyProfile()` + the existing reset function that fires `notifyConnectionResetListeners()` (triggers `resetClientCache` via already-registered hook). Next tool call sees the new connection automatically. |
@@ -56,9 +56,9 @@ Goal: server can load a user-level profile, hot-reload it via a new `ReloadProfi
 | 1.6 | L2 | Wire the guard into every tool handler in the §4 matrix. Single chokepoint preferred — add the check at the tool-dispatch layer if present, else decorate each handler. |
 
 **Verification**:
-- Manual: create `~/.sc4sap/profiles/KR-DEV/sap.env` + `.sc4sap/active-profile.txt=KR-DEV`. Start server. `UpdateClass` succeeds.
+- Manual: create `~/.prism/profiles/KR-DEV/sap.env` + `.prism/active-profile.txt=KR-DEV`. Start server. `UpdateClass` succeeds.
 - Write `active-profile.txt=KR-PRD` (with a second profile), call `ReloadProfile`, call `UpdateClass` → returns `ERR_READONLY_TIER`.
-- Start server without profile system (only legacy `.sc4sap/sap.env`) → server still works; no regression for existing users.
+- Start server without profile system (only legacy `.prism/sap.env`) → server still works; no regression for existing users.
 - Rapid switch: DEV → PRD → DEV via three `ReloadProfile` calls → all three reflect correctly in subsequent tool calls (cache invalidation is clean).
 
 **Dependencies**: Phase 0 complete (`resolveSecret` required by `loadActiveProfile`).
@@ -67,7 +67,7 @@ Goal: server can load a user-level profile, hot-reload it via a new `ReloadProfi
 
 ## Phase 2 — Plugin baseline (switching works)
 
-Goal: user can list and switch between profiles they have manually placed under `~/.sc4sap/profiles/`. Safety hook is in place.
+Goal: user can list and switch between profiles they have manually placed under `~/.prism/profiles/`. Safety hook is in place.
 
 | # | Layer | Deliverable |
 |---|---|---|
@@ -92,7 +92,7 @@ Goal: users manage profiles without hand-editing files.
 | # | Layer | Deliverable |
 |---|---|---|
 | 3.1 | L1 | `sap-option add` wizard — alias, tier, same-company meta-copy prompt, connection fields, password capture → keychain (via L3 keychain helper invoked through a small node CLI bundled with plugin). |
-| 3.2 | L1 | `sap-option remove` — confirm by alias typing, archive to `~/.sc4sap/profiles/.trash/{alias}-{iso-timestamp}/`, delete keychain entry (prompt before), refuse if alias is active. |
+| 3.2 | L1 | `sap-option remove` — confirm by alias typing, archive to `~/.prism/profiles/.trash/{alias}-{iso-timestamp}/`, delete keychain entry (prompt before), refuse if alias is active. |
 | 3.3 | L1 | `sap-option edit` — modify non-tier fields; re-prompt password if username changes. Tier is immutable here (force remove+add to change tier). |
 | 3.4 | L1 | `sap-option purge` — remove `.trash/*` older than 7 days; `--all` flag for immediate full purge with confirmation. Optional background prune on `sap-option` invocation. |
 
@@ -107,19 +107,19 @@ Goal: users manage profiles without hand-editing files.
 
 ## Phase 4 — Migration (existing users upgrade)
 
-Goal: users who had `{cwd}/.sc4sap/sap.env` are migrated to `~/.sc4sap/profiles/{alias}/` on first run without data loss.
+Goal: users who had `{cwd}/.prism/sap.env` are migrated to `~/.prism/profiles/{alias}/` on first run without data loss.
 
 | # | Layer | Deliverable |
 |---|---|---|
-| 4.1 | L1 | `setup` and `sap-option` detect legacy `{cwd}/.sc4sap/sap.env` without sibling `active-profile.txt`. Emit mandatory prompt: alias + tier. |
-| 4.2 | L1 | Migration executor: create `~/.sc4sap/profiles/{alias}/{sap.env, config.json}` (copy + rewrite password to keychain reference). Write password to OS keychain. Set `active-profile.txt` in project. |
-| 4.3 | L1 | Archive original: `mv {cwd}/.sc4sap/sap.env {cwd}/.sc4sap/sap.env.legacy`. Same for `config.json` if present and not already copied. |
+| 4.1 | L1 | `setup` and `sap-option` detect legacy `{cwd}/.prism/sap.env` without sibling `active-profile.txt`. Emit mandatory prompt: alias + tier. |
+| 4.2 | L1 | Migration executor: create `~/.prism/profiles/{alias}/{sap.env, config.json}` (copy + rewrite password to keychain reference). Write password to OS keychain. Set `active-profile.txt` in project. |
+| 4.3 | L1 | Archive original: `mv {cwd}/.prism/sap.env {cwd}/.prism/sap.env.legacy`. Same for `config.json` if present and not already copied. |
 | 4.4 | L1 | Post-migration help output reminding how to add other companies/tiers. |
 
 **Verification**:
-- Start with current `.sc4sap/sap.env` fixture, run `sap-option` → prompted → migrated → all downstream skills still work.
+- Start with current `.prism/sap.env` fixture, run `sap-option` → prompted → migrated → all downstream skills still work.
 - Rerun `sap-option` → no prompt (migration already done).
-- Delete `~/.sc4sap/profiles/`, keep `sap.env.legacy` → manual rollback by renaming `.legacy` back works.
+- Delete `~/.prism/profiles/`, keep `sap.env.legacy` → manual rollback by renaming `.legacy` back works.
 
 **Dependencies**: Phase 3 complete (needs `add` flow internals for the migration executor).
 
@@ -169,7 +169,7 @@ Phase 0 (L2 keychain)  ─  Phase 1 (L2 ReloadProfile + guard)  ─┬─ Phase 
                                                                                   Phase 5 (UX polish)  ─  Phase 6 ──┘
 ```
 
-Phases 0→1→2 are strictly sequential (functional dependency). Phase 5 items can be parallelized with Phase 4 once Phase 3 is done. No L3 npm package needs republishing — everything lives in L1 (sc4sap plugin) and L2 (abap-mcp-adt-powerup).
+Phases 0→1→2 are strictly sequential (functional dependency). Phase 5 items can be parallelized with Phase 4 once Phase 3 is done. No L3 npm package needs republishing — everything lives in L1 (prism plugin) and L2 (abap-mcp-adt-powerup).
 
 ## Risk register
 
@@ -177,8 +177,8 @@ Phases 0→1→2 are strictly sequential (functional dependency). Phase 5 items 
 |---|---|
 | `@napi-rs/keyring` prebuilt binary missing for customer's OS/arch, or keychain daemon absent (headless Linux/docker/CI) | Graceful fallback: `resolveSecret` detects load failure, surfaces `ERR_KEYCHAIN_UNAVAILABLE`. Documented escape hatch `SAP_PASSWORD_STORAGE=file` using AES-encrypted sidecar file with a machine-derived key. Not default. |
 | User disables hook; MCP guard is their only defense | Phase 5.3 startup warning + docs emphasize the MCP layer; release note calls this out. |
-| Legacy `.sc4sap/config.json` has engagement artifacts (activeTransport with live transport number) that are Dev-only | Migration preserves them into the created DEV profile; other profiles start with empty `activeTransport`. |
-| Concurrent Claude Code sessions in different projects with different active profiles | Each session reads its own `{cwd}/.sc4sap/active-profile.txt`; MCP server instances are per-session. No cross-contamination. |
+| Legacy `.prism/config.json` has engagement artifacts (activeTransport with live transport number) that are Dev-only | Migration preserves them into the created DEV profile; other profiles start with empty `activeTransport`. |
+| Concurrent Claude Code sessions in different projects with different active profiles | Each session reads its own `{cwd}/.prism/active-profile.txt`; MCP server instances are per-session. No cross-contamination. |
 | Profile deletion leaves orphan keychain entries | `remove` prompts to also delete keychain secret; `purge` cleans orphans found in `.trash/`. |
 
 ## Definition of done (per phase)

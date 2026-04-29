@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * sc4sap PreToolUse hook — Tier Readonly Guard
+ * prism PreToolUse hook — Tier Readonly Guard
  *
  * Blocks mutation / code-execution MCP tool calls when the currently active
  * SAP profile is QA or PRD. Layer 1 of the two-layer defense (MCP server is
  * Layer 2).
  *
  * Resolution:
- *   1. Walk up from cwd to find `.sc4sap/active-profile.txt`.
+ *   1. Walk up from cwd to find `.prism/active-profile.txt`.
  *   2. If found, read `$SC4SAP_HOME_DIR/profiles/<alias>/sap.env` (falls back
- *      to `~/.sc4sap/profiles/<alias>/sap.env`) and extract `SAP_TIER`.
- *   3. If no pointer is found, fall back to `<projectDir>/.sc4sap/sap.env`
+ *      to `~/.prism/profiles/<alias>/sap.env`) and extract `SAP_TIER`.
+ *   3. If no pointer is found, fall back to `<projectDir>/.prism/sap.env`
  *      (legacy single-profile mode) and extract `SAP_TIER` (default DEV).
  *
  * Block matrix (Strict) — same as MCP server readonlyGuard:
@@ -34,14 +34,14 @@ const RUNTIME_EXEC = new Set([
 ]);
 const QA_ALLOW = new Set(['RunUnitTest']);
 
-function sc4sapHome() {
-  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.sc4sap');
+function prismHome() {
+  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
 }
 
 function walkUpForProject(start) {
   let dir = start;
   for (let i = 0; i < 8; i++) {
-    if (existsSync(join(dir, '.sc4sap'))) return dir;
+    if (existsSync(join(dir, '.prism'))) return dir;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
@@ -50,7 +50,7 @@ function walkUpForProject(start) {
 }
 
 function readActiveAlias(projectDir) {
-  const p = join(projectDir, '.sc4sap', 'active-profile.txt');
+  const p = join(projectDir, '.prism', 'active-profile.txt');
   if (!existsSync(p)) return null;
   try {
     const a = readFileSync(p, 'utf8').trim();
@@ -85,11 +85,11 @@ function parseDotenvTier(envFilePath) {
 function resolveTier(projectDir) {
   const alias = readActiveAlias(projectDir);
   if (alias) {
-    const envPath = join(sc4sapHome(), 'profiles', alias, 'sap.env');
+    const envPath = join(prismHome(), 'profiles', alias, 'sap.env');
     const tier = parseDotenvTier(envPath);
     return { alias, tier: tier ?? 'DEV', source: envPath, legacy: false };
   }
-  const legacy = join(projectDir, '.sc4sap', 'sap.env');
+  const legacy = join(projectDir, '.prism', 'sap.env');
   const tier = parseDotenvTier(legacy);
   return { alias: null, tier: tier ?? 'DEV', source: legacy, legacy: true };
 }
@@ -166,12 +166,12 @@ async function main() {
 
   const aliasLabel = ctx.alias ?? '(legacy)';
   const message =
-    `sc4sap tier-readonly-guard — DENIED\n` +
+    `prism tier-readonly-guard — DENIED\n` +
     `  tool:    ${tool}\n` +
     `  profile: ${aliasLabel}\n` +
     `  tier:    ${ctx.tier}\n` +
     `  reason:  ${reason}\n\n` +
-    `Switch to a DEV profile via /sc4sap:sap-option, then retry.\n` +
+    `Switch to a DEV profile via /prism:sap-option, then retry.\n` +
     `(This check is backed by the MCP server-side guard — bypassing this hook does not bypass enforcement.)`;
 
   process.stdout.write(

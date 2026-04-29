@@ -4,7 +4,7 @@ Referenced by [`wizard-steps.md`](wizard-steps.md) — this file holds the full 
 
 ## 9.0 — Tier gate (MANDATORY — runs before 9a)
 
-Read `SAP_TIER` from `~/.sc4sap/profiles/<activeAlias>/sap.env`. Branch:
+Read `SAP_TIER` from `~/.prism/profiles/<activeAlias>/sap.env`. Branch:
 
 | Tier | Behaviour |
 |---|---|
@@ -22,7 +22,7 @@ Read `SAP_TIER` from `~/.sc4sap/profiles/<activeAlias>/sap.env`. Branch:
 >
 > Recommended path:
 >   1. Install the utilities on the matching DEV profile first
->      (`/sc4sap:sap-option switch {ISO}-DEV` → `/sc4sap:setup`).
+>      (`/prism:sap-option switch {ISO}-DEV` → `/prism:setup`).
 >   2. Collect them in a CTS Workbench request on DEV (transaction `SE09`).
 >   3. Release the transport on DEV, then import to QA/PRD via the standard
 >      TMS import queue (transaction `STMS` on the target system).
@@ -33,7 +33,7 @@ Read `SAP_TIER` from `~/.sc4sap/profiles/<activeAlias>/sap.env`. Branch:
 > of a one-time bootstrap transport. Talk to your Basis team for the package
 > assignment (common choice: `Z_SC4SAP_UTILS`, delivery class `S` or `C`).
 
-Record the skip in `~/.sc4sap/profiles/<alias>/.abap-utils-installed`:
+Record the skip in `~/.prism/profiles/<alias>/.abap-utils-installed`:
 
 ```json
 { "installedAt": null, "dedupKey": "<SAP_URL>#<SAP_CLIENT>", "skippedReason": "tier=<QA|PRD>", "objects": [] }
@@ -43,7 +43,7 @@ Proceed to Step 10 after printing the guidance.
 
 ## 9.0b — System dedup check (DEV only)
 
-Compute `dedupKey = SAP_URL + '#' + SAP_CLIENT`. Iterate sibling profiles under `~/.sc4sap/profiles/*/.abap-utils-installed`; if any sentinel has the same `dedupKey` AND `installedAt != null`, skip the actual install and reuse:
+Compute `dedupKey = SAP_URL + '#' + SAP_CLIENT`. Iterate sibling profiles under `~/.prism/profiles/*/.abap-utils-installed`; if any sentinel has the same `dedupKey` AND `installedAt != null`, skip the actual install and reuse:
 
 ```json
 { "installedAt": "2026-04-21T...", "dedupKey": "<same>", "skippedReason": "already-installed-on-sibling", "via": "<siblingAlias>", "objects": [...] }
@@ -99,11 +99,11 @@ Required by the MCP server for Screen, GUI Status, and Text Element operations.
 8. Test (optional, requires SE38 access): the plugin ships `abap/Z_TEST_DDIC_ROUNDTRIP.abap` as a one-shot smoke test. Running it in SE38 executes CREATE + ACTIVATE for a domain → data element → table chain and prints the subrc/message/result of each step. All six steps should return `subrc=0`.
 9. After install: re-verify via `SearchObject` for each of the four FM names.
 
-**S/4HANA note:** if `SAP_VERSION=S4`, these four ECC-only files are NOT installed. S/4HANA's `sc4sap` MCP server handles DDIC writes directly via ADT endpoints (`CreateTable` / `CreateDataElement` / `CreateDomain`). Do not port these FMs to the S/4 primary layer.
+**S/4HANA note:** if `SAP_VERSION=S4`, these four ECC-only files are NOT installed. S/4HANA's `prism` MCP server handles DDIC writes directly via ADT endpoints (`CreateTable` / `CreateDataElement` / `CreateDomain`). Do not port these FMs to the S/4 primary layer.
 
 ## 9b. ALV OOP Reuse Handlers `ZIF_S4SAP_CM` / `ZCX_S4SAP_EXCP` / `ZCL_S4SAP_CM_*`
 
-Reusable ALV Grid + ALV Tree + SALV wrapper library consumed by generated programs (e.g. via `/sc4sap:create-program`) and custom dialogs.
+Reusable ALV Grid + ALV Tree + SALV wrapper library consumed by generated programs (e.g. via `/prism:create-program`) and custom dialogs.
 
 1. Check if interface `ZIF_S4SAP_CM` already exists via `SearchObject` (query=`ZIF_S4SAP_CM`, objectType=`INTF`). If yes, skip 9b entirely and report "ALV OOP handlers already installed".
 2. Source location: `abap/alv-oop-handlers/` (7 objects = 14 files, `.abap` source + `.xml` ADT metadata pairs).
@@ -150,7 +150,7 @@ Installs the single class that powers the `zrfc` backend: an `IF_HTTP_EXTENSION`
    > - Right-click on the new `zmcp_rfc` node → **Activate Service**
    > - Verify: `curl -u $SAP_USERNAME:$SAP_PASSWORD -H "X-CSRF-Token: Fetch" "$SAP_URL/sap/bc/rest/zmcp_rfc/dispatch?sap-client=$SAP_CLIENT"` returns `200` with an `X-CSRF-Token` response header
    >
-   > Confirm "SICF zmcp_rfc 활성화 완료" back to sc4sap before proceeding.
+   > Confirm "SICF zmcp_rfc 활성화 완료" back to prism before proceeding.
 
 5. After SICF activation: re-run the CSRF probe from `rfc-backend-selection.md` "If the user chose `zrfc`" → item 2. If the probe succeeds, proceed to Step 5 (MCP reconnect). If it fails (`404`, `401`, empty token), halt and surface the symptom.
 

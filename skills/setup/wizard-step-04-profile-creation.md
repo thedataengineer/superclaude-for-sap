@@ -1,6 +1,6 @@
 # Wizard Step 4 — Profile Creation & SAP Connection
 
-Referenced by [`wizard-steps.md`](wizard-steps.md). This file replaces the pre-0.6.0 single-file `.sc4sap/sap.env` flow with multi-profile-aware logic. The actual file writes are delegated to `scripts/sap-profile-cli.mjs`; this wizard only collects inputs and routes.
+Referenced by [`wizard-steps.md`](wizard-steps.md). This file replaces the pre-0.6.0 single-file `.prism/sap.env` flow with multi-profile-aware logic. The actual file writes are delegated to `scripts/sap-profile-cli.mjs`; this wizard only collects inputs and routes.
 
 ## 4.0 — Legacy detection (runs FIRST, before any question)
 
@@ -13,14 +13,14 @@ node "$CLAUDE_PLUGIN_ROOT/scripts/sap-profile-cli.mjs" detect-legacy
 
 | Condition | Action |
 |---|---|
-| `needsMigration=true` | Route to **[`../sap-option/migration.md`](../sap-option/migration.md)** (alias + tier prompt → `sap-profile-cli.mjs migrate`). Per decision §4.3, migration also DELETES `<project>/.sc4sap/config.json` after moving engagement state (`activeTransport`, `namingConvention`) into the new profile's `config.json`. On success, return to Step 5. Do NOT run 4.1–4.9. |
+| `needsMigration=true` | Route to **[`../sap-option/migration.md`](../sap-option/migration.md)** (alias + tier prompt → `sap-profile-cli.mjs migrate`). Per decision §4.3, migration also DELETES `<project>/.prism/config.json` after moving engagement state (`activeTransport`, `namingConvention`) into the new profile's `config.json`. On success, return to Step 5. Do NOT run 4.1–4.9. |
 | `needsMigration=false` AND `profileCount=0` | Fresh install. Run 4.1–4.9. |
 | `needsMigration=false` AND `profileCount≥1` AND `hasActivePointer=true` | Ask via `AskUserQuestion`: "Profile `{activeAlias}` is already active. Create another profile, or keep using this one?" → create another ⇒ 4.1 (with 4.3 meta-copy offer) / keep ⇒ skip to Step 5. |
 | `needsMigration=false` AND `profileCount≥1` AND `hasActivePointer=false` | List profiles via `sap-profile-cli.mjs list`. Offer `switch <alias>` or `create another`. |
 
 ## 4.1 — alias
 
-Free text. Validate `^[A-Z0-9_-]+$`. Reject `default` (see design §6). Must not exist in `~/.sc4sap/profiles/`. Suggest convention `{ISO-COUNTRY}-{TIER}` (`KR-DEV`, `US-PRD`) — ISO alpha-2 country per feedback memory, never company initials.
+Free text. Validate `^[A-Z0-9_-]+$`. Reject `default` (see design §6). Must not exist in `~/.prism/profiles/`. Suggest convention `{ISO-COUNTRY}-{TIER}` (`KR-DEV`, `US-PRD`) — ISO alpha-2 country per feedback memory, never company initials.
 
 ## 4.2 — tier
 
@@ -89,7 +89,7 @@ Expected JSON: `{ ok, alias, tier, profileDir, passwordStored: "keychain"|"plain
 ## 4.7 — Write active-profile pointer
 
 ```bash
-printf '%s' "$alias" > "$PWD/.sc4sap/active-profile.txt"
+printf '%s' "$alias" > "$PWD/.prism/active-profile.txt"
 ```
 
 No config.json is written in the project folder (decision §4.3 — legacy files are deleted by migration, fresh installs never create one).
@@ -120,10 +120,10 @@ Both are optional; include as commented examples in the generated profile env on
 After 4.6–4.9 complete:
 
 ```
-~/.sc4sap/profiles/<alias>/sap.env         ← profile env (secrets via keychain)
-~/.sc4sap/profiles/<alias>/config.json     ← sapVersion, abapRelease, industry, activeModules, namingConvention
-<project>/.sc4sap/active-profile.txt       ← alias
-<project>/.sc4sap/config.json              ← DOES NOT EXIST (deleted by migration; never created on fresh install)
+~/.prism/profiles/<alias>/sap.env         ← profile env (secrets via keychain)
+~/.prism/profiles/<alias>/config.json     ← sapVersion, abapRelease, industry, activeModules, namingConvention
+<project>/.prism/active-profile.txt       ← alias
+<project>/.prism/config.json              ← DOES NOT EXIST (deleted by migration; never created on fresh install)
 ```
 
-Continue to **Step 4bis — RFC backend selection** (`rfc-backend-selection.md`). All `SAP_RFC_*` keys that 4bis collects are written to `~/.sc4sap/profiles/<alias>/sap.env`, not the project folder.
+Continue to **Step 4bis — RFC backend selection** (`rfc-backend-selection.md`). All `SAP_RFC_*` keys that 4bis collects are written to `~/.prism/profiles/<alias>/sap.env`, not the project folder.

@@ -36,7 +36,7 @@ Emit phase banner per `common/model-routing-rule.md` § Phase Banner Convention:
 Dispatch with the collected intake as context:
 ```
 Agent({
-  subagent_type: "sc4sap:sap-stocker",
+  subagent_type: "prism:sap-stocker",
   description: "CBO inventory — <PACKAGE>",
   prompt: """
     Stock the CBO package <PACKAGE> (module <MODULE>).
@@ -56,7 +56,7 @@ The stocker executes the full inventory pass internally — consult `agents/sap-
 - **Business purpose inference** (DDIC signals): role classification — `header / line / log / mapping / classification / config / util / service / event / dto` — plus 1–2 sentence purpose.
 - **Cross-module gap** (read `SAP_ACTIVE_MODULES` from `sap.env`/`config.json`): per `common/active-modules.md` matrix, flag expected-but-missing integration fields (e.g., MM CBO without `PS_POSID` when PS is active) → `inventory.json → crossModuleGaps[]`.
 - **Sensitive-name check** against `exceptions/custom-patterns.md` (PII / HR / CUST / BANK / PRICE / ...). Never calls `GetTableContents` or `GetSqlQuery`.
-- **Persist** `.sc4sap/cbo/<MODULE>/<PACKAGE>/{index.md, inventory.json}` (+ optional `raw-walk.md` if the package has <200 objects).
+- **Persist** `.prism/cbo/<MODULE>/<PACKAGE>/{index.md, inventory.json}` (+ optional `raw-walk.md` if the package has <200 objects).
 
 `inventory.json` schema example (authoritative — also referenced by `create-program`, `create-object`):
 ```json
@@ -90,7 +90,7 @@ Sort order in `objects[]`: every object with `used_by_key_programs` non-empty fi
 Sort order in `index.md`:
 1. `## 📌 Pinned — used by flagship programs` (grouped by the flagship program that pulls each in)
 2. `## Frequently used tables`, `## Frequently used structures`, ... (remaining non-pinned frequently-used objects, by score descending)
-3. `## Sensitive CBO objects` (name-pattern flagged; suggest additions to `.sc4sap/blocklist-extend.txt`)
+3. `## Sensitive CBO objects` (name-pattern flagged; suggest additions to `.prism/blocklist-extend.txt`)
 
 ## Main-thread hand-off (branches on `Logic-heavy` flag)
 
@@ -103,15 +103,15 @@ Read the `Logic-heavy: <true|false>` line from the stocker's return block (class
 No agent dispatch. Main thread (Haiku — skill frontmatter `model: haiku`) prints:
 ```
 CBO inventory written:
-  .sc4sap/cbo/<MODULE>/<PACKAGE>/index.md
-  .sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json
+  .prism/cbo/<MODULE>/<PACKAGE>/index.md
+  .prism/cbo/<MODULE>/<PACKAGE>/inventory.json
 
 📌 Pinned (used by flagship programs [P1, P2]): P objects — always surfaced first
 Frequently used: N tables · M structures · K data elements · P classes · Q FMs
 Cross-module gaps: G (or "n/a — SAP_ACTIVE_MODULES unset")
 Sensitive objects flagged: X
 
-Downstream skills (/sc4sap:create-program, /sc4sap:program-to-spec, /sc4sap:create-object)
+Downstream skills (/prism:create-program, /prism:program-to-spec, /prism:create-object)
 read inventory.json and prefer pinned objects > frequently-used objects > new creation.
 ```
 
@@ -127,10 +127,10 @@ Emit phase banner:
 Dispatch:
 ```
 Agent({
-  subagent_type: "sc4sap:sap-writer",
+  subagent_type: "prism:sap-writer",
   description: "CBO briefing — <MODULE>/<PACKAGE>",
   prompt: """
-    Read .sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json and produce a reader-facing briefing for the user (language = user's current conversation language; default Korean).
+    Read .prism/cbo/<MODULE>/<PACKAGE>/inventory.json and produce a reader-facing briefing for the user (language = user's current conversation language; default Korean).
 
     Required sections (15–25 lines, markdown):
     1. **📌 Pinned highlights** — for each pinned object, one line: name · type · 1-sentence purpose · reuse_hint.
@@ -151,8 +151,8 @@ Agent({
 After the writer returns, print its output verbatim to the user. Prepend one header line identifying the artifacts:
 ```
 CBO inventory written:
-  .sc4sap/cbo/<MODULE>/<PACKAGE>/index.md
-  .sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json
+  .prism/cbo/<MODULE>/<PACKAGE>/index.md
+  .prism/cbo/<MODULE>/<PACKAGE>/inventory.json
 ```
 
 ### Failure handling (both branches)

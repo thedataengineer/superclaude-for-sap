@@ -41,7 +41,7 @@ Lead:
    ```
    TEAM CHARTER
    team_name: <team_name>
-   invoked_by: /sc4sap:create-program · Phase <1A|2>
+   invoked_by: /prism:create-program · Phase <1A|2>
    members: <sap-<module>-consultant × N for each module in module_set>
    round_cap: 3
    environment:
@@ -54,10 +54,10 @@ Lead:
    inputs:
      # Phase 1A:
      - per-consultant interview answers (dim 1-6 each)
-     - .sc4sap/program/<PROG>/module-interview.md.DRAFT (pre-finalization)
+     - .prism/program/<PROG>/module-interview.md.DRAFT (pre-finalization)
      # Phase 2:
-     - .sc4sap/program/<PROG>/module-interview.md
-     - .sc4sap/program/<PROG>/interview.md
+     - .prism/program/<PROG>/module-interview.md
+     - .prism/program/<PROG>/interview.md
      - planner's detected conflict summary (inline in charter)
    question: |
      # Phase 1A: "Are your module's interview answers consistent with the others' visible here? List any cross-module rule contradictions."
@@ -94,7 +94,7 @@ Same pattern as ask-consultant/team-mode.md. Lead re-spawns members in parallel 
 
 ### Phase 1A synthesis
 
-**Target**: finalize `.sc4sap/program/<PROG>/module-interview.md` with a reconciled cross-module section.
+**Target**: finalize `.prism/program/<PROG>/module-interview.md` with a reconciled cross-module section.
 
 Spawn `sap-writer` (Sonnet override, **NOT team member**):
 ```

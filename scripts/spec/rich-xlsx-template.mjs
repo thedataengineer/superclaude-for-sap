@@ -1,4 +1,4 @@
-// sc4sap:program-to-spec — Rich XLSX standalone driver TEMPLATE.
+// prism:program-to-spec — Rich XLSX standalone driver TEMPLATE.
 //
 // Purpose:
 //   Generate a human-readable multi-sheet .xlsx specification artifact
@@ -8,7 +8,7 @@
 //   render cleanly at any zoom level.
 //
 // How the skill uses this file:
-//   1. COPY this template to .sc4sap/specs/_drivers/{OBJECT}-{YYYYMMDD}.mjs
+//   1. COPY this template to .prism/specs/_drivers/{OBJECT}-{YYYYMMDD}.mjs
 //      (or C:/Users/<user>/Desktop/... when the user specifies an absolute
 //      directory).
 //   2. REPLACE the three // TODO blocks:
@@ -1352,26 +1352,26 @@ async function buildImages() {
   try {
     // Resolve screen-image-renderer.mjs. Works whether this file runs in
     // its original location (scripts/spec/...) OR was copied as a
-    // throwaway per-spec driver to .sc4sap/specs/_drivers/, to an absolute
+    // throwaway per-spec driver to .prism/specs/_drivers/, to an absolute
     // Desktop folder, or into a plugin cache. Search order:
     //   (1) next to this file                          → in-place / plugin cache
     //   (2) walk up + 'scripts/spec/...'               → consumer layout (scripts/ at root)
-    //   (3) walk up + 'sc4sap/scripts/spec/...'        → plugin-dev layout (source inside sc4sap/)
+    //   (3) walk up + 'prism/scripts/spec/...'        → plugin-dev layout (source inside prism/)
     //   (4) process.cwd() + 'scripts/spec/...'         → invocation from project root, consumer
-    //   (5) process.cwd() + 'sc4sap/scripts/spec/...'  → invocation from project root, dev
+    //   (5) process.cwd() + 'prism/scripts/spec/...'  → invocation from project root, dev
     //   (6) CLAUDE_PLUGIN_ROOT env (Claude Code plugin cache runtime)
     const hereDir = dirname(fileURLToPath(import.meta.url));
     const candidates = [join(hereDir, 'screen-image-renderer.mjs')];
     let cur = hereDir;
     for (let i = 0; i < 8; i++) {
       candidates.push(join(cur, 'scripts', 'spec', 'screen-image-renderer.mjs'));
-      candidates.push(join(cur, 'sc4sap', 'scripts', 'spec', 'screen-image-renderer.mjs'));
+      candidates.push(join(cur, 'prism', 'scripts', 'spec', 'screen-image-renderer.mjs'));
       const parent = dirname(cur);
       if (parent === cur) break;
       cur = parent;
     }
     candidates.push(join(process.cwd(), 'scripts', 'spec', 'screen-image-renderer.mjs'));
-    candidates.push(join(process.cwd(), 'sc4sap', 'scripts', 'spec', 'screen-image-renderer.mjs'));
+    candidates.push(join(process.cwd(), 'prism', 'scripts', 'spec', 'screen-image-renderer.mjs'));
     if (process.env.CLAUDE_PLUGIN_ROOT) {
       candidates.push(join(process.env.CLAUDE_PLUGIN_ROOT, 'scripts', 'spec', 'screen-image-renderer.mjs'));
     }

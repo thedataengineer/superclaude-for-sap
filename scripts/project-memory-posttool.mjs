@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap PostToolUse Hook: Project Memory Learning
+ * prism PostToolUse Hook: Project Memory Learning
  * Learns from tool outputs and updates project memory.
  * Adapted from OMC project-memory-posttool.mjs.
  *
@@ -64,7 +64,7 @@ async function main() {
     }
 
     // Load existing project memory
-    const memoryPath = join(directory, '.sc4sap', 'project-memory.json');
+    const memoryPath = join(directory, '.prism', 'project-memory.json');
     const memory = readJsonFile(memoryPath) || {
       techStack: { languages: ['ABAP'], frameworks: ['SAP'] },
       sapModules: [],

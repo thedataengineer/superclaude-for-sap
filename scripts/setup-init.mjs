@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Setup Init Hook (SessionStart, matcher: "init")
- * Runs initial setup when a new sc4sap project is initialized.
- * Creates .sc4sap directory structure and default configuration.
+ * prism Setup Init Hook (SessionStart, matcher: "init")
+ * Runs initial setup when a new prism project is initialized.
+ * Creates .prism directory structure and default configuration.
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
@@ -18,13 +18,13 @@ async function main() {
 
     const directory = data.cwd || data.directory || process.cwd();
 
-    // Create .sc4sap directory structure
+    // Create .prism directory structure
     const dirs = [
-      join(directory, '.sc4sap'),
-      join(directory, '.sc4sap', 'state'),
-      join(directory, '.sc4sap', 'skills'),
-      join(directory, '.sc4sap', 'research'),
-      join(directory, '.sc4sap', 'logs'),
+      join(directory, '.prism'),
+      join(directory, '.prism', 'state'),
+      join(directory, '.prism', 'skills'),
+      join(directory, '.prism', 'research'),
+      join(directory, '.prism', 'logs'),
     ];
 
     for (const dir of dirs) {
@@ -34,7 +34,7 @@ async function main() {
     }
 
     // Create default notepad if it doesn't exist
-    const notepadPath = join(directory, '.sc4sap', 'notepad.md');
+    const notepadPath = join(directory, '.prism', 'notepad.md');
     if (!existsSync(notepadPath)) {
       try {
         writeFileSync(notepadPath, `# SC4SAP Project Notepad
@@ -55,7 +55,7 @@ async function main() {
     }
 
     // Create default project memory if it doesn't exist
-    const memoryPath = join(directory, '.sc4sap', 'project-memory.json');
+    const memoryPath = join(directory, '.prism', 'project-memory.json');
     if (!existsSync(memoryPath)) {
       try {
         writeFileSync(memoryPath, JSON.stringify({
@@ -72,7 +72,7 @@ async function main() {
       continue: true,
       hookSpecificOutput: {
         hookEventName: 'SessionStart',
-        additionalContext: '[SC4SAP] Project initialized. .sc4sap directory structure created.'
+        additionalContext: '[SC4SAP] Project initialized. .prism directory structure created.'
       }
     }));
   } catch (error) {

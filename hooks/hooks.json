@@ -1,5 +1,5 @@
 {
-  "description": "sc4sap orchestration hooks with SAP-specific capabilities",
+  "description": "prism orchestration hooks with SAP-specific capabilities",
   "hooks": {
     "UserPromptSubmit": [
       {

@@ -1,8 +1,8 @@
 # Industry Selection
 
 Industry is stored in **two places** and must stay in sync:
-- `.sc4sap/sap.env` → `SAP_INDUSTRY=<key>` (MCP server-side env)
-- `.sc4sap/config.json` → `industry: "<key>"` (plugin-side, read by consultant agents)
+- `.prism/sap.env` → `SAP_INDUSTRY=<key>` (MCP server-side env)
+- `.prism/config.json` → `industry: "<key>"` (plugin-side, read by consultant agents)
 
 **Flow:**
 1. Show the current value from both files. If they disagree, flag it ("⚠️ sap.env and config.json disagree — will overwrite both to the same value").

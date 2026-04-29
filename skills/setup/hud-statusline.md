@@ -2,11 +2,11 @@
 
 Referenced by `SKILL.md` — this file holds the full HUD specification.
 
-The plugin ships a sc4sap-branded status line that renders **below the input box** on every prompt. It is declared both in `.claude-plugin/plugin.json` → `statusLine` *and* injected into the user's `~/.claude/settings.json` by the setup wizard, because some Claude Code versions do not render plugin-declared statusLines unless the user's own settings carry the same entry.
+The plugin ships a prism-branded status line that renders **below the input box** on every prompt. It is declared both in `.claude-plugin/plugin.json` → `statusLine` *and* injected into the user's `~/.claude/settings.json` by the setup wizard, because some Claude Code versions do not render plugin-declared statusLines unless the user's own settings carry the same entry.
 
 ## Activation (new installs)
 
-`/sc4sap:setup` runs `scripts/hud/install-statusline.mjs` as Step 13, which writes a `statusLine` block into `~/.claude/settings.json` pointing at `<PLUGIN_ROOT>/scripts/hud/statusline.mjs`. The installer is **idempotent** and refuses to overwrite a non-sc4sap `statusLine` unless invoked with `--force`, so a user who has customized their own status line is never silently clobbered.
+`/prism:setup` runs `scripts/hud/install-statusline.mjs` as Step 13, which writes a `statusLine` block into `~/.claude/settings.json` pointing at `<PLUGIN_ROOT>/scripts/hud/statusline.mjs`. The installer is **idempotent** and refuses to overwrite a non-prism `statusLine` unless invoked with `--force`, so a user who has customized their own status line is never silently clobbered.
 
 Manual install / re-install:
 
@@ -20,8 +20,8 @@ Restart Claude Code after install for the status line to appear.
 
 ## Displayed segments
 
-1. `sc4sap` — plugin brand
-2. `S4/756` — SAP version / ABAP release from `.sc4sap/config.json` (shows `not-configured` until setup runs)
+1. `prism` — plugin brand
+2. `S4/756` — SAP version / ABAP release from `.prism/config.json` (shows `not-configured` until setup runs)
 3. `MCP●  ENV●` — health dots: vendor MCP build, `sap.env` presence (green = OK, red = missing)
 4. `⚡ working` / `✓ idle` — agent activity indicator. Working when the session transcript was modified in the last 5 seconds, OR the last assistant message has tool_use blocks without matching tool_results (CC is waiting on a tool callback). Idle otherwise.
 5. `ctx 420K/1.00M 42%` — current context window usage from the latest assistant `usage` block
@@ -36,7 +36,7 @@ Restart Claude Code after install for the status line to appear.
 - ~150ms cold, ~240ms with 7-day scan; within Claude Code's 300ms budget
 - Transcript parser reads only the **tail (256KB)** of the JSONL — file size is irrelevant
 - 5h block: 1MB tail per session file, mtime-filtered
-- 7-day window: scans every project dir under `~/.claude/projects/` but **caches the result to `.sc4sap/.hud-week.json` with a 60s TTL** so keystroke refreshes hit the cache, not disk
+- 7-day window: scans every project dir under `~/.claude/projects/` but **caches the result to `.prism/.hud-week.json` with a 60s TTL** so keystroke refreshes hit the cache, not disk
 
 ## Environment variables
 
@@ -55,6 +55,6 @@ Restart Claude Code after install for the status line to appear.
 - `scripts/hud/install-statusline.mjs` — user-settings installer (injects the `statusLine` block into `~/.claude/settings.json`)
 - `scripts/hud/lib/pricing.mjs` — model-to-price + context-window table
 - `scripts/hud/lib/transcript.mjs` — JSONL tail scanner + 5h/7d aggregation
-- `scripts/hud/lib/sc4sap-status.mjs` — reads `.sc4sap/config.json`, checks MCP/sap.env/SPRO
+- `scripts/hud/lib/prism-status.mjs` — reads `.prism/config.json`, checks MCP/sap.env/SPRO
 - `scripts/hud/lib/cache.mjs` — 60s TTL disk cache for weekly roll-up
 - `scripts/hud/lib/format.mjs` — ANSI, humanized numbers, `NO_COLOR` support

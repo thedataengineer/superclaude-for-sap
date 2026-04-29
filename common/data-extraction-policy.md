@@ -1,6 +1,6 @@
 # Data Extraction Policy
 
-**MANDATORY for all sc4sap agents, skills, and direct Claude sessions.** Applies whenever row-level data is about to be read from an SAP system.
+**MANDATORY for all prism agents, skills, and direct Claude sessions.** Applies whenever row-level data is about to be read from an SAP system.
 
 ## Core Rule
 
@@ -14,7 +14,7 @@ Before calling any of the following MCP tools:
 You MUST:
 
 1. **Identify every table referenced** in the request (direct table name, tables inside a JOIN, underlying tables of a CDS view / SQL query).
-2. **Check `exceptions/table_exception.md`** at the sc4sap plugin root.
+2. **Check `exceptions/table_exception.md`** at the prism plugin root.
 3. If **any** referenced table matches the blocklist (exact name, family pattern like `PA*`, or customer-specific Z-pattern): **refuse the extraction**.
 
 ## Actions: `deny` vs `warn`
@@ -45,7 +45,7 @@ Allowed alternatives:
 - Released CDS view with PII masking (I_*)
 - Anonymized test data from QAS/SANDBOX
 - Count/aggregate only (COUNT, SUM)
-- Explicit one-off approval: write `.sc4sap/data-access-approval-{YYYYMMDD}.md`
+- Explicit one-off approval: write `.prism/data-access-approval-{YYYYMMDD}.md`
   with business justification and have the user confirm.
 ```
 
@@ -86,7 +86,7 @@ The `acknowledge_risk` flag exists because some protected data has legitimate us
 
 A blocked extraction may be authorized per-task when the business need is real and documented. To authorize:
 
-1. Create `.sc4sap/data-access-approval-{YYYYMMDD-HHMM}.md` with:
+1. Create `.prism/data-access-approval-{YYYYMMDD-HHMM}.md` with:
    - Tables to be accessed
    - Business justification
    - Data retention / disposal plan
@@ -100,7 +100,7 @@ Approval applies to **one session and one scope** — not a permanent bypass.
 This policy is one of four enforcement layers:
 
 1. **L1 (this file)** — agent/skill instruction level
-2. **L2 (`sc4sap/CLAUDE.md`)** — global directive loaded into every Claude session
+2. **L2 (`prism/CLAUDE.md`)** — global directive loaded into every Claude session
 3. **L3 (`PreToolUse` hook at `scripts/hooks/block-forbidden-tables.mjs`)** — programmatic interception in Claude Code
 4. **L4 (MCP server upstream)** — hardcoded blocklist in `mcp-abap-adt` (roadmap)
 

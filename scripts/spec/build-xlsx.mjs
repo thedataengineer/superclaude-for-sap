@@ -1,4 +1,4 @@
-// Pure-Node XLSX writer for sc4sap:program-to-spec.
+// Pure-Node XLSX writer for prism:program-to-spec.
 // No external npm dependencies — uses only node:zlib + node:fs.
 // XLSX = ZIP(DEFLATE) container of OOXML SpreadsheetML parts.
 //

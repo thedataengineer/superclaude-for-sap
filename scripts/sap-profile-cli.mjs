@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * sc4sap Profile CLI — backend for the sap-option skill's multi-profile flows.
+ * prism Profile CLI — backend for the sap-option skill's multi-profile flows.
  *
  * All side effects (profile file writes, keychain updates, active-profile
  * pointer changes) live here so the skill markdown can stay declarative.
@@ -23,7 +23,7 @@
  *   remove <alias>    — archive to .trash (user must confirm alias in skill)
  *   purge [--all]     — permanently delete .trash entries > 7 days old
  *   migrate           — read JSON from stdin: {alias, tier} → convert
- *                       <cwd>/.sc4sap/sap.env into
+ *                       <cwd>/.prism/sap.env into
  *                       $SC4SAP_HOME_DIR/profiles/<alias>/ and archive source
  *   detect-legacy     — print JSON with legacy detection state (for
  *                       SessionStart banner)
@@ -63,27 +63,27 @@ const KEYRING_REQUIRE = createRequire(
   join(dirname(fileURLToPath(import.meta.url)), '..', 'runtime-deps', 'keyring', 'package.json'),
 );
 
-const KEYCHAIN_SERVICE_DEFAULT = 'sc4sap';
+const KEYCHAIN_SERVICE_DEFAULT = 'prism';
 
 const CLI_VERSION = '1.0.0';
 // Multi-profile infrastructure was introduced here. Used by detect-legacy
 // banner so the plugin can tell users what changed.
 const MULTI_PROFILE_SINCE = '0.6.0';
 
-function sc4sapHome() {
-  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.sc4sap');
+function prismHome() {
+  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
 }
 function profilesDir() {
-  return join(sc4sapHome(), 'profiles');
+  return join(prismHome(), 'profiles');
 }
 function trashDir() {
   return join(profilesDir(), '.trash');
 }
 function legacyFiles(cwd) {
   return {
-    env: join(cwd, '.sc4sap', 'sap.env'),
-    config: join(cwd, '.sc4sap', 'config.json'),
-    pointer: join(cwd, '.sc4sap', 'active-profile.txt'),
+    env: join(cwd, '.prism', 'sap.env'),
+    config: join(cwd, '.prism', 'config.json'),
+    pointer: join(cwd, '.prism', 'active-profile.txt'),
   };
 }
 

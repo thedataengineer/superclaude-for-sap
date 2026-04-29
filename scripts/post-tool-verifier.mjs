@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap PostToolUse Hook: Verification Reminder System
+ * prism PostToolUse Hook: Verification Reminder System
  * Monitors tool execution and provides contextual guidance.
  * Adapted from OMC post-tool-verifier.mjs with SAP-specific awareness.
  */
@@ -12,7 +12,7 @@ import { homedir } from 'os';
 import { readStdin } from './lib/stdin.mjs';
 
 const cfgDir = process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude');
-const STATE_FILE = join(cfgDir, '.sc4sap-session-stats.json');
+const STATE_FILE = join(cfgDir, '.prism-session-stats.json');
 
 try {
   if (!existsSync(cfgDir)) mkdirSync(cfgDir, { recursive: true });

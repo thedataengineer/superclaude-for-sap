@@ -1,5 +1,5 @@
 ---
-name: sc4sap:release
+name: prism:release
 description: CTS Transport Release workflow — list, validate, release, and confirm import
 level: 3
 ---
@@ -9,7 +9,7 @@ level: 3
 Full CTS (Change and Transport System) transport release workflow. Hybrid mode: confirms transport selection interactively, then auto-executes validation and release steps.
 
 <Purpose>
-sc4sap:release guides you through the complete CTS transport release process: listing available transports, selecting the target, validating pre-release conditions, performing the release, and confirming import readiness. It prevents releasing transports with syntax errors or inactive objects.
+prism:release guides you through the complete CTS transport release process: listing available transports, selecting the target, validating pre-release conditions, performing the release, and confirming import readiness. It prevents releasing transports with syntax errors or inactive objects.
 </Purpose>
 
 <Response_Prefix>
@@ -24,7 +24,7 @@ Every response triggered by this skill MUST begin with `[Model: <main-model> · 
 </Use_When>
 
 <Do_Not_Use_When>
-- User wants to create a new transport -- use `/sc4sap:create-object` (which handles transport assignment) or `CreateTransport` directly
+- User wants to create a new transport -- use `/prism:create-object` (which handles transport assignment) or `CreateTransport` directly
 - User wants to import a transport (import is done on the target system by Basis)
 - Task is not transport-related
 </Do_Not_Use_When>
@@ -71,7 +71,7 @@ This ensures you never accidentally release the wrong transport, but don't need 
 </Workflow_Steps>
 
 <Error_Handling>
-- Syntax errors found: list each object with error message; do not release; suggest fix via direct MCP `Update*` calls or re-run `/sc4sap:create-program`
+- Syntax errors found: list each object with error message; do not release; suggest fix via direct MCP `Update*` calls or re-run `/prism:create-program`
 - Inactive objects found: list each inactive object; do not release; suggest activation
 - Transport already released: report status and skip release step
 - Authorization error on release: report S_TRANSPRT authorization requirement

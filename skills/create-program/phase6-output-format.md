@@ -4,7 +4,7 @@ Companion file split from [`phase6-review.md`](./phase6-review.md) to keep each 
 
 ## Output File Format
 
-Write to `.sc4sap/program/{PROG}/review.md`:
+Write to `.prism/program/{PROG}/review.md`:
 
 ```markdown
 # Phase 6 Review — {PROG}

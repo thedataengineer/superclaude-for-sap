@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Code Simplifier Stop Hook
+ * prism Code Simplifier Stop Hook
  * Intercepts Stop events to suggest code review for recently modified files.
  * Adapted from OMC code-simplifier.mjs.
  *
- * Opt-in via .sc4sap/config.json: { "codeSimplifier": { "enabled": true } }
+ * Opt-in via .prism/config.json: { "codeSimplifier": { "enabled": true } }
  * Default: disabled
  */
 
@@ -26,13 +26,13 @@ function readJsonFile(filePath) {
 
 function readConfig(directory) {
   // Multi-profile: prefer the active profile's config.json (falls through to
-  // legacy project `.sc4sap/config.json` when no active-profile.txt exists).
+  // legacy project `.prism/config.json` when no active-profile.txt exists).
   const active = readActiveConfigJson(directory);
   if (active?.config?.codeSimplifier?.enabled) return active.config;
 
-  // Global user-home fallback — `~/.sc4sap/config.json` — retained for users
+  // Global user-home fallback — `~/.prism/config.json` — retained for users
   // who configured the opt-in there before the multi-profile migration.
-  const globalConfig = readJsonFile(join(homedir(), '.sc4sap', 'config.json'));
+  const globalConfig = readJsonFile(join(homedir(), '.prism', 'config.json'));
   return globalConfig;
 }
 

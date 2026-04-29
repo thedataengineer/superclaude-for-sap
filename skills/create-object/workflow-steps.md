@@ -6,7 +6,7 @@ Full Agent prompt bodies live in [`dispatch-prompts.md`](dispatch-prompts.md) (k
 
 ## Step 0 — Trust Session (skill-to-skill, Haiku)
 
-Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:create-object`. Skip silently if already trusted within 24h.
+Invoke `/prism:trust-session` with `parent_skill=prism:create-object`. Skip silently if already trusted within 24h.
 
 ## Step 1 — Classify Object Type (main thread, Haiku)
 
@@ -28,7 +28,7 @@ Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:create-object`. Skip si
 
 ## Step 3.5 — Version Branch Decision (main thread, Haiku)
 
-- Read `SAP_VERSION` from `.sc4sap/config.json` (or `sap.env`).
+- Read `SAP_VERSION` from `.prism/config.json` (or `sap.env`).
 - If `SAP_VERSION = ECC` **and** object type ∈ {Table, Data Element, Domain} → go to Step 4-ECC.
 - Otherwise → go to Step 4 (standard flow).
 
@@ -44,7 +44,7 @@ Emit phase banner:
 Dispatch shape:
 ```
 Agent({
-  subagent_type: "sc4sap:sap-executor",
+  subagent_type: "prism:sap-executor",
   model: "opus",                    // override base Sonnet
   description: "Create + implement <TYPE> <NAME>",
   prompt: "<standard-flow prompt per dispatch-prompts.md § Step 4+5+6>",
@@ -66,7 +66,7 @@ Emit phase banner:
 Dispatch shape:
 ```
 Agent({
-  subagent_type: "sc4sap:sap-executor",
+  subagent_type: "prism:sap-executor",
   model: "opus",
   description: "ECC DDIC helper — <TYPE> <NAME>",
   prompt: "<ecc-helper prompt per dispatch-prompts.md § Step 4-ECC>",
@@ -86,7 +86,7 @@ Emit phase banner:
 Dispatch shape:
 ```
 Agent({
-  subagent_type: "sc4sap:sap-writer",
+  subagent_type: "prism:sap-writer",
   description: "Create-object completion report",
   prompt: "<report prompt per dispatch-prompts.md § Step 7>",
   mode: "dontAsk"

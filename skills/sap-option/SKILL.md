@@ -1,17 +1,17 @@
 ---
-name: sc4sap:sap-option
-description: View SAP system status snapshot and edit values in `.sc4sap/sap.env` (connection, blocklist) and HUD usage limits in `~/.claude/settings.json` → `env` — single entrypoint for all sc4sap runtime options
+name: prism:sap-option
+description: View SAP system status snapshot and edit values in `.prism/sap.env` (connection, blocklist) and HUD usage limits in `~/.claude/settings.json` → `env` — single entrypoint for all prism runtime options
 level: 2
 model: haiku
 ---
 
 # SC4SAP Option
 
-Single entrypoint to **inspect live SAP state** and **edit the values stored in `.sc4sap/sap.env`** — the dotenv file that holds SAP connection credentials, TLS settings, and the `abap-mcp-adt-powerup` blocklist policy for row-extraction safety.
+Single entrypoint to **inspect live SAP state** and **edit the values stored in `.prism/sap.env`** — the dotenv file that holds SAP connection credentials, TLS settings, and the `abap-mcp-adt-powerup` blocklist policy for row-extraction safety.
 
 
 <Purpose>
-`sap.env` is the single source of truth for per-user runtime configuration of the sc4sap MCP server. This skill also replaces the former `/sc4sap:hud` snapshot: before editing, it shows a compact status panel (system ID, client, user, inactive object count, active transport, blocklist profile) so the user can confirm which system they are about to change settings for.
+`sap.env` is the single source of truth for per-user runtime configuration of the prism MCP server. This skill also replaces the former `/prism:hud` snapshot: before editing, it shows a compact status panel (system ID, client, user, inactive object count, active transport, blocklist profile) so the user can confirm which system they are about to change settings for.
 
 Users should not edit `sap.env` blindly; this skill surfaces the current values (masking secrets), explains each option, lets the user pick what to change, and writes the file back safely with a backup.
 </Purpose>
@@ -27,7 +27,7 @@ Every response triggered by this skill MUST begin with `[Model: <main-model> · 
 - User says "switch profile", "switch to KR-QA", "change system", "use the PRD system", "list profiles", "add a new profile", "register another system", "remove profile", "edit KR-DEV", "rotate credentials for KR-PRD" — route to the **Profile management** flow described in `<Profile_Management>` (see [`profile-management.md`](profile-management.md)).
 - User wants to change blocklist tier (`MCP_BLOCKLIST_PROFILE`) or manage `MCP_ALLOW_TABLE` / `MCP_BLOCKLIST_EXTEND`.
 - User is rotating credentials, moving to a new SAP system, or flipping language/client.
-- After `/sc4sap:setup` if the user wants to adjust without re-running full setup.
+- After `/prism:setup` if the user wants to adjust without re-running full setup.
 - User says "hud limit", "5h limit", "weekly limit", "extra limit", "usage budget", "configure limit" — route to the **HUD limits** flow (see `<HUD_Limits>`), which edits `~/.claude/settings.json` → `env`, not `sap.env`.
 </Use_When>
 
@@ -35,7 +35,7 @@ Every response triggered by this skill MUST begin with `[Model: <main-model> · 
 When invoked with `status` / `show` / `hud` (or as the preamble to any edit flow), render this panel. Keep it compact — roughly 10–14 lines — and silence sections that can't be fetched (e.g. MCP disconnected) rather than failing.
 
 Contents (only show rows you could resolve):
-- **Active profile**: `<alias> [<tier>]` with `🔒` if tier≠DEV — from `<project>/.sc4sap/active-profile.txt` + `~/.sc4sap/profiles/<alias>/sap.env` → `SAP_TIER`. Show `(legacy)` when no active-profile.txt is set and a legacy `sap.env` is in use.
+- **Active profile**: `<alias> [<tier>]` with `🔒` if tier≠DEV — from `<project>/.prism/active-profile.txt` + `~/.prism/profiles/<alias>/sap.env` → `SAP_TIER`. Show `(legacy)` when no active-profile.txt is set and a legacy `sap.env` is in use.
 - **System**: `<SID>` · client `<MANDT>` · user `<BNAME>` · lang `<SPRAS>`   *(from `GetSession`)*
 - **Connection**: `<SAP_URL>` · auth `<SAP_AUTH_TYPE>` · type `<SAP_SYSTEM_TYPE>` · version `<SAP_VERSION>` · ABAP `<ABAP_RELEASE>`
 - **RFC backend**: `<SAP_RFC_BACKEND or "odata (default)">` — if `odata` (or unset), append `· <SAP_RFC_ODATA_SERVICE_URL>` (with CSRF TTL = `<SAP_RFC_ODATA_CSRF_TTL_SEC or "600">`s); if `native`, append `· ashost <SAP_RFC_ASHOST>:<SAP_RFC_SYSNR>` or `· mshost <SAP_RFC_MSHOST>/<SAP_RFC_SYSID>`; if `gateway`, append `· <SAP_RFC_GATEWAY_URL>` (token masked)
@@ -50,9 +50,9 @@ If the user's intent is **status-only** (they just said "hud" / "show status"), 
 </Status_Snapshot>
 
 <File_Path>
-- **Plugin install path**: `${CLAUDE_PLUGIN_ROOT}/.sc4sap/sap.env`
-- Typical absolute path on Windows: `C:\Users\<user>\.claude\plugins\cache\sc4sap\sc4sap\<version>\.sc4sap\sap.env`
-- If the file does not exist, tell the user to run `/sc4sap:setup` first. Do NOT create it from scratch here — setup handles the initial interactive credential flow.
+- **Plugin install path**: `${CLAUDE_PLUGIN_ROOT}/.prism/sap.env`
+- Typical absolute path on Windows: `C:\Users\<user>\.claude\plugins\cache\prism\prism\<version>\.prism\sap.env`
+- If the file does not exist, tell the user to run `/prism:setup` first. Do NOT create it from scratch here — setup handles the initial interactive credential flow.
 </File_Path>
 
 <Managed_Keys>
@@ -66,7 +66,7 @@ Connection (required):
 - `SAP_SYSTEM_TYPE`        — `onprem` | `cloud` | `legacy`
 - `SAP_VERSION`            — `S4` | `ECC`
 - `ABAP_RELEASE`           — e.g. `756`, `758`
-- `SAP_INDUSTRY`           — one of the 15 keys in `industry/README.md` (`retail` | `fashion` | `cosmetics` | `tire` | `automotive` | `pharmaceutical` | `food-beverage` | `chemical` | `electronics` | `construction` | `steel` | `utilities` | `banking` | `public-sector` | `other`). **Mirrored** to `.sc4sap/config.json` → `industry` whenever changed — both writes must succeed or neither.
+- `SAP_INDUSTRY`           — one of the 15 keys in `industry/README.md` (`retail` | `fashion` | `cosmetics` | `tire` | `automotive` | `pharmaceutical` | `food-beverage` | `chemical` | `electronics` | `construction` | `steel` | `utilities` | `banking` | `public-sector` | `other`). **Mirrored** to `.prism/config.json` → `industry` whenever changed — both writes must succeed or neither.
 - `TLS_REJECT_UNAUTHORIZED` — `0` (accept self-signed, dev only) or unset
 
 Blocklist policy (optional — guard for `GetTableContents` / `GetSqlQuery`):
@@ -90,7 +90,7 @@ See [workflow.md](workflow.md).
 </Workflow>
 
 <Profile_Management>
-See [profile-management.md](profile-management.md). Handles multi-environment (Dev/QA/Prod) connection switching, tier-based readonly enforcement, OS-keychain-backed password storage, profile add/edit/remove/purge, and migration from legacy single-profile `.sc4sap/sap.env`.
+See [profile-management.md](profile-management.md). Handles multi-environment (Dev/QA/Prod) connection switching, tier-based readonly enforcement, OS-keychain-backed password storage, profile add/edit/remove/purge, and migration from legacy single-profile `.prism/sap.env`.
 </Profile_Management>
 
 <Industry_Selection>
@@ -120,17 +120,17 @@ See [hud-limits.md](hud-limits.md).
 
 <Security>
 - Never print secrets (`SAP_PASSWORD`, `XSUAA_CLIENT_SECRET`) in chat output, diffs, logs, or confirmation prompts. Always mask.
-- Never copy `sap.env` to any location outside `.sc4sap/` — no uploads to Notion, no pastes into issues.
+- Never copy `sap.env` to any location outside `.prism/` — no uploads to Notion, no pastes into issues.
 - After writing, do not display the final file contents. Only summarize which keys changed.
 - The backup `sap.env.bak` contains secrets — mention its existence but do not open/read it back to the user.
 </Security>
 
 <Edge_Cases>
-- **File missing** → stop, direct to `/sc4sap:setup`. Do not create.
+- **File missing** → stop, direct to `/prism:setup`. Do not create.
 - **File has syntax errors** (lines that are not `KEY=VALUE` or comments) → show the offending lines, ask user to clean manually, abort.
 - **User wants to add a key not in `<Managed_Keys>`** → warn, ask to confirm adding as a custom key (append at end with a `# custom` comment). Do not validate content.
 - **User wants to remove a required connection key** (e.g. `SAP_URL`) → refuse; required keys can only be changed, not removed.
-- **Plugin is launched from `marketplaces/` source tree** (dev mode) rather than `cache/` → still look up `.sc4sap/sap.env` relative to the plugin root; if both exist, prefer the one under the currently-running plugin directory and tell the user which path was edited.
+- **Plugin is launched from `marketplaces/` source tree** (dev mode) rather than `cache/` → still look up `.prism/sap.env` relative to the plugin root; if both exist, prefer the one under the currently-running plugin directory and tell the user which path was edited.
 </Edge_Cases>
 
 <Standalone_TUI>

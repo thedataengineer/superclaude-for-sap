@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap PreCompact Hook: Project Memory Preservation
+ * prism PreCompact Hook: Project Memory Preservation
  * Ensures user directives and project context survive compaction.
  * Adapted from OMC project-memory-precompact.mjs.
  */
@@ -28,7 +28,7 @@ async function main() {
     const directory = data.cwd || data.directory || process.cwd();
 
     // Load project memory
-    const memoryPath = join(directory, '.sc4sap', 'project-memory.json');
+    const memoryPath = join(directory, '.prism', 'project-memory.json');
     const memory = readJsonFile(memoryPath);
 
     if (!memory || !memory.userDirectives?.length) {

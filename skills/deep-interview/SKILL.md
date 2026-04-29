@@ -1,5 +1,5 @@
 ---
-name: sc4sap:deep-interview
+name: prism:deep-interview
 description: Socratic deep interview to crystallize SAP requirements before autonomous execution
 level: 2
 model: haiku
@@ -11,7 +11,7 @@ Follows OMC `deep-interview` pattern adapted for SAP. Conducts a structured Socr
 
 
 <Purpose>
-sc4sap:deep-interview asks targeted questions to resolve ambiguity in SAP requirements. It gates on a mathematical ambiguity threshold: only when requirements are sufficiently specified does it produce a validated spec file and offer to proceed to `/sc4sap:create-program` or `/sc4sap:create-object`.
+prism:deep-interview asks targeted questions to resolve ambiguity in SAP requirements. It gates on a mathematical ambiguity threshold: only when requirements are sufficiently specified does it produce a validated spec file and offer to proceed to `/prism:create-program` or `/prism:create-object`.
 </Purpose>
 
 <Response_Prefix>
@@ -26,8 +26,8 @@ Every response triggered by this skill MUST begin with `[Model: <main-model> · 
 </Use_When>
 
 <Do_Not_Use_When>
-- Requirements are concrete (specific class name, method signature, package) -- proceed directly to `/sc4sap:create-object`
-- User wants immediate execution on a full program spec -- use `/sc4sap:create-program`
+- Requirements are concrete (specific class name, method signature, package) -- proceed directly to `/prism:create-object`
+- User wants immediate execution on a full program spec -- use `/prism:create-program`
 - Task is a one-line fix -- skip interview entirely
 </Do_Not_Use_When>
 
@@ -58,9 +58,9 @@ Do not proceed to spec generation until score is below 5.
 
 <Output>
 When ambiguity threshold is met:
-1. Write validated spec to `.sc4sap/deep-interviews/sap-{timestamp}.md`
+1. Write validated spec to `.prism/deep-interviews/sap-{timestamp}.md`
 2. Spec includes: object list, package, transport strategy, technical pattern, integration points, test requirements
-3. Offer: "Spec ready. Proceed with `/sc4sap:create-program` (full program) or `/sc4sap:create-object` (single object)?"
+3. Offer: "Spec ready. Proceed with `/prism:create-program` (full program) or `/prism:create-object` (single object)?"
 </Output>
 
 Task: {{ARGUMENTS}}

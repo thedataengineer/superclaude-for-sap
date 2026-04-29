@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap PreToolUse Hook: Reminder Enforcer
+ * prism PreToolUse Hook: Reminder Enforcer
  * Injects contextual reminders before every tool execution.
  * Adapted from OMC pre-tool-enforcer.mjs with SAP-specific guidance.
  */
@@ -27,7 +27,7 @@ function getTodoStatus(directory) {
   let inProgress = 0;
 
   const localPaths = [
-    join(directory, '.sc4sap', 'todos.json'),
+    join(directory, '.prism', 'todos.json'),
     join(directory, '.claude', 'todos.json')
   ];
 

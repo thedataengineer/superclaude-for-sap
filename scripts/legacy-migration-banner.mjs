@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * sc4sap SessionStart hook — Legacy migration banner.
+ * prism SessionStart hook — Legacy migration banner.
  *
  * Detects the transitional state where a project still uses
- * `<cwd>/.sc4sap/sap.env` as its single-profile config, but multi-profile
+ * `<cwd>/.prism/sap.env` as its single-profile config, but multi-profile
  * support is now available. Emits a one-line notice into the session so the
  * user knows migration is available.
  *
  * Detection rule:
  *   needsMigration =
- *     EXISTS <cwd>/.sc4sap/sap.env
- *     AND NOT EXISTS <cwd>/.sc4sap/active-profile.txt
+ *     EXISTS <cwd>/.prism/sap.env
+ *     AND NOT EXISTS <cwd>/.prism/active-profile.txt
  *     AND (no profiles in $SC4SAP_HOME_DIR/profiles/)
  *
  * Non-blocking. Silent on any other state (fresh install, already migrated,
@@ -21,12 +21,12 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-function sc4sapHome() {
-  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.sc4sap');
+function prismHome() {
+  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
 }
 
 function hasAnyProfile() {
-  const dir = join(sc4sapHome(), 'profiles');
+  const dir = join(prismHome(), 'profiles');
   if (!existsSync(dir)) return false;
   try {
     return readdirSync(dir).some((f) => {
@@ -44,8 +44,8 @@ function hasAnyProfile() {
 
 function main() {
   const cwd = process.cwd();
-  const legacy = join(cwd, '.sc4sap', 'sap.env');
-  const pointer = join(cwd, '.sc4sap', 'active-profile.txt');
+  const legacy = join(cwd, '.prism', 'sap.env');
+  const pointer = join(cwd, '.prism', 'active-profile.txt');
 
   const legacyExists = existsSync(legacy);
   const pointerExists = existsSync(pointer);
@@ -55,9 +55,9 @@ function main() {
   if (!needsMigration) process.exit(0);
 
   const message =
-    '[sc4sap] 🆕 Multi-environment profiles are now available (Dev / QA / Prod).\n' +
-    '         Your project still uses the legacy single-profile .sc4sap/sap.env.\n' +
-    '         Run /sc4sap:sap-option to migrate — you choose the alias and tier.\n' +
+    '[prism] 🆕 Multi-environment profiles are now available (Dev / QA / Prod).\n' +
+    '         Your project still uses the legacy single-profile .prism/sap.env.\n' +
+    '         Run /prism:sap-option to migrate — you choose the alias and tier.\n' +
     '         The original file is kept as sap.env.legacy for rollback.';
 
   // Claude Code SessionStart hook schema: write a plain message to stdout.

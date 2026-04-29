@@ -1,5 +1,5 @@
 ---
-name: sc4sap:analyze-symptom
+name: prism:analyze-symptom
 description: Step-by-step root cause analysis for SAP operational errors. Uses MCP to directly inspect dumps, logs, transports, and where-used relations, then narrows hypotheses with minimal user questions and provides SAP Note search keywords.
 level: 2
 model: sonnet
@@ -11,7 +11,7 @@ Performs structured root cause analysis for SAP operational incidents by connect
 
 
 <Purpose>
-sc4sap:analyze-symptom is the first-line triage skill for SAP production incidents. Rather than bombarding the user with questions, it **directly investigates the SAP system through MCP** to gather evidence it can collect on its own. It then asks the user only about gaps that MCP cannot fill, narrows hypotheses to 2–3 categories, and produces SAP Note search keywords plus recommended next actions.
+prism:analyze-symptom is the first-line triage skill for SAP production incidents. Rather than bombarding the user with questions, it **directly investigates the SAP system through MCP** to gather evidence it can collect on its own. It then asks the user only about gaps that MCP cannot fill, narrows hypotheses to 2–3 categories, and produces SAP Note search keywords plus recommended next actions.
 </Purpose>
 
 <Response_Prefix>
@@ -31,18 +31,18 @@ Multi-phase skill. Before each `Agent(...)` dispatch, emit `▶ phase=<id> (<lab
 </Use_When>
 
 <Do_Not_Use_When>
-- Root cause is already identified and only a code fix is needed — use `/sc4sap:create-program` or direct MCP `Update*` calls
-- Pure static code quality review — use `/sc4sap:analyze-code`
-- Need to create a new ABAP object — use `/sc4sap:create-object`
+- Root cause is already identified and only a code fix is needed — use `/prism:create-program` or direct MCP `Update*` calls
+- Pure static code quality review — use `/prism:analyze-code`
+- Need to create a new ABAP object — use `/prism:create-object`
 - Conceptual or configuration-guide question — use a module consultant agent directly
 </Do_Not_Use_When>
 
 <Session_Trust_Bootstrap>
 **MANDATORY — runs as Step 0 before any MCP call or user interaction.**
 
-Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:analyze-symptom` to pre-grant all MCP tool + file-op permissions for this session (eliminates per-tool "Allow this tool?" prompts during auto-investigation — `RuntimeAnalyzeDump`, `ListTransports`, `GetWhereUsed`, etc.).
+Invoke `/prism:trust-session` with `parent_skill=prism:analyze-symptom` to pre-grant all MCP tool + file-op permissions for this session (eliminates per-tool "Allow this tool?" prompts during auto-investigation — `RuntimeAnalyzeDump`, `ListTransports`, `GetWhereUsed`, etc.).
 
-- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- If `.prism/session-trust.log` already has a line within the last 24h, skip silently.
 - Otherwise run it and surface the one-line confirmation.
 - All subsequent `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
 
@@ -55,7 +55,7 @@ Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
 - **Minimal questions**: At most 3 questions per round. Skip any question whose answer is already known via MCP.
 - **Hypothesis narrowing**: Reduce candidate causes to 2–3 from the 8-category framework; each must carry a confidence level and a confirmation path.
 - **Actionable output**: Every hypothesis must include the next evidence step (another MCP call, a TCode, or an escalation target).
-- **Customization cache first (local, before live MCP) when a Z*/Y* object or customized SAP include appears in the trace**: read `.sc4sap/customizations/<MODULE>/{enhancements,extensions}.json` and correlate — a `Z*` class in a dump may be a known BAdI impl, a customized `MV45AFZZ`/`ZXRSRU01` may be a recorded form-based exit, a failing field may be a recorded append. Follow `common/customization-lookup.md`. If the cache is absent, suggest `/sc4sap:setup customizations` but do not block the current analysis.
+- **Customization cache first (local, before live MCP) when a Z*/Y* object or customized SAP include appears in the trace**: read `.prism/customizations/<MODULE>/{enhancements,extensions}.json` and correlate — a `Z*` class in a dump may be a known BAdI impl, a customized `MV45AFZZ`/`ZXRSRU01` may be a recorded form-based exit, a failing field may be a recorded append. Follow `common/customization-lookup.md`. If the cache is absent, suggest `/prism:setup customizations` but do not block the current analysis.
 </Core_Principles>
 
 <Analysis_Framework>
@@ -84,7 +84,7 @@ Evidence collection strategy — prefer MCP auto-query, fall back to manual TCod
 | Performance / long runtime | `RuntimeRunProgramWithProfiling`, `RuntimeAnalyzeProfilerTrace`, `RuntimeListProfilerTraceFiles` | ST05, SAT, SQLM |
 | Suspect program/class logic | `ReadClass`/`ReadProgram`, `GetAbapAST`, `GetAbapSemanticAnalysis`, `GetWhereUsed` | SE80, SE24, SE38 |
 | Recent change tracking | `ListTransports`, `GetTransport`, `GetObjectInfo` (Author/Changed-by) | SE09, SE10, SE16 → E070 |
-| **Z\*/Y\* object or customized SAP include in trace** | Local file read: `.sc4sap/customizations/<MODULE>/enhancements.json` (→ `badiImplementations[]`, `cmodProjects[]`, `formBasedExits[]`) and `.sc4sap/customizations/<MODULE>/extensions.json` (→ `appendStructures[]`) | n/a — local cache only |
+| **Z\*/Y\* object or customized SAP include in trace** | Local file read: `.prism/customizations/<MODULE>/enhancements.json` (→ `badiImplementations[]`, `cmodProjects[]`, `formBasedExits[]`) and `.prism/customizations/<MODULE>/extensions.json` (→ `appendStructures[]`) | n/a — local cache only |
 | Enhancement / BAdI | `GetEnhancements`, `GetEnhancementImpl`, `GetEnhancementSpot` | SE18, SE19, SMOD, CMOD |
 | System / session info | `GetSession` | /n (status), /o SM04 |
 | Table schema (not rows) | `GetTable`, `GetStructure`, `GetView`, `GetDataElement`, `GetDomain` | SE11 |
@@ -115,7 +115,7 @@ Per-step model allocation (skill main thread runs on Haiku 4.5 per frontmatter; 
 | (multi-round) repeat Step 2 | `sap-debugger` (Opus override) | Opus 4.7 | re-run with new user-supplied evidence |
 | 4 SAP Note Keywords | main | **Haiku** | assemble copy-paste search strings from debugger's sap_note_hints |
 | 5 Recommended Actions | main | **Haiku** | static classification by actor (immediate / access-required / escalation) |
-| 6 Escalation Routing | main | **Haiku** | point to next skill or agent (sap-debugger write mode, /sc4sap:analyze-code, module consultant, etc.) |
+| 6 Escalation Routing | main | **Haiku** | point to next skill or agent (sap-debugger write mode, /prism:analyze-code, module consultant, etc.) |
 
 sap-debugger's tool set already covers `RuntimeAnalyzeDump`, profiler, transport queries, code reads, enhancement lookup, and customization cache reads — see the agent's Investigation_Protocol for the full inventory. The `model: "opus"` override is appropriate here because symptom triage is cross-file reasoning (dump × transport × source × customization × profiler) with ambiguity resolution (8-category framework), which `common/model-routing-rule.md` § Tier 2 classifies as Opus territory.
 </Workflow_Steps>

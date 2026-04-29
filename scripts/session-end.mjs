@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Session End Hook
+ * prism Session End Hook
  * Performs cleanup tasks when a session ends.
  * Adapted from OMC session-end.mjs.
  *
  * Cleanup:
  * - Deactivate stale mode states
- * - Log session summary to .sc4sap/logs/
+ * - Log session summary to .prism/logs/
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'fs';
@@ -33,7 +33,7 @@ async function main() {
     const sessionId = data.session_id || data.sessionId || '';
 
     // Deactivate any active mode states
-    const stateDir = join(directory, '.sc4sap', 'state');
+    const stateDir = join(directory, '.prism', 'state');
     if (existsSync(stateDir)) {
       const modeFiles = ['ralph-state.json', 'autopilot-state.json'];
       for (const file of modeFiles) {
@@ -51,7 +51,7 @@ async function main() {
     }
 
     // Log session summary
-    const logsDir = join(directory, '.sc4sap', 'logs');
+    const logsDir = join(directory, '.prism', 'logs');
     if (!existsSync(logsDir)) {
       try { mkdirSync(logsDir, { recursive: true }); } catch {}
     }

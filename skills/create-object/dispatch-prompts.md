@@ -47,7 +47,7 @@ Return structure (JSON-like):
   }
 
 Rules:
-- Field typing: always follow common/field-typing-rule.md — run SearchObject(DTEL) + check .sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json before falling back to primitives.
+- Field typing: always follow common/field-typing-rule.md — run SearchObject(DTEL) + check .prism/cbo/<MODULE>/<PACKAGE>/inventory.json before falling back to primitives.
 - FM signature: always inline in the FUNCTION statement per common/function-module-rule.md.
 - Naming: already validated by main before dispatch, but reject if any second-pass check fails.
 ```
@@ -117,7 +117,7 @@ User conversation language: <LANG>
 Render rules:
 - flow = "standard" AND activation_status = "ACTIVE":
     5–7 line block — object name · type · package · transport · ACTIVE status + 1-line next-step hint
-    (e.g., "Add methods with direct UpdateClass MCP calls" or "Release with /sc4sap:release").
+    (e.g., "Add methods with direct UpdateClass MCP calls" or "Release with /prism:release").
 
 - flow = "standard" AND activation_status = "FAILED":
     error message + suggested fix + retry hint.

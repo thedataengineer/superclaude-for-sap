@@ -1,6 +1,6 @@
 # Legacy Single-Profile Migration
 
-When a project still has `<cwd>/.sc4sap/sap.env` but no `active-profile.txt` and no user-level profiles, the plugin is in the legacy state. A SessionStart banner reminds the user; `sap-option` also drives the migration when invoked.
+When a project still has `<cwd>/.prism/sap.env` but no `active-profile.txt` and no user-level profiles, the plugin is in the legacy state. A SessionStart banner reminds the user; `sap-option` also drives the migration when invoked.
 
 ## Trigger
 
@@ -15,13 +15,13 @@ Run the migration flow when ANY of the following are true:
 Before writing anything, render an explanation panel:
 
 ```
-⚙  sc4sap upgrade detected — multi-profile connection support is active.
+⚙  prism upgrade detected — multi-profile connection support is active.
 
-Legacy .sc4sap/sap.env found. This wizard moves your current connection
+Legacy .prism/sap.env found. This wizard moves your current connection
 into a named profile so you can later add QA / PRD / other companies.
 
 Nothing is deleted:
-  • original .sc4sap/sap.env → .sc4sap/sap.env.legacy (rollback)
+  • original .prism/sap.env → .prism/sap.env.legacy (rollback)
   • password moves to OS keychain (if available)
   • activeTransport + systemInfo in config.json are preserved
 
@@ -60,8 +60,8 @@ Expected JSON response:
   "ok": true,
   "alias": "KR-DEV",
   "tier": "DEV",
-  "profileDir": "~/.sc4sap/profiles/KR-DEV",
-  "archived": "<cwd>/.sc4sap/sap.env.legacy",
+  "profileDir": "~/.prism/profiles/KR-DEV",
+  "archived": "<cwd>/.prism/sap.env.legacy",
   "passwordStored": "keychain" | "plaintext-fallback" | "none"
 }
 ```
@@ -76,12 +76,12 @@ Expected JSON response:
 2. Confirm success to the user:
    ```
    ✔ Migrated → KR-DEV (tier=DEV)
-      profile: ~/.sc4sap/profiles/KR-DEV/
-      backup:  <cwd>/.sc4sap/sap.env.legacy
+      profile: ~/.prism/profiles/KR-DEV/
+      backup:  <cwd>/.prism/sap.env.legacy
    ```
 3. Remind the user how to add more profiles:
    ```
-   ℹ  Add another company or tier with:  /sc4sap:sap-option → Add profile
+   ℹ  Add another company or tier with:  /prism:sap-option → Add profile
        (e.g., KR-QA, KR-PRD, US-DEV)
    ```
 
@@ -90,11 +90,11 @@ Expected JSON response:
 If the user regrets the migration before adding other profiles:
 
 ```bash
-mv .sc4sap/sap.env.legacy .sc4sap/sap.env
-rm .sc4sap/active-profile.txt
-rm -rf ~/.sc4sap/profiles/<alias>
+mv .prism/sap.env.legacy .prism/sap.env
+rm .prism/active-profile.txt
+rm -rf ~/.prism/profiles/<alias>
 # If password was stored in keychain:
-echo '{"service":"sc4sap","account":"<alias>/<user>"}' \
+echo '{"service":"prism","account":"<alias>/<user>"}' \
   | node "$CLAUDE_PLUGIN_ROOT/scripts/sap-profile-cli.mjs" keychain-delete
 ```
 
@@ -102,7 +102,7 @@ This restores the pre-upgrade state exactly. Don't perform this automatically �
 
 ## Edge cases
 
-- **Legacy `sap.env` + profiles already exist** — `detect-legacy` returns `needsMigration: false`. Do NOT offer migration; instead tell the user they can either `sap-option switch` to an existing profile or manually `rm .sc4sap/sap.env` if it's truly stale.
+- **Legacy `sap.env` + profiles already exist** — `detect-legacy` returns `needsMigration: false`. Do NOT offer migration; instead tell the user they can either `sap-option switch` to an existing profile or manually `rm .prism/sap.env` if it's truly stale.
 - **User runs migration twice** — the CLI refuses with `profile already exists: <alias>` (exit 4). Tell the user to either pick a different alias or remove the existing profile first.
 - **Legacy `sap.env` has no `SAP_PASSWORD`** — normal; pass the migration through with `passwordStored: "none"`. Tell the user to add the password via `sap-option edit` afterwards.
-- **`config.json` present** — the CLI copies it into the new profile directory. The project-local `.sc4sap/config.json` is left untouched (some project-specific state like `activeTransport` may still be referenced by other skills).
+- **`config.json` present** — the CLI copies it into the new profile directory. The project-local `.prism/config.json` is left untouched (some project-specific state like `activeTransport` may still be referenced by other skills).

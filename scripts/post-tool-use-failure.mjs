@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Post-Tool-Use-Failure Hook
+ * prism Post-Tool-Use-Failure Hook
  * Tracks tool failures for retry guidance.
  * Writes last-tool-error.json with tool name, error, and retry count.
  * Adapted from OMC post-tool-use-failure.mjs.
@@ -26,7 +26,7 @@ function initStateDir(directory) {
   const cwd = process.cwd();
   if (!isPathContained(directory, cwd)) directory = cwd;
 
-  const stateDir = join(directory, '.sc4sap', 'state');
+  const stateDir = join(directory, '.prism', 'state');
   if (!existsSync(stateDir)) {
     try { mkdirSync(stateDir, { recursive: true }); } catch {}
   }

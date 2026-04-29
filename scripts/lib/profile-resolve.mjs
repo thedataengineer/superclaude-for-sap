@@ -1,14 +1,14 @@
-// sc4sap multi-profile resolver — shared helper for HUD, hooks, scripts.
+// prism multi-profile resolver — shared helper for HUD, hooks, scripts.
 //
 // Resolves the active SAP profile's env file, config JSON, and work-artifact
 // base directory. Legacy fallback (pre-0.6.0 single-profile) is preserved so
 // users who haven't migrated yet still see the same behaviour as before.
 //
 // Resolution order for config.json and sap.env:
-//   1. <workspace>/.sc4sap/active-profile.txt → <alias>
+//   1. <workspace>/.prism/active-profile.txt → <alias>
 //      → $SC4SAP_HOME_DIR/profiles/<alias>/{sap.env, config.json}
-//      (fallback: ~/.sc4sap/profiles/<alias>/...)
-//   2. Legacy: <workspace>/.sc4sap/{sap.env, config.json}
+//      (fallback: ~/.prism/profiles/<alias>/...)
+//   2. Legacy: <workspace>/.prism/{sap.env, config.json}
 //
 // Callers pass the workspace directory (usually `process.cwd()`). Returning
 // `null` means neither multi-profile nor legacy state exists.
@@ -17,27 +17,27 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-export function sc4sapHome() {
-  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.sc4sap');
+export function prismHome() {
+  return process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
 }
 
 export function profilesDir() {
-  return join(sc4sapHome(), 'profiles');
+  return join(prismHome(), 'profiles');
 }
 
-// Walk up from `startDir` looking for the effective `.sc4sap/` directory.
+// Walk up from `startDir` looking for the effective `.prism/` directory.
 // Users often launch Claude Code from a subdirectory of their workspace
 // (e.g., the plugin dev repo inside a larger project), so resolving profile
 // state only at the exact cwd diverges from the MCP server's walk-up
 // behaviour and leaves the HUD showing "SAP not configured" while the MCP
 // connection is alive.
 //
-// Nested-.sc4sap handling: a subdirectory may contain its own `.sc4sap/`
+// Nested-.prism handling: a subdirectory may contain its own `.prism/`
 // holding only artifact folders (e.g. `comparisons/`, `test-reports/`) while
 // the real profile state (active-profile.txt, sap.env, config.json) lives
-// at a higher ancestor. Prefer the first `.sc4sap/` on the chain that
-// actually contains profile state; fall back to the first `.sc4sap/` seen
-// when no ancestor has state. Returns null only when no `.sc4sap/` exists
+// at a higher ancestor. Prefer the first `.prism/` on the chain that
+// actually contains profile state; fall back to the first `.prism/` seen
+// when no ancestor has state. Returns null only when no `.prism/` exists
 // anywhere on the chain. Depth-limited as a paranoia guard.
 function hasProfileState(dotSc4sapDir) {
   return (
@@ -51,7 +51,7 @@ function findDotSc4sapDir(startDir) {
   let cur = startDir;
   let firstHit = null;
   for (let i = 0; i < 64; i++) {
-    const candidate = join(cur, '.sc4sap');
+    const candidate = join(cur, '.prism');
     if (existsSync(candidate)) {
       if (hasProfileState(candidate)) return candidate;
       if (!firstHit) firstHit = candidate;
@@ -63,20 +63,20 @@ function findDotSc4sapDir(startDir) {
   return firstHit;
 }
 
-// The directory that *contains* the effective `.sc4sap/` — i.e., the
+// The directory that *contains* the effective `.prism/` — i.e., the
 // workspace root as the plugin sees it. Falls back to `startDir` when no
-// `.sc4sap/` exists anywhere on the ancestry chain.
+// `.prism/` exists anywhere on the ancestry chain.
 export function resolveWorkspaceRoot(startDir) {
   const hit = findDotSc4sapDir(startDir);
   return hit ? dirname(hit) : startDir;
 }
 
 // Returns the active alias (reading the nearest ancestor's
-// .sc4sap/active-profile.txt), or null when the pointer is missing /
+// .prism/active-profile.txt), or null when the pointer is missing /
 // empty / unreadable.
 export function readActiveAlias(startDir) {
   const root = resolveWorkspaceRoot(startDir);
-  const pointer = join(root, '.sc4sap', 'active-profile.txt');
+  const pointer = join(root, '.prism', 'active-profile.txt');
   if (!existsSync(pointer)) return null;
   try {
     const raw = readFileSync(pointer, 'utf8').trim();
@@ -94,7 +94,7 @@ export function resolveSapEnvPath(startDir) {
     if (existsSync(p)) return { path: p, source: 'profile', alias };
   }
   const root = resolveWorkspaceRoot(startDir);
-  const legacy = join(root, '.sc4sap', 'sap.env');
+  const legacy = join(root, '.prism', 'sap.env');
   if (existsSync(legacy)) return { path: legacy, source: 'legacy', alias: null };
   return null;
 }
@@ -107,20 +107,20 @@ export function resolveConfigJsonPath(startDir) {
     if (existsSync(p)) return { path: p, source: 'profile', alias };
   }
   const root = resolveWorkspaceRoot(startDir);
-  const legacy = join(root, '.sc4sap', 'config.json');
+  const legacy = join(root, '.prism', 'config.json');
   if (existsSync(legacy)) return { path: legacy, source: 'legacy', alias: null };
   return null;
 }
 
 // Returns the base directory for per-profile artifacts.
-// - Multi-profile: <workspace-root>/.sc4sap/work/<alias>/
-// - Legacy:        <workspace-root>/.sc4sap/
+// - Multi-profile: <workspace-root>/.prism/work/<alias>/
+// - Legacy:        <workspace-root>/.prism/
 // Always returns a string (never null) — callers may need to create it.
 export function resolveArtifactBase(startDir) {
   const root = resolveWorkspaceRoot(startDir);
   const alias = readActiveAlias(startDir);
-  if (alias) return join(root, '.sc4sap', 'work', alias);
-  return join(root, '.sc4sap');
+  if (alias) return join(root, '.prism', 'work', alias);
+  return join(root, '.prism');
 }
 
 // Parse a minimal KEY=VALUE dotenv file into a plain object.

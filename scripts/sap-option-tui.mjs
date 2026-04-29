@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// Standalone interactive editor for .sc4sap/sap.env — runs in its own
+// Standalone interactive editor for .prism/sap.env — runs in its own
 // terminal so Claude Code's session stays untouched.
 //
 // Usage (from any terminal, outside the Claude Code session):
-//   node scripts/sap-option-tui.mjs                # default: cwd/.sc4sap/sap.env
+//   node scripts/sap-option-tui.mjs                # default: cwd/.prism/sap.env
 //   node scripts/sap-option-tui.mjs --file <path>  # explicit path
 //
 // Design note: zero external deps. Uses readline for prompts and ANSI color
@@ -127,19 +127,19 @@ async function main() {
   // Resolve the env path:
   //   1. --file <path> wins when supplied.
   //   2. Otherwise, consult the shared resolver which follows
-  //      `<cwd>/.sc4sap/active-profile.txt` → `~/.sc4sap/profiles/<alias>/sap.env`
+  //      `<cwd>/.prism/active-profile.txt` → `~/.prism/profiles/<alias>/sap.env`
   //      (multi-profile) and falls back to the legacy project `sap.env`.
   let filePath;
   if (fileArgIdx >= 0) {
     filePath = path.resolve(args[fileArgIdx + 1]);
   } else {
     const hit = resolveSapEnvPath(process.cwd());
-    filePath = hit?.path || path.resolve(process.cwd(), '.sc4sap', 'sap.env');
+    filePath = hit?.path || path.resolve(process.cwd(), '.prism', 'sap.env');
   }
 
   if (!fs.existsSync(filePath)) {
     console.error(paint(`\n  ✗ sap.env not found: ${filePath}`, C.red));
-    console.error(paint('    Run `/sc4sap:setup` inside Claude Code first (or `/sc4sap:sap-option add` to register a profile), or pass --file <path>.\n', C.dim));
+    console.error(paint('    Run `/prism:setup` inside Claude Code first (or `/prism:sap-option add` to register a profile), or pass --file <path>.\n', C.dim));
     process.exit(1);
   }
 
@@ -177,7 +177,7 @@ async function main() {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       clear();
-      console.log(paint('  sc4sap — sap.env option editor', C.bold, C.cyan));
+      console.log(paint('  prism — sap.env option editor', C.bold, C.cyan));
       console.log(paint(`  ${filePath}`, C.dim));
       console.log(renderTable(entries));
       console.log();

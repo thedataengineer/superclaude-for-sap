@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Session Start Hook
+ * prism Session Start Hook
  * Restores persistent mode states and injects SAP context on session start.
  * Adapted from OMC session-start.mjs.
  */
@@ -32,7 +32,7 @@ async function main() {
 
     // Inject SAP development context reminder
     messages.push(`<system-reminder>
-[SC4SAP] SuperClaude for SAP is active. SAP development standards enforced:
+[SC4SAP] Prism for SAP is active. SAP development standards enforced:
 - Custom objects require Z/Y prefix
 - All changes must be assigned to transport requests
 - Objects must be activated after creation/modification
@@ -44,7 +44,7 @@ async function main() {
 `);
 
     // Check for active autopilot state
-    const stateDir = join(directory, '.sc4sap', 'state');
+    const stateDir = join(directory, '.prism', 'state');
     const autopilotState = readJsonFile(join(stateDir, 'autopilot-state.json'));
     if (autopilotState?.active) {
       messages.push(`<session-restore>
@@ -82,7 +82,7 @@ Treat this as prior-session context only. Prioritize the user's newest request.
     }
 
     // Check for notepad Priority Context
-    const notepadPath = join(directory, '.sc4sap', 'notepad.md');
+    const notepadPath = join(directory, '.prism', 'notepad.md');
     if (existsSync(notepadPath)) {
       try {
         const notepadContent = readFileSync(notepadPath, 'utf-8');

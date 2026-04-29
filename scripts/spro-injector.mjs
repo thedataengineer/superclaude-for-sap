@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap SPRO Injector Hook (UserPromptSubmit) — SAP-SPECIFIC
+ * prism SPRO Injector Hook (UserPromptSubmit) — SAP-SPECIFIC
  *
  * Detects SAP module context in user prompts and injects relevant
  * SPRO (SAP Project Reference Object) configuration data.
@@ -51,34 +51,30 @@ function getAvailableModules(pluginRoot) {
   }
 }
 
+import { complete } from './lib/llm-client.mjs';
+
 /**
- * Classify SAP module using Haiku LLM.
+ * Classify SAP module using LLM.
  * Returns the module name or null if classification fails.
  */
-async function classifyWithHaiku(prompt, availableModules) {
-  // Check for API key
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-
+async function classifyWithLLM(prompt, availableModules) {
   try {
-    const Anthropic = (await import('@anthropic-ai/sdk')).default;
-    const client = new Anthropic({ apiKey });
-
-    const response = await client.messages.create({
-      model: 'claude-haiku-4-20250514',
+    const result = await complete({
+      model: process.env.PRISM_LLM_MODEL || 'claude-3-5-haiku-20241022',
       max_tokens: 50,
+      system: `Classify this SAP-related prompt into exactly one SAP module from this list: ${availableModules.join(', ')}. Reply with ONLY the module abbreviation (e.g., "SD", "MM", "FI"). If the prompt is not SAP-related or you cannot classify it, reply "NONE".`,
       messages: [{
         role: 'user',
-        content: `Classify this SAP-related prompt into exactly one SAP module from this list: ${availableModules.join(', ')}. Reply with ONLY the module abbreviation (e.g., "SD", "MM", "FI"). If the prompt is not SAP-related or you cannot classify it, reply "NONE".\n\nPrompt: ${prompt.slice(0, 500)}`
+        content: `Prompt: ${prompt.slice(0, 500)}`
       }],
     });
 
-    const result = response.content?.[0]?.text?.trim().toUpperCase();
-    if (result && result !== 'NONE' && availableModules.includes(result)) {
-      return result;
+    const trimmed = result.trim().toUpperCase();
+    if (trimmed && trimmed !== 'NONE' && availableModules.includes(trimmed)) {
+      return trimmed;
     }
     return null;
-  } catch {
+  } catch (error) {
     // API call failed — fall back to keyword matching
     return null;
   }
@@ -182,8 +178,8 @@ async function main() {
       return;
     }
 
-    // Step 1: Try Haiku LLM classification
-    let detectedModule = await classifyWithHaiku(prompt, availableModules);
+    // Step 1: Try LLM classification
+    let detectedModule = await classifyWithLLM(prompt, availableModules);
 
     // Step 2: Fall back to keyword matching
     if (!detectedModule) {
@@ -210,7 +206,7 @@ async function main() {
 
     // Build injection message
     const parts = [
-      `<sc4sap-spro module="${detectedModule}">`,
+      `<prism-spro module="${detectedModule}">`,
       '',
       `## SAP Module: ${detectedModule} — SPRO Configuration Reference`,
       '',
@@ -228,7 +224,7 @@ async function main() {
       parts.push('', '## Development Workflows', '', additionalConfigs.workflows);
     }
 
-    parts.push('', `</sc4sap-spro>`);
+    parts.push('', `</prism-spro>`);
 
     console.log(JSON.stringify({
       continue: true,

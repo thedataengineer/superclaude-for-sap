@@ -1,5 +1,5 @@
 ---
-name: sc4sap:compare-programs
+name: prism:compare-programs
 description: Business-angle comparison of 2–5 ABAP programs that share the same business scenario but diverge by module (MM vs CO), country (KR vs EU), persona (controller vs warehouse), or time horizon. Reader = functional consultant.
 level: 2
 model: sonnet
@@ -39,18 +39,18 @@ Step 4b is the integration point for Type A teamMode (Cross-Module Consultant Pa
 </Use_When>
 
 <Do_Not_Use_When>
-- Only **one** program → use `/sc4sap:program-to-spec` instead
-- User wants **code quality** review (not business intent) → `/sc4sap:analyze-code`
-- User wants to **build a new** program → `/sc4sap:create-program`
-- More than 5 programs — break into multiple comparison sessions or escalate to `/sc4sap:team`
+- Only **one** program → use `/prism:program-to-spec` instead
+- User wants **code quality** review (not business intent) → `/prism:analyze-code`
+- User wants to **build a new** program → `/prism:create-program`
+- More than 5 programs — break into multiple comparison sessions or escalate to `/prism:team`
 </Do_Not_Use_When>
 
 <Session_Trust_Bootstrap>
 **MANDATORY — runs as Step 0 before any MCP call or user interaction.**
 
-Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:compare-programs` to pre-grant MCP tool + file-op permissions (eliminates per-tool prompts during parallel program reads).
+Invoke `/prism:trust-session` with `parent_skill=prism:compare-programs` to pre-grant MCP tool + file-op permissions (eliminates per-tool prompts during parallel program reads).
 
-- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- If `.prism/session-trust.log` already has a line within the last 24h, skip silently.
 - Otherwise run it and surface the one-line confirmation.
 - All `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
 
@@ -90,10 +90,10 @@ All Agent dispatches pass `mode: "dontAsk"` (trust-session already granted in St
 </Language_Policy>
 
 <Output_Location>
-`.sc4sap/comparisons/{prog1}__vs__{prog2}[__vs__{prog3}…]-{YYYYMMDD}.md`
+`.prism/comparisons/{prog1}__vs__{prog2}[__vs__{prog3}…]-{YYYYMMDD}.md`
 
 - Program names are uppercase, underscore-safe (slashes → `_`).
-- If the filename exceeds 120 chars (5-program case), use `.sc4sap/comparisons/compare-{YYYYMMDD}-{hash6}.md` and list the programs inside the front-matter.
+- If the filename exceeds 120 chars (5-program case), use `.prism/comparisons/compare-{YYYYMMDD}-{hash6}.md` and list the programs inside the front-matter.
 </Output_Location>
 
 <Execution_Summary>
@@ -109,10 +109,10 @@ This skill reads **source code + DDIC metadata + where-used + screen/GUI-status/
 </Data_Extraction_Safety>
 
 <Related_Skills>
-- `/sc4sap:program-to-spec` — single-program reverse-engineering (vertical depth)
-- `/sc4sap:analyze-code` — quality review (what's wrong, not what's different)
-- `/sc4sap:analyze-cbo-obj` — CBO package inventory (complementary context for dimension 8)
-- `/sc4sap:deep-interview` — use before comparison if user is unsure which programs to include
+- `/prism:program-to-spec` — single-program reverse-engineering (vertical depth)
+- `/prism:analyze-code` — quality review (what's wrong, not what's different)
+- `/prism:analyze-cbo-obj` — CBO package inventory (complementary context for dimension 8)
+- `/prism:deep-interview` — use before comparison if user is unsure which programs to include
 </Related_Skills>
 
 Task: {{ARGUMENTS}}

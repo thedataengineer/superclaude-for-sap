@@ -41,37 +41,37 @@
 
 | Skill | Description |
 |-------|-------------|
-| `sc4sap:setup` | Plugin setup — auto-installs MCP server, generates SPRO config, installs blocklist hook |
-| `sc4sap:mcp-setup` | Standalone MCP ABAP ADT server install / reconfigure guide |
-| `sc4sap:sap-option` | View / edit SAP profiles (credentials, RFC backend, blocklist, active modules), **manage multi-environment profiles** (Dev/QA/Prod switch/add/remove), and HUD usage limits |
-| `sc4sap:sap-doctor` | Plugin + MCP + SAP diagnostics (6 layers) |
-| `sc4sap:create-object` | ABAP object creation (hybrid mode — transport + package confirm, create, activate) |
-| `sc4sap:create-program` | Full ABAP program pipeline — Main+Include, OOP/Procedural, ALV, Dynpro, Text Elements, ABAP Unit |
-| `sc4sap:program-to-spec` | Reverse-engineer an ABAP program into a Functional/Technical Spec (Markdown / Excel) |
-| `sc4sap:compare-programs` | Side-by-side business comparison of 2–5 ABAP programs that split the same scenario by module / country / persona — consultant-facing Markdown report |
-| `sc4sap:analyze-code` | ABAP code analysis (Clean ABAP / performance / security) |
-| `sc4sap:analyze-cbo-obj` | Customer Business Object (CBO) inventory scanner with cross-module gap analysis |
-| `sc4sap:analyze-symptom` | Step-by-step SAP operational error/symptom analysis (dumps, logs, SAP Note candidates) |
-| `sc4sap:ask-consultant` | Direct user-facing Q&A with a module consultant agent (SD/MM/FI/CO/PP/PS/PM/QM/TR/HCM/WM/TM/BW/Ariba/BC). Read-only — honors the configured SAP environment. |
-| `sc4sap:trust-session` | INTERNAL-ONLY — session-wide MCP permission bootstrap |
-| `sc4sap:deep-interview` | Socratic requirements gathering before implementation |
-| `sc4sap:team` | Coordinated parallel agent execution (native Claude Code teams) |
-| `sc4sap:release` | CTS transport release workflow |
+| `prism:setup` | Plugin setup — auto-installs MCP server, generates SPRO config, installs blocklist hook |
+| `prism:mcp-setup` | Standalone MCP ABAP ADT server install / reconfigure guide |
+| `prism:sap-option` | View / edit SAP profiles (credentials, RFC backend, blocklist, active modules), **manage multi-environment profiles** (Dev/QA/Prod switch/add/remove), and HUD usage limits |
+| `prism:sap-doctor` | Plugin + MCP + SAP diagnostics (6 layers) |
+| `prism:create-object` | ABAP object creation (hybrid mode — transport + package confirm, create, activate) |
+| `prism:create-program` | Full ABAP program pipeline — Main+Include, OOP/Procedural, ALV, Dynpro, Text Elements, ABAP Unit |
+| `prism:program-to-spec` | Reverse-engineer an ABAP program into a Functional/Technical Spec (Markdown / Excel) |
+| `prism:compare-programs` | Side-by-side business comparison of 2–5 ABAP programs that split the same scenario by module / country / persona — consultant-facing Markdown report |
+| `prism:analyze-code` | ABAP code analysis (Clean ABAP / performance / security) |
+| `prism:analyze-cbo-obj` | Customer Business Object (CBO) inventory scanner with cross-module gap analysis |
+| `prism:analyze-symptom` | Step-by-step SAP operational error/symptom analysis (dumps, logs, SAP Note candidates) |
+| `prism:ask-consultant` | Direct user-facing Q&A with a module consultant agent (SD/MM/FI/CO/PP/PS/PM/QM/TR/HCM/WM/TM/BW/Ariba/BC). Read-only — honors the configured SAP environment. |
+| `prism:trust-session` | INTERNAL-ONLY — session-wide MCP permission bootstrap |
+| `prism:deep-interview` | Socratic requirements gathering before implementation |
+| `prism:team` | Coordinated parallel agent execution (native Claude Code teams) |
+| `prism:release` | CTS transport release workflow |
 
 ## Skills — Examples & Workflow
 
-### `/sc4sap:create-object`
+### `/prism:create-object`
 Hybrid-mode single-object creation: confirms transport + package interactively, then creates, scaffolds, and activates.
 ```
-/sc4sap:create-object
+/prism:create-object
 → "Create a class ZCL_SD_ORDER_VALIDATOR in package ZSD_ORDER"
 ```
 Flow: type inference → package + transport confirm → MCP `Create*` → initial implementation → `GetAbapSemanticAnalysis` → activate.
 
-### `/sc4sap:create-program`
+### `/prism:create-program`
 Flagship program creation pipeline — Main + Include wrapping, OOP or Procedural, full ALV + Dynpro support.
 ```
-/sc4sap:create-program
+/prism:create-program
 → "Make an ALV report for open sales orders, selection screen by sales org + date range"
 ```
 Flow (Phase 0–8):
@@ -87,55 +87,55 @@ Flow (Phase 0–8):
 - Phase 7 — debug escalation
 - Phase 8 — completion report with timing table
 
-### `/sc4sap:analyze-code`
+### `/prism:analyze-code`
 ```
-/sc4sap:analyze-code
+/prism:analyze-code
 → "Review ZCL_SD_ORDER_VALIDATOR for Clean ABAP violations and SELECT * usage"
 ```
 
-### `/sc4sap:analyze-cbo-obj`
+### `/prism:analyze-cbo-obj`
 Walks a Z-package, catalogs reusable assets, runs cross-module gap analysis.
 ```
-/sc4sap:analyze-cbo-obj
+/prism:analyze-cbo-obj
 → "Scan ZSD_ORDER package for MM module reuse candidates"
 ```
-Flow: `GetPackageTree` → category walk → frequency heuristics → cross-module gap check → `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json`.
+Flow: `GetPackageTree` → category walk → frequency heuristics → cross-module gap check → `.prism/cbo/<MODULE>/<PACKAGE>/inventory.json`.
 
-### `/sc4sap:analyze-symptom`
+### `/prism:analyze-symptom`
 ```
-/sc4sap:analyze-symptom
+/prism:analyze-symptom
 → "Dump MESSAGE_TYPE_X in ZFI_POSTING at line 234 during F110"
 ```
 Flow: `RuntimeListDumps` → `RuntimeAnalyzeDump` → stack trace → SAP Note candidates → remediation options.
 
-### `/sc4sap:program-to-spec`
+### `/prism:program-to-spec`
 Reverse-engineer an ABAP program into a spec (Markdown/Excel) with Socratic scope narrowing.
 
-### `/sc4sap:team`
+### `/prism:team`
 Coordinated parallel agent execution via native Claude Code teams.
 
-### `/sc4sap:release`
+### `/prism:release`
 CTS transport release workflow — list, validate, release, confirm import.
 
-### `/sc4sap:sap-doctor`
+### `/prism:sap-doctor`
 Plugin + MCP + SAP connectivity diagnostics. First thing to run when something's off.
 
-### `/sc4sap:sap-option`
-View and edit `.sc4sap/sap.env` — credentials, RFC backend, blocklist policy, active modules. Secrets masked.
+### `/prism:sap-option`
+View and edit `.prism/sap.env` — credentials, RFC backend, blocklist policy, active modules. Secrets masked.
 
 ## 🌐 Multi-Environment Profiles (Dev / QA / Prod)
 
-**Multinational SAP customers run a 3-tier landscape per legal entity** (Sandbox / Dev / QA / Prod; often several legal entities: KR, US, DE…). sc4sap supports managing all of them from a single Claude Code session, with **automatic safety rails on non-Dev tiers.**
+**Multinational SAP customers run a 3-tier landscape per legal entity** (Sandbox / Dev / QA / Prod; often several legal entities: KR, US, DE…). prism supports managing all of them from a single Claude Code session, with **automatic safety rails on non-Dev tiers.**
 
 ### Profile storage
 
 | Where | What |
 |---|---|
-| `~/.sc4sap/profiles/<alias>/sap.env` | User-level profile definition (connection, tier, industry, modules). Shared across all repos. |
-| `~/.sc4sap/profiles/<alias>/config.json` | User-level per-profile config (naming convention, systemInfo, activeTransport history). |
-| `~/.sc4sap/profiles/.trash/` | Soft-deleted profiles, auto-purged 7 days after removal. |
-| `<project>/.sc4sap/active-profile.txt` | Project-level pointer — which profile this repo talks to right now. |
-| `<project>/.sc4sap/work/<alias>/` | Project artifacts (specs, CBO catalogs, audits) per profile. Read-only cross-view: a QA session can see Dev-produced specs, but writes always land under the active profile. |
+| `~/.prism/profiles/<alias>/sap.env` | User-level profile definition (connection, tier, industry, modules). Shared across all repos. |
+| `~/.prism/profiles/<alias>/config.json` | User-level per-profile config (naming convention, systemInfo, activeTransport history). |
+| `~/.prism/profiles/.trash/` | Soft-deleted profiles, auto-purged 7 days after removal. |
+| `<project>/.prism/active-profile.txt` | Project-level pointer — which profile this repo talks to right now. |
+| `<project>/.prism/work/<alias>/` | Project artifacts (specs, CBO catalogs, audits) per profile. Read-only cross-view: a QA session can see Dev-produced specs, but writes always land under the active profile. |
 
 ### Tier-based readonly enforcement (Strict policy)
 
@@ -155,7 +155,7 @@ Two-layer defense:
 
 ### OS keychain for passwords (`@napi-rs/keyring`)
 
-Profiles store `SAP_PASSWORD=keychain:sc4sap/<alias>/<user>` — a reference, not the secret. The real value lives in the OS credential store:
+Profiles store `SAP_PASSWORD=keychain:prism/<alias>/<user>` — a reference, not the secret. The real value lives in the OS credential store:
 
 | OS | Backend |
 |---|---|
@@ -163,11 +163,11 @@ Profiles store `SAP_PASSWORD=keychain:sc4sap/<alias>/<user>` — a reference, no
 | macOS | Keychain |
 | Linux | libsecret (GNOME Keyring / KWallet) |
 
-Implementation uses `@napi-rs/keyring` — Rust + N-API prebuilt binaries (no `node-gyp` compilation on install, no rebuild on Node version bumps). Declared as `optionalDependencies`; headless environments (Docker, CI) gracefully fall back to `SAP_PASSWORD_STORAGE=file` (plaintext with a prominent warning). Existing plaintext `.sc4sap/sap.env` files are migrated into the keychain on first upgrade.
+Implementation uses `@napi-rs/keyring` — Rust + N-API prebuilt binaries (no `node-gyp` compilation on install, no rebuild on Node version bumps). Declared as `optionalDependencies`; headless environments (Docker, CI) gracefully fall back to `SAP_PASSWORD_STORAGE=file` (plaintext with a prominent warning). Existing plaintext `.prism/sap.env` files are migrated into the keychain on first upgrade.
 
 ### Switching, adding, removing profiles
 
-All via `/sc4sap:sap-option`:
+All via `/prism:sap-option`:
 
 - **Switch** — interactive picker (native `AskUserQuestion` UI) with per-profile preview panel showing connection details + the tools-allowed matrix. Writes `active-profile.txt`, calls `mcp__sap__ReloadProfile` on the MCP server (no Claude Code restart needed), and the HUD re-renders with the new `alias [tier] 🔒` badge.
 - **Add** — wizard captures alias, tier, host/client/user, password (streamed directly to keychain, never shown on-screen). Same-company auto-detection: adding `KR-QA` while `KR-DEV` exists offers to copy `SAP_INDUSTRY`, `SAP_ACTIVE_MODULES`, `ABAP_RELEASE`, and the `namingConvention` block.
@@ -177,7 +177,7 @@ All via `/sc4sap:sap-option`:
 
 ### Migration from legacy single-profile `sap.env`
 
-Existing users upgrading to the multi-profile release see a SessionStart banner (`scripts/legacy-migration-banner.mjs`) the first time they start Claude Code in a project with `.sc4sap/sap.env` but no `active-profile.txt`. The banner points them to `/sc4sap:sap-option` which drives a two-question migration wizard (alias, tier). The legacy file is renamed to `sap.env.legacy` for rollback; no data is deleted.
+Existing users upgrading to the multi-profile release see a SessionStart banner (`scripts/legacy-migration-banner.mjs`) the first time they start Claude Code in a project with `.prism/sap.env` but no `active-profile.txt`. The banner points them to `/prism:sap-option` which drives a two-question migration wizard (alias, tier). The legacy file is renamed to `sap.env.legacy` for rollback; no data is deleted.
 
 ### HUD
 
@@ -197,7 +197,7 @@ Line 2 of the statusline shows `{alias} [{tier}]` with a 🔒 when `tier != DEV`
 
 ## MCP ABAP ADT Server — Unique Capabilities
 
-sc4sap is backed by **[abap-mcp-adt-powerup](https://github.com/babamba2/abap-mcp-adt-powerup)** (150+ tools). Beyond the usual Class / Program / Table / CDS / FM CRUD, it adds **full R/U/C coverage for classic Dynpro artifacts** that most MCP servers don't touch:
+prism is backed by **[abap-mcp-adt-powerup](https://github.com/abap-mcp-adt-powerup)** (150+ tools). Beyond the usual Class / Program / Table / CDS / FM CRUD, it adds **full R/U/C coverage for classic Dynpro artifacts** that most MCP servers don't touch:
 
 | Artifact | Coverage |
 |----------|----------|
@@ -246,7 +246,7 @@ Cross-skill authoring rules live in `common/` so every skill and agent follows t
 
 ## Context Loading Architecture (v0.5.2+)
 
-sc4sap's rule corpus is large — 25+ `common/*.md` + 14 `configs/{MODULE}/*.md` + 30+ industry/country files. Loading every file on every agent dispatch wastes tokens and dilutes model attention. The **4-tier context loading model** (defined in [`common/context-loading-protocol.md`](../common/context-loading-protocol.md)) separates "always-load safety rails" from "role-specific baseline" from "condition-triggered" from "per-task kit".
+prism's rule corpus is large — 25+ `common/*.md` + 14 `configs/{MODULE}/*.md` + 30+ industry/country files. Loading every file on every agent dispatch wastes tokens and dilutes model attention. The **4-tier context loading model** (defined in [`common/context-loading-protocol.md`](../common/context-loading-protocol.md)) separates "always-load safety rails" from "role-specific baseline" from "condition-triggered" from "per-task kit".
 
 | Tier | When loaded | Files |
 |------|-------------|-------|
@@ -274,12 +274,12 @@ Every `agents/*.md` file declares its role group in a `<Mandatory_Baseline>` blo
 ### Measured effects
 
 - Per-dispatch tokens: −40 to −60% vs pre-v0.5.0 implicit load-all pattern.
-- Opus usage share in `/sc4sap:create-program`: −50% (routing matrix in `model-routing-rule.md`).
+- Opus usage share in `/prism:create-program`: −50% (routing matrix in `model-routing-rule.md`).
 - Reviewer MAJOR-finding detection: improved — each of §1-§12 runs with only its relevant rule in context instead of skimming 12 rule files at once.
 
 ## Response Prefix Convention (v0.5.2+)
 
-Every `/sc4sap:*` skill-triggered response begins with a one-line prefix so the user can see at a glance which model is running the work and which sub-agents were dispatched:
+Every `/prism:*` skill-triggered response begins with a one-line prefix so the user can see at a glance which model is running the work and which sub-agents were dispatched:
 
 ```
 [Model: <main-model> · Dispatched: <sub-summary>]
@@ -301,7 +301,7 @@ Examples:
 — Multi-Executor Split per multi-executor-split.md Strategy A
 ```
 
-The convention is enforced by a `<Response_Prefix>` block in every `/sc4sap:*` SKILL.md pointing to [`common/model-routing-rule.md`](../common/model-routing-rule.md) § *Response Prefix Convention*. The prefix applies only to skill-triggered turns and unrelated-pivot user messages drop the prefix on the turn they arrive.
+The convention is enforced by a `<Response_Prefix>` block in every `/prism:*` SKILL.md pointing to [`common/model-routing-rule.md`](../common/model-routing-rule.md) § *Response Prefix Convention*. The prefix applies only to skill-triggered turns and unrelated-pivot user messages drop the prefix on the turn they arrive.
 
 ## Industry Reference (`industry/`)
 
@@ -340,11 +340,11 @@ Multi-country rollouts: every relevant file loads + cross-country touchpoints (i
 
 Example: MM PO creation in a landscape with **PS active** → suggest account assignment category `P`/`Q` + `PS_POSID` (WBS element); **CO active** → suggest cost center derivation; **QM active** → inspection lot auto-creation on GR.
 
-Configure via `/sc4sap:setup` (Step 4) or `/sc4sap:sap-option modules`. Consumed by `create-program`, `create-object`, `analyze-cbo-obj`, all consultant agents.
+Configure via `/prism:setup` (Step 4) or `/prism:sap-option modules`. Consumed by `create-program`, `create-object`, `analyze-cbo-obj`, all consultant agents.
 
 ## SAP Platform Awareness (ECC / S4 On-Prem / Cloud)
 
-`sc4sap:create-program` runs a mandatory SAP Version Preflight, reading `.sc4sap/config.json` for `sapVersion` and `abapRelease`:
+`prism:create-program` runs a mandatory SAP Version Preflight, reading `.prism/config.json` for `sapVersion` and `abapRelease`:
 
 - **ECC** — no RAP/ACDOCA/BP; syntax gated by release
 - **S/4HANA On-Premise** — classical Dynpro warned; extensibility-first, MATDOC + ACDOCA for finance
@@ -384,7 +384,7 @@ Matrix verified on ECC 7.40 (BASIS 7.40, SAP_SYSTEM_TYPE=onprem, SAP_VERSION=ECC
 
 Legend: ✅ full · ⚠️ partial · ❌ refused with clear error (SAP platform limit) · ℹ️ works, but depends on prior setup / policy.
 
-Upstream reference (same matrix, MCP-server canonical view): [`abap-mcp-adt-powerup` README → Legacy (ECC / BASIS < 7.50) Compatibility Matrix](https://github.com/babamba2/abap-mcp-adt-powerup#legacy-ecc--basis--750-compatibility-matrix).
+Upstream reference (same matrix, MCP-server canonical view): [`abap-mcp-adt-powerup` README → Legacy (ECC / BASIS < 7.50) Compatibility Matrix](https://github.com/abap-mcp-adt-powerup#legacy-ecc--basis--750-compatibility-matrix).
 
 ## SPRO Configuration Reference
 
@@ -400,7 +400,7 @@ Modules: SD, MM, FI, CO, PP, PS, PM, QM, TR, HCM, WM, TM, Ariba, BW.
 
 ### SPRO Local Cache (Token-Saving)
 
-`/sc4sap:setup spro` extracts customer-specific SPRO customizing into `.sc4sap/spro-config.json`. Consultants follow `common/spro-lookup.md`:
+`/prism:setup spro` extracts customer-specific SPRO customizing into `.prism/spro-config.json`. Consultants follow `common/spro-lookup.md`:
 1. Local cache → 2. Static references → 3. Live MCP query (with confirmation).
 
 ## SAP-Specific Hooks
@@ -427,9 +427,9 @@ Defense-in-depth layer preventing row data from sensitive tables (PII, credentia
 
 **Actions**: `deny` (blocked) vs `warn` (proceeds with warning block). If any table in a call is `deny` → whole call blocked.
 
-**Profiles** (picked during `/sc4sap:setup`): `strict` / `standard` / `minimal` / `custom`. Site-specific additions via `.sc4sap/blocklist-extend.txt`.
+**Profiles** (picked during `/prism:setup`): `strict` / `standard` / `minimal` / `custom`. Site-specific additions via `.prism/blocklist-extend.txt`.
 
-**Install** (automated by `/sc4sap:setup`; manual):
+**Install** (automated by `/prism:setup`; manual):
 ```bash
 node scripts/install-hooks.mjs            # user-level
 node scripts/install-hooks.mjs --project  # project-level
@@ -446,7 +446,7 @@ echo '{"tool_name":"mcp__abap__GetTableContents","tool_input":{"table":"BNKA"}}'
 ```bash
 export SC4SAP_POLICY=on
 export SC4SAP_POLICY_PROFILE=strict
-export SC4SAP_BLOCKLIST_PATH=/path/to/sc4sap/exceptions/table_exception.md
+export SC4SAP_BLOCKLIST_PATH=/path/to/prism/exceptions/table_exception.md
 export SC4SAP_ALLOW_TABLE=TAB1,TAB2  # session emergency exemption (logged)
 ```
 
@@ -477,14 +477,14 @@ Screen / GUI Status / Text Element operations dispatch through RFC-enabled FMs o
 | `odata` (default) | HTTPS OData v2 `ZMCP_ADT_SRV` | Works on hardened Gateway installs; routes through standard Gateway auth (S_SERVICE). [docs/odata-backend.md](odata-backend.md) |
 | `soap` | HTTPS `/sap/bc/soap/rfc` | Classic path when `/sap/bc/soap/rfc` ICF node is active (increasingly disabled in production) |
 | `native` | `node-rfc` + NW RFC SDK | Lowest latency; requires paid SDK. _Deprecated — use `zrfc`_ |
-| `gateway` | HTTPS to sc4sap-rfc-gateway middleware | Teams of 10+, centralized |
+| `gateway` | HTTPS to prism-rfc-gateway middleware | Teams of 10+, centralized |
 | 🆕 `zrfc` | HTTPS ICF handler `/sap/bc/rest/zmcp_rfc` | SOAP closed AND OData Gateway hard (typical ECC). No SDK, no Gateway — one class + one SICF node |
 
-Switch any time via `/sc4sap:sap-option`, reconnect MCP, verify with `/sc4sap:sap-doctor`.
+Switch any time via `/prism:sap-option`, reconnect MCP, verify with `/prism:sap-doctor`.
 
 ## 🏢 RFC Gateway (Enterprise Deployment)
 
-For large SAP development teams (10s of developers), sc4sap supports a **central RFC Gateway** middleware so developer laptops never need the SAP NW RFC SDK / MSVC. One Linux host runs `node-rfc` + SDK; all MCP clients speak HTTPS/JSON to it.
+For large SAP development teams (10s of developers), prism supports a **central RFC Gateway** middleware so developer laptops never need the SAP NW RFC SDK / MSVC. One Linux host runs `node-rfc` + SDK; all MCP clients speak HTTPS/JSON to it.
 
 **When this matters**:
 - IT policy forbids SAP NW RFC SDK on developer machines
@@ -493,7 +493,7 @@ For large SAP development teams (10s of developers), sc4sap supports a **central
 
 **Configuration**:
 ```
-/sc4sap:sap-option
+/prism:sap-option
 # Set SAP_RFC_BACKEND=gateway
 #     SAP_RFC_GATEWAY_URL=https://rfc-gw.company.com
 #     SAP_RFC_GATEWAY_TOKEN=<team-or-per-user-bearer>

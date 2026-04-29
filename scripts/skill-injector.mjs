@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Skill Injector Hook (UserPromptSubmit)
+ * prism Skill Injector Hook (UserPromptSubmit)
  * Injects relevant learned skills into context based on prompt triggers.
  * Adapted from OMC skill-injector.mjs.
  *
  * Searches for .md skill files in:
- * - Project-level: .sc4sap/skills/
+ * - Project-level: .prism/skills/
  * - Plugin-level: $CLAUDE_PLUGIN_ROOT/skills/
  */
 
@@ -51,7 +51,7 @@ function findSkillFiles(directory) {
   const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
 
   // Project-level skills (higher priority)
-  const projectDir = join(directory, '.sc4sap', 'skills');
+  const projectDir = join(directory, '.prism', 'skills');
   if (existsSync(projectDir)) {
     try {
       for (const file of readdirSync(projectDir, { withFileTypes: true })) {
@@ -144,7 +144,7 @@ function findMatchingSkills(prompt, directory, sessionId) {
 // Format skills for injection
 function formatSkillsMessage(skills) {
   const lines = [
-    '<sc4sap-skills>',
+    '<prism-skills>',
     '',
     '## Relevant SAP Skills',
     '',
@@ -161,7 +161,7 @@ function formatSkillsMessage(skills) {
     lines.push('');
   }
 
-  lines.push('</sc4sap-skills>');
+  lines.push('</prism-skills>');
   return lines.join('\n');
 }
 

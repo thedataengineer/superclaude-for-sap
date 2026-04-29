@@ -4,7 +4,7 @@
  *
  * Reads SPRO table lists from configs/{MODULE}/spro.md,
  * queries each table via the running MCP server's GetSqlQuery tool,
- * and writes results to .sc4sap/spro-config.json.
+ * and writes results to .prism/spro-config.json.
  *
  * Usage:
  *   node scripts/extract-spro.mjs [modules...]
@@ -25,9 +25,9 @@ import { resolveArtifactBase, resolveSapEnvPath } from './lib/profile-resolve.mj
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const CONFIGS_DIR = resolve(ROOT, 'configs');
-// Output under the active profile's artifact base (`.sc4sap/work/<alias>/`) in
-// multi-profile mode, or `.sc4sap/` in legacy mode. The shared resolver walks
-// `<cwd>/.sc4sap/active-profile.txt` to determine the right folder.
+// Output under the active profile's artifact base (`.prism/work/<alias>/`) in
+// multi-profile mode, or `.prism/` in legacy mode. The shared resolver walks
+// `<cwd>/.prism/active-profile.txt` to determine the right folder.
 const OUTPUT_DIR = resolveArtifactBase(process.cwd());
 // Single module → per-module file; multiple/all → merged file
 const isSingleModule = () => selectedModules.length === 1;
@@ -62,7 +62,7 @@ function isValidTableName(name) {
 function resolveSapVersion() {
   if (process.env.SAP_VERSION) return process.env.SAP_VERSION.trim().toUpperCase();
   const hit = resolveSapEnvPath(process.cwd());
-  const fallback = resolve(ROOT, '.sc4sap', 'sap.env');
+  const fallback = resolve(ROOT, '.prism', 'sap.env');
   const candidates = [];
   if (hit) candidates.push(hit.path);
   if (existsSync(fallback)) candidates.push(fallback);

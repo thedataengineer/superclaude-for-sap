@@ -1,6 +1,6 @@
 # Include Structure Convention
 
-Shared convention for sc4sap ABAP programs that wrap logic in a Main Program + conditional Includes. **Source of truth for Procedural programs: [`procedural-sample/main-program.abap`](procedural-sample/main-program.abap)**. OOP programs follow [`oop-sample/zrsc4sap_oop_ex.prog.abap`](oop-sample/zrsc4sap_oop_ex.prog.abap).
+Shared convention for prism ABAP programs that wrap logic in a Main Program + conditional Includes. **Source of truth for Procedural programs: [`procedural-sample/main-program.abap`](procedural-sample/main-program.abap)**. OOP programs follow [`oop-sample/zrprism_oop_ex.prog.abap`](oop-sample/zrprism_oop_ex.prog.abap).
 
 ## Include Set
 

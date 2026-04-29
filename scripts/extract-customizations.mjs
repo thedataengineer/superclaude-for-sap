@@ -7,8 +7,8 @@
 // (via the MCP server) to find which ones the customer has actually
 // implemented with Z-namespace or Y-namespace objects.
 //
-// Outputs (multi-profile: `.sc4sap/work/<activeAlias>/customizations/...`;
-//          legacy: `.sc4sap/customizations/...`):
+// Outputs (multi-profile: `.prism/work/<activeAlias>/customizations/...`;
+//          legacy: `.prism/customizations/...`):
 //   {artifactBase}/customizations/{MODULE}/enhancements.json   (BAdI impl, SMOD -> CMOD Z-namespace)
 //   {artifactBase}/customizations/{MODULE}/extensions.json     (Append Structures + Custom Fields)
 //
@@ -26,7 +26,7 @@
 //   node scripts/extract-customizations.mjs all
 //
 // Requires the MCP server bridge (bridge/mcp-server.cjs) to be runnable
-// with a populated .sc4sap/sap.env — same prerequisites as extract-spro.mjs.
+// with a populated .prism/sap.env — same prerequisites as extract-spro.mjs.
 //
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, statSync } from 'fs';
@@ -40,7 +40,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const CONFIGS_DIR = resolve(ROOT, 'configs');
 // Output path is `<artifactBase>/customizations/` — artifactBase resolves to
-// `.sc4sap/work/<alias>/` in multi-profile mode, `.sc4sap/` in legacy mode.
+// `.prism/work/<alias>/` in multi-profile mode, `.prism/` in legacy mode.
 const OUTPUT_DIR = join(resolveArtifactBase(process.cwd()), 'customizations');
 const BRIDGE = resolve(ROOT, 'bridge', 'mcp-server.cjs');
 

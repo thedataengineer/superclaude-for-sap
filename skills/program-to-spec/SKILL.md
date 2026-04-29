@@ -1,5 +1,5 @@
 ---
-name: sc4sap:program-to-spec
+name: prism:program-to-spec
 description: Reverse-engineer an ABAP program into a Functional/Technical Specification artifact (Markdown or Excel). Socratic scope narrowing from "everything" to "only what the user needs".
 level: 2
 model: sonnet
@@ -28,18 +28,18 @@ Turn legacy or unfamiliar ABAP objects into a reviewable Functional/Technical Sp
 </Use_When>
 
 <Do_Not_Use_When>
-- User wants a **code quality review** → `/sc4sap:analyze-code`
-- User wants to **create a new** program from a spec → `/sc4sap:create-program`
-- User wants to **fix** the program → direct MCP `Update*` calls or re-run `/sc4sap:create-program`
+- User wants a **code quality review** → `/prism:analyze-code`
+- User wants to **create a new** program from a spec → `/prism:create-program`
+- User wants to **fix** the program → direct MCP `Update*` calls or re-run `/prism:create-program`
 - Object does not exist yet
 </Do_Not_Use_When>
 
 <Session_Trust_Bootstrap>
 **MANDATORY — runs as Step 0a before any MCP call or user interaction.**
 
-Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:program-to-spec` to pre-grant MCP tool + file-op permissions (eliminates per-tool prompts during structural reads + screen rendering pipeline).
+Invoke `/prism:trust-session` with `parent_skill=prism:program-to-spec` to pre-grant MCP tool + file-op permissions (eliminates per-tool prompts during structural reads + screen rendering pipeline).
 
-- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- If `.prism/session-trust.log` already has a line within the last 24h, skip silently.
 - Otherwise run it and surface the one-line confirmation.
 - All `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
 
@@ -88,7 +88,7 @@ Ask ONE narrowing question per turn until ambiguity ≤3:
 - The rendered `Where-Used` section MUST repeat this scope in its header so reviewers know what was (and wasn't) searched.
 
 **Round 5 — Output location**
-- Default: `.sc4sap/specs/{object_name}-{YYYYMMDD}-{lang}.{md|xlsx}`
+- Default: `.prism/specs/{object_name}-{YYYYMMDD}-{lang}.{md|xlsx}`
 - Language: ko / en / ja (infer from user's current language; confirm once).
 
 **Stop condition**: every dimension above has a concrete answer OR user explicitly says "skip remaining, use defaults".
@@ -125,7 +125,7 @@ All Agent dispatches pass `mode: "dontAsk"` (trust-session granted in Step 0a).
 Spec generated: ZSDR_OPEN_ORDER_ALV
 Depth: L2 Standard · Format: markdown · Lang: ko
 Sections: 9 · Tables referenced: 6 · Screens: 1 · GUI status: 1
-File: .sc4sap/specs/ZSDR_OPEN_ORDER_ALV-20260414-ko.md
+File: .prism/specs/ZSDR_OPEN_ORDER_ALV-20260414-ko.md
 
 Top-level summary:
   Report that lists open sales orders by Sales Organization and date range and displays them via ALV.
@@ -152,9 +152,9 @@ Next options:
 </MCP_Tools_Used>
 
 <Related_Skills>
-- `/sc4sap:analyze-code` — code quality review (what's wrong)
-- `/sc4sap:create-program` — spec → new program (forward direction)
-- `/sc4sap:deep-interview` — requirement clarification for new builds
+- `/prism:analyze-code` — code quality review (what's wrong)
+- `/prism:create-program` — spec → new program (forward direction)
+- `/prism:deep-interview` — requirement clarification for new builds
 </Related_Skills>
 
 <Data_Extraction_Safety>

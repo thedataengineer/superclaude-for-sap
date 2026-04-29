@@ -1,5 +1,5 @@
 ---
-name: sc4sap:team
+name: prism:team
 description: N coordinated SAP agents on a shared task list using Claude Code native teams
 level: 3
 model: sonnet
@@ -11,7 +11,7 @@ Follows OMC `team` pattern adapted for SAP. Coordinates multiple specialized SAP
 
 
 <Purpose>
-sc4sap:team spins up N coordinated agents that divide and conquer a SAP development task. Each agent is assigned a role (sap-developer, sap-code-reviewer, sap-transport-manager, etc.) and works on its slice of the task list simultaneously, with results merged at the end.
+prism:team spins up N coordinated agents that divide and conquer a SAP development task. Each agent is assigned a role (sap-developer, sap-code-reviewer, sap-transport-manager, etc.) and works on its slice of the task list simultaneously, with results merged at the end.
 </Purpose>
 
 <Response_Prefix>
@@ -30,9 +30,9 @@ Multi-phase skill. Before each `Agent(...)` dispatch (including every parallel s
 </Use_When>
 
 <Do_Not_Use_When>
-- Task is sequential (one object depends on another) -- use `/sc4sap:create-program` (for a full program with ordered includes) or `/sc4sap:create-object` repeatedly
+- Task is sequential (one object depends on another) -- use `/prism:create-program` (for a full program with ordered includes) or `/prism:create-object` repeatedly
 - Single object creation or modification -- delegate directly to executor
-- User wants to review options first -- use `/sc4sap:deep-interview` to crystallize the spec before dispatching agents
+- User wants to review options first -- use `/prism:deep-interview` to crystallize the spec before dispatching agents
 </Do_Not_Use_When>
 
 <SAP_Agent_Roles>

@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 /**
- * sc4sap PreToolUse hook — Block Forbidden Tables (profile-aware)
+ * prism PreToolUse hook — Block Forbidden Tables (profile-aware)
  *
  * Intercepts MCP tool calls that would read row data from SAP and checks the
  * target table(s) against `exceptions/table_exception.md`, filtered by the
- * active profile in `.sc4sap/config.json` (`blocklistProfile`).
+ * active profile in `.prism/config.json` (`blocklistProfile`).
  *
  * Profiles (accumulative):
  *   - minimal  — PII + credentials only
  *   - standard — minimal + Protected Business Data
  *   - strict   — everything (default)
- *   - custom   — ignore built-in; use `.sc4sap/blocklist-custom.txt` only
+ *   - custom   — ignore built-in; use `.prism/blocklist-custom.txt` only
  *
- * Any profile additionally honors `.sc4sap/blocklist-extend.txt` (one
+ * Any profile additionally honors `.prism/blocklist-extend.txt` (one
  * table name / pattern per line) if present.
  *
  * Failure mode: fails OPEN (allows) on parse/IO errors so a broken file
@@ -35,14 +35,14 @@ const INDEX_FILE = 'table_exception.md';
 const TIER_ORDER = { minimal: 1, standard: 2, strict: 3 };
 const DEFAULT_PROFILE = 'strict';
 
-// Walk up from cwd to find a project directory (one that contains .sc4sap/),
+// Walk up from cwd to find a project directory (one that contains .prism/),
 // then resolve the active-profile.txt pointer through the shared resolver so
 // the active profile's config.json is preferred over any legacy project-local
 // config.json that may have been left behind.
 function resolveProjectConfig() {
   let dir = process.cwd();
   for (let i = 0; i < 8; i++) {
-    if (existsSync(join(dir, '.sc4sap'))) {
+    if (existsSync(join(dir, '.prism'))) {
       const hit = resolveConfigJsonPath(dir);
       if (hit) return { configPath: hit.path, projectDir: dir, source: hit.source, alias: hit.alias };
       return { configPath: null, projectDir: dir, source: null, alias: null };
@@ -279,13 +279,13 @@ async function main() {
   let builtin;
   try { builtin = loadBuiltinBlocklist(); }
   catch (err) {
-    process.stderr.write(`[sc4sap hook] Unable to load blocklist: ${err.message}\n`);
+    process.stderr.write(`[prism hook] Unable to load blocklist: ${err.message}\n`);
     process.exit(0);
   }
 
   const filtered = filterByProfile(builtin, profile);
-  const extendPath = resolve(projectDir, '.sc4sap', 'blocklist-extend.txt');
-  const customPath = resolve(projectDir, '.sc4sap', 'blocklist-custom.txt');
+  const extendPath = resolve(projectDir, '.prism', 'blocklist-extend.txt');
+  const customPath = resolve(projectDir, '.prism', 'blocklist-custom.txt');
   const extend = loadTextList(extendPath, { category: 'User Extended', tier: 'minimal' });
   const custom = profile === 'custom' ? loadTextList(customPath, { category: 'User Custom', tier: 'minimal' }) : { exact: new Map(), patterns: [] };
 
@@ -306,10 +306,10 @@ async function main() {
   if (denyHits.length > 0) {
     const lines = denyHits.map((h) => `  - ${h.table} — ${h.category}: ${h.why || 'protected'}`).join('\n');
     const reason =
-      `sc4sap blocklist (profile: ${profile}) — row extraction denied:\n${lines}\n\n` +
+      `prism blocklist (profile: ${profile}) — row extraction denied:\n${lines}\n\n` +
       `See exceptions/table_exception.md and common/data-extraction-policy.md for allowed alternatives ` +
       `(released CDS views, anonymized test data, COUNT/SUM aggregates, or documented one-off approval).\n` +
-      `To change scope, run \`/sc4sap:setup\` and reselect the blocklist profile.`;
+      `To change scope, run \`/prism:setup\` and reselect the blocklist profile.`;
     process.stdout.write(JSON.stringify({
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
@@ -323,7 +323,7 @@ async function main() {
   // warn category: require explicit user confirmation via permissionDecision="ask".
   const lines = warnHits.map((h) => `  - ${h.table} — ${h.category}: ${h.why || 'sensitive'}`).join('\n');
   const reason =
-    `sc4sap blocklist (profile: ${profile}) — sensitive table access requires confirmation:\n${lines}\n\n` +
+    `prism blocklist (profile: ${profile}) — sensitive table access requires confirmation:\n${lines}\n\n` +
     `These are "Protected Business Data" tables. Default posture is blocked until the user authorizes the request ` +
     `(scope, anonymization, intended use). Approve only if the user has confirmed scope and party-ID handling. ` +
     `Safer alternatives: released CDS views, anonymized test data, COUNT/SUM aggregates.`;

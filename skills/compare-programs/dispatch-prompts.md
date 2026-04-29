@@ -94,7 +94,7 @@ Inputs:
 - module_consultant_outputs (optional): <per-module blobs>
 - user_language: <lang>
 
-Write the Markdown file to .sc4sap/comparisons/<filename>.md (path rule in SKILL.md
+Write the Markdown file to .prism/comparisons/<filename>.md (path rule in SKILL.md
 <Output_Location>). Return a short confirmation block with file path + dimension counts
 + headline divergence.
 ```

@@ -14,26 +14,26 @@ Route here when the user says:
 ## Storage layout
 
 ```
-~/.sc4sap/profiles/<alias>/sap.env        # user-level (shared across repos)
-~/.sc4sap/profiles/<alias>/config.json    # user-level
-~/.sc4sap/profiles/.trash/<alias>-<ts>/   # soft-deleted, auto-purged after 7 days
+~/.prism/profiles/<alias>/sap.env        # user-level (shared across repos)
+~/.prism/profiles/<alias>/config.json    # user-level
+~/.prism/profiles/.trash/<alias>-<ts>/   # soft-deleted, auto-purged after 7 days
 
-<project>/.sc4sap/active-profile.txt      # project-level pointer (alias only)
-<project>/.sc4sap/work/<alias>/...        # project artifacts, per-profile
+<project>/.prism/active-profile.txt      # project-level pointer (alias only)
+<project>/.prism/work/<alias>/...        # project artifacts, per-profile
 ```
 
 `SAP_TIER` enum: `DEV` | `QA` | `PRD`. Non-canonical tiers (SBX, STG, PRE-PRD, TRN) are mapped: SBX→DEV, STG/PRE-PRD→PRD, INT/TRN→QA.
 
 ## Switch — interactive flow
 
-1. Read all profile directories under `~/.sc4sap/profiles/` (skip `.trash/`).
-2. Read `<project>/.sc4sap/active-profile.txt` to mark the current one.
+1. Read all profile directories under `~/.prism/profiles/` (skip `.trash/`).
+2. Read `<project>/.prism/active-profile.txt` to mark the current one.
 3. Call `AskUserQuestion`:
    - `question`: "Which profile do you want to switch to?"
    - One option per profile. `label`: alias + ` ● current` if active. `description`: `tier={tier} • host={SAP_URL} • client={SAP_CLIENT} • user={SAP_USERNAME}`.
    - `preview`: rendered connection panel + tools-allowed matrix for that tier (see `<Preview_Panel>` below).
 4. On selection:
-   - Write the alias to `<project>/.sc4sap/active-profile.txt`.
+   - Write the alias to `<project>/.prism/active-profile.txt`.
    - Call `mcp__sap__ReloadProfile` via MCP. Expect `{ ok: true, alias, tier, readonly, host, client }`.
    - Confirm to user: `✔ Switched to <alias> (tier={tier}, readonly={readonly})`.
 
@@ -65,19 +65,19 @@ Multi-step. Use `AskUserQuestion` where the answer is a small enum; otherwise us
    - `SAP_URL`: `^https?://`, no trailing slash.
    - `SAP_CLIENT`: exactly 3 digits.
    - `SAP_USERNAME`: non-empty.
-5. **password** — free-form, NEVER display. After capture, invoke the bundled node helper to store in OS keychain under service `sc4sap` and account `<alias>/<username>`. Write `SAP_PASSWORD=keychain:sc4sap/<alias>/<username>` in the env file. If keychain is unavailable (headless / Docker), offer plaintext fallback with an explicit warning and write the plaintext value.
+5. **password** — free-form, NEVER display. After capture, invoke the bundled node helper to store in OS keychain under service `prism` and account `<alias>/<username>`. Write `SAP_PASSWORD=keychain:prism/<alias>/<username>` in the env file. If keychain is unavailable (headless / Docker), offer plaintext fallback with an explicit warning and write the plaintext value.
 6. **description** (optional) — free-form short label, stored as `SAP_DESCRIPTION`.
 7. Write files:
-   - `~/.sc4sap/profiles/<alias>/sap.env` (0600 if platform supports)
-   - `~/.sc4sap/profiles/<alias>/config.json` with `sapVersion`, `industry`, `activeModules`, copied `namingConvention`
+   - `~/.prism/profiles/<alias>/sap.env` (0600 if platform supports)
+   - `~/.prism/profiles/<alias>/config.json` with `sapVersion`, `industry`, `activeModules`, copied `namingConvention`
 8. Offer to switch to the new profile immediately.
 
 ## Remove — safety flow
 
 1. Refuse if the alias is the currently active profile. Ask the user to `switch` away first.
-2. Show what will be removed: profile directory path, artifacts count (under `<project>/.sc4sap/work/<alias>/`), keychain entry.
+2. Show what will be removed: profile directory path, artifacts count (under `<project>/.prism/work/<alias>/`), keychain entry.
 3. Ask the user to type the alias verbatim via `AskUserQuestion` → "Other". Compare case-sensitively. Abort on mismatch.
-4. Move `~/.sc4sap/profiles/<alias>/` → `~/.sc4sap/profiles/.trash/<alias>-<ISO-timestamp>/`. Do NOT touch per-project artifacts under `work/<alias>/` — they belong to the project and removal is the user's separate decision.
+4. Move `~/.prism/profiles/<alias>/` → `~/.prism/profiles/.trash/<alias>-<ISO-timestamp>/`. Do NOT touch per-project artifacts under `work/<alias>/` — they belong to the project and removal is the user's separate decision.
 5. Ask whether to delete the keychain entry. Default yes.
 6. Report: `✔ Archived to .trash. Permanent purge in 7 days (or via sap-option purge).`
 
@@ -87,11 +87,11 @@ Same wizard as `add` but pre-fills current values. Tier is **immutable** via thi
 
 ## Purge
 
-`sap-option purge` walks `~/.sc4sap/profiles/.trash/` and permanently deletes entries older than 7 days. `--all` deletes everything in `.trash/` with a single confirmation. Orphan keychain entries for purged profiles are also removed.
+`sap-option purge` walks `~/.prism/profiles/.trash/` and permanently deletes entries older than 7 days. `--all` deletes everything in `.trash/` with a single confirmation. Orphan keychain entries for purged profiles are also removed.
 
-## Migration of legacy `<project>/.sc4sap/sap.env`
+## Migration of legacy `<project>/.prism/sap.env`
 
-Trigger on first `sap-option` invocation when a legacy `.sc4sap/sap.env` exists AND no `<project>/.sc4sap/active-profile.txt` AND no `~/.sc4sap/profiles/` directory. See `migration.md`.
+Trigger on first `sap-option` invocation when a legacy `.prism/sap.env` exists AND no `<project>/.prism/active-profile.txt` AND no `~/.prism/profiles/` directory. See `migration.md`.
 
 ## Preview_Panel
 

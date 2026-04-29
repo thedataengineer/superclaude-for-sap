@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Script runner for sc4sap hook scripts.
+ * Script runner for prism hook scripts.
  * Executes the specified ESM script with proper error handling.
  * Usage: node run.cjs <script-path> [args...]
  */
@@ -28,7 +28,7 @@ const child = execFile('node', ['--experimental-vm-modules', resolved, ...args],
     // Hook scripts should not block the user's workflow on failure
     // Log the error but exit cleanly
     if (process.env.SC4SAP_DEBUG) {
-      console.error(`[sc4sap] Script error: ${error.message}`);
+      console.error(`[prism] Script error: ${error.message}`);
     }
   }
   process.exit(0);

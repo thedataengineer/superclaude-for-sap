@@ -13,11 +13,11 @@ Never skip entirely unless the user supplies `object=... depth=L2 format=md lang
 
 **Step 1.5 — CBO inventory lookup** (auto)
 - Resolve `<PACKAGE>` from `GetObjectInfo` above.
-- Ask the user one question: "Which module does package `<PACKAGE>` belong to? (SD / MM / PP / PM / QM / WM / TM / TR / FI / CO / HCM / BW / PS / Ariba)" — only if the module cannot be derived from `.sc4sap/config.json` or the package's existing CBO folder.
-- Check `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json`.
+- Ask the user one question: "Which module does package `<PACKAGE>` belong to? (SD / MM / PP / PM / QM / WM / TM / TR / FI / CO / HCM / BW / PS / Ariba)" — only if the module cannot be derived from `.prism/config.json` or the package's existing CBO folder.
+- Check `.prism/cbo/<MODULE>/<PACKAGE>/inventory.json`.
   - **Exists** → Load it. When the analyst describes data sources, tables, or helper calls in Step 3, annotate each one that matches an inventory entry with its CBO role + one-line business purpose (e.g., "writes to `ZSD_ORDER_LOG` — append-only sales-order processing log"). This turns opaque Z-references in the spec into named reusable assets.
-  - **Missing** → Print one line: "No CBO inventory at `.sc4sap/cbo/<MODULE>/<PACKAGE>/`. Run `/sc4sap:analyze-cbo-obj` first for richer spec annotations, or type `skip` to proceed."
-- Persist the loaded entries to `.sc4sap/specs/<OBJECT>/cbo-context.md` so sap-analyst and sap-writer consume it in Step 3.
+  - **Missing** → Print one line: "No CBO inventory at `.prism/cbo/<MODULE>/<PACKAGE>/`. Run `/prism:analyze-cbo-obj` first for richer spec annotations, or type `skip` to proceed."
+- Persist the loaded entries to `.prism/specs/<OBJECT>/cbo-context.md` so sap-analyst and sap-writer consume it in Step 3.
 - Source:
   - Report/Program: `GetProgFullCode` + `GetIncludesList` → iterate `GetInclude`
   - Class: `ReadClass` (all sections) + `GetLocalDefinitions` / `GetLocalMacros` / `GetLocalTestClass` / `GetLocalTypes`
@@ -75,7 +75,7 @@ Artifacts produced in this step are placed in the `Inputs & Screens` section (MD
   Pipeline for each Excel-output spec:
 
   1. **Copy the template** `scripts/spec/rich-xlsx-template.mjs` to a per-spec driver path:
-     - Default: `.sc4sap/specs/_drivers/{OBJECT}-{YYYYMMDD}.mjs`
+     - Default: `.prism/specs/_drivers/{OBJECT}-{YYYYMMDD}.mjs`
      - If the user specified an absolute output directory (e.g. `C:\Users\...\Desktop\test`), put the driver next to the target xlsx — it makes cleanup obvious and avoids cluttering the project.
   2. **Fill the TODO blocks** inside the copy, using the content produced by sap-analyst + sap-writer in Step 3:
      - `SHEETS_DATA` — array of `{ name, rows: [[header...], [row...], ...] }` for text sheets (Overview, Data Model, Logic, Outputs, Authorization, Exceptions, plus L3 sheets — Enhancements / Includes & Artifacts; plus L4 sheets — Where-Used / Risk). The Parameters table lives inside the `Inputs & Screens` sheet and is produced by `screensSheet()` (see below), not as an independent text sheet.
@@ -89,7 +89,7 @@ Artifacts produced in this step are placed in the `Inputs & Screens` section (MD
      - `PROCESS_FLOW` (new in v8.4) — vertical flowchart auto-appended below the `Processing Logic` data table (sheet name matched via `PROCESS_FLOW_SHEET`, default `'Processing Logic'`). Each entry is one node string. Conventions: plain text → bordered box (style 21); `?` prefix → decision (yellow style 20, prefix replaced with `◇ `); `!` prefix → terminal/exit marker (bordered, prefix replaced with `■ `). Decisions can fold a single branch into the same row using ` → ` (e.g. `'? gt_result IS INITIAL → MESSAGE + LEAVE LIST-PROCESSING'`). The renderer inserts a centered `↓` arrow row (style 25 — no border / no fill) between consecutive nodes. Localise `PROCESS_FLOW_HEADING` per language (default `'Process Flow Chart'`; KO `'프로세스 플로우 차트'`, JA `'プロセスフロー'`). Empty array = no flowchart rendered (heading also skipped). The flowchart ALWAYS sits AFTER the numbered step table — the table is the authoritative source, the chart is a navigation aid.
      - **Automatic image pipeline** — drivers do NOT manually import `renderScreenImages` and do NOT edit the `build()` call. The template's internal `buildImages()` + top-level `await` runs automatically: (a) renders Selection + ALV PNGs **in parallel** via headless browser, (b) falls back to `screensSheet()` cell-border wireframes per section when rasterize returns null or times out. No driver action needed beyond populating the two SPEC constants.
      - **Never** place ASCII box-drawing characters (`┌─┐│└┘├┤┬┴┼`) inside data cells.
-     - `OUT_PATH` — absolute path the user asked for (or the default `.sc4sap/specs/{object}-{YYYYMMDD}-{lang}.xlsx`).
+     - `OUT_PATH` — absolute path the user asked for (or the default `.prism/specs/{object}-{YYYYMMDD}-{lang}.xlsx`).
   3. **Run the driver**:
      ```bash
      node <driver>.mjs

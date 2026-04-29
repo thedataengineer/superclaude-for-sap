@@ -4,7 +4,7 @@ Main thread runs on Haiku 4.5 (skill frontmatter). Every MCP read is pushed into
 
 ## Step 0 — Trust Session (mandatory, see SKILL.md)
 
-Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:compare-programs`. Skip silently if already trusted within 24h.
+Invoke `/prism:trust-session` with `parent_skill=prism:compare-programs`. Skip silently if already trusted within 24h.
 
 ## Step 1 — Program Input (main thread, Haiku)
 
@@ -15,7 +15,7 @@ Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:compare-programs`. Skip
 **Validation**:
 1. For each name, call `SearchObject` to resolve the ADT object type (REPS / CLAS / FUGR / CDS).
 2. If a name is ambiguous or missing → list candidates, ask user to choose.
-3. If user provides only 1 → suggest `/sc4sap:program-to-spec` instead and stop.
+3. If user provides only 1 → suggest `/prism:program-to-spec` instead and stop.
 4. If user provides > 5 → ask to trim, or propose splitting into multiple comparison sessions.
 
 Store the confirmed list as `compared_objects` (array of `{name, type, package}`).
@@ -38,7 +38,7 @@ For each program in `compared_objects`, emit phase banner:
 Dispatch shape (repeat per program, parallel in one message):
 ```
 Agent({
-  subagent_type: "sc4sap:sap-code-reviewer",
+  subagent_type: "prism:sap-code-reviewer",
   model: "sonnet",   // override base Opus — facts-only extraction doesn't need Opus judgment
   description: "Facts — <PROG>",
   prompt: "<facts-extraction prompt per dispatch-prompts.md § Step 3>, target=<PROG>, type=<TYPE>",
@@ -62,7 +62,7 @@ Emit phase banner:
 Dispatch:
 ```
 Agent({
-  subagent_type: "sc4sap:sap-analyst",
+  subagent_type: "prism:sap-analyst",
   description: "Compare — analyst synthesis",
   prompt: """
     Compare <N> programs across dimensions <active_dimensions>.
@@ -106,7 +106,7 @@ For each module in `module_set`:
 Dispatch shape:
 ```
 Agent({
-  subagent_type: "sc4sap:sap-<module>-consultant",   // frontmatter pins Opus 4.7
+  subagent_type: "prism:sap-<module>-consultant",   // frontmatter pins Opus 4.7
   description: "<MODULE> angle on compared programs",
   prompt: """
     From a <MODULE> consultant's view, briefly explain (2–3 sentences each) which of these
@@ -131,7 +131,7 @@ Emit banner:
 Dispatch:
 ```
 Agent({
-  subagent_type: "sc4sap:sap-writer",
+  subagent_type: "prism:sap-writer",
   description: "Render comparison report",
   prompt: """
     Render the comparison report using skills/compare-programs/report-template.md as the skeleton.
@@ -145,7 +145,7 @@ Agent({
     - module_consultant_outputs (optional): <per-module blobs>
     - user_language: <lang>
 
-    Write the Markdown file to .sc4sap/comparisons/<filename>.md (path rule in SKILL.md
+    Write the Markdown file to .prism/comparisons/<filename>.md (path rule in SKILL.md
     <Output_Location>). Return a short confirmation block with file path + dimension counts
     + headline divergence.
   """,
@@ -157,7 +157,7 @@ Emit a concise completion block to the user (in the user's current conversation 
 
 ```
 Comparison report generated.
-File: .sc4sap/comparisons/ZMMR_GR_LIST__vs__ZCOR_GR_LIST-20260423.md
+File: .prism/comparisons/ZMMR_GR_LIST__vs__ZCOR_GR_LIST-20260423.md
 Dimensions: 7 · Divergent: 3 · Variant: 2 · Same: 2
 Key divergence: ZMMR = quantity-centric (MSEG, M_MSEG_WWA) / ZCOR = cost-value-centric (ACDOCA, F_BKPF_*)
 ```
@@ -178,6 +178,6 @@ Wait for user instruction — do not loop automatically.
 ## Safety Rails
 
 - Blocklist: `GetTableContents` / `GetSqlQuery` are **forbidden** in this skill — enforced per-reviewer-dispatch.
-- Country/Industry context: if dimension 9 is active, the analyst loads `country/<iso>.md` based on `.sc4sap/config.json` → `country` (or `sap.env` → `SAP_COUNTRY`). If unset, the analyst asks once for the relevant country list via its `BLOCKED` channel.
+- Country/Industry context: if dimension 9 is active, the analyst loads `country/<iso>.md` based on `.prism/config.json` → `country` (or `sap.env` → `SAP_COUNTRY`). If unset, the analyst asks once for the relevant country list via its `BLOCKED` channel.
 - Module activation: respect `common/active-modules.md` — if a module is not active in the project, the analyst flags with "(module not active in this landscape — observation only)".
 - Per-call transports: this skill is **read-only** — never creates or modifies transports.

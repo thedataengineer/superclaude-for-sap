@@ -4,7 +4,7 @@ For users who want to edit `sap.env` **without blocking the Claude Code session*
 
 ```bash
 # In a separate terminal window / tab:
-node <PLUGIN_ROOT>/scripts/sap-option-tui.mjs            # defaults to ./.sc4sap/sap.env
+node <PLUGIN_ROOT>/scripts/sap-option-tui.mjs            # defaults to ./.prism/sap.env
 node <PLUGIN_ROOT>/scripts/sap-option-tui.mjs --file /path/to/sap.env
 ```
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Setup Maintenance Hook (SessionStart, matcher: "maintenance")
+ * prism Setup Maintenance Hook (SessionStart, matcher: "maintenance")
  * Performs maintenance tasks: cleanup stale state, verify configs.
  */
 
@@ -21,7 +21,7 @@ async function main() {
     const messages = [];
 
     // Clean up stale state files
-    const stateDir = join(directory, '.sc4sap', 'state');
+    const stateDir = join(directory, '.prism', 'state');
     if (existsSync(stateDir)) {
       try {
         const now = Date.now();

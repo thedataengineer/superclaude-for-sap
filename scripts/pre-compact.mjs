@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap PreCompact Hook
+ * prism PreCompact Hook
  * Preserves important context before compaction occurs.
  * Adapted from OMC pre-compact.mjs.
  *
- * Saves critical state to .sc4sap/ so it survives compaction:
+ * Saves critical state to .prism/ so it survives compaction:
  * - Active SAP objects being worked on
  * - Transport request numbers
  * - Current task context
@@ -34,7 +34,7 @@ async function main() {
     const messages = [];
 
     // Inject project memory summary for post-compact context
-    const memoryPath = join(directory, '.sc4sap', 'project-memory.json');
+    const memoryPath = join(directory, '.prism', 'project-memory.json');
     const memory = readJsonFile(memoryPath);
     if (memory) {
       const parts = [];
@@ -58,7 +58,7 @@ async function main() {
     }
 
     // Inject notepad priority context
-    const notepadPath = join(directory, '.sc4sap', 'notepad.md');
+    const notepadPath = join(directory, '.prism', 'notepad.md');
     if (existsSync(notepadPath)) {
       try {
         const notepadContent = readFileSync(notepadPath, 'utf-8');

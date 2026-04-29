@@ -1,5 +1,5 @@
 ---
-name: sc4sap:create-object
+name: prism:create-object
 description: ABAP object creation workflow — confirm transport+package, auto-create and activate
 level: 3
 model: sonnet
@@ -11,7 +11,7 @@ Guided ABAP object creation workflow. Hybrid mode: confirms transport and packag
 
 
 <Purpose>
-sc4sap:create-object handles the full lifecycle of creating a new ABAP object: determining the right object type, confirming package and transport assignment, creating the object via MCP, generating a well-structured initial implementation, and activating it — all in one workflow.
+prism:create-object handles the full lifecycle of creating a new ABAP object: determining the right object type, confirming package and transport assignment, creating the object via MCP, generating a well-structured initial implementation, and activating it — all in one workflow.
 </Purpose>
 
 <Response_Prefix>
@@ -30,16 +30,16 @@ Multi-phase skill. Before each `Agent(...)` dispatch, emit `▶ phase=<id> (<lab
 
 <Do_Not_Use_When>
 - Modifying an existing object -- use direct MCP `Update*` tools (`UpdateClass`, `UpdateProgram`, `UpdateInclude`, etc.)
-- Creating multiple interdependent objects -- use `/sc4sap:team` for parallel orchestration or `/sc4sap:create-program` for a full program with includes
+- Creating multiple interdependent objects -- use `/prism:team` for parallel orchestration or `/prism:create-program` for a full program with includes
 - User just wants to understand what type to use -- ask a module consultant agent directly
 </Do_Not_Use_When>
 
 <Session_Trust_Bootstrap>
 **MANDATORY — runs as Step 0 before any MCP call or user interaction.**
 
-Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:create-object` to pre-grant all MCP tool + file-op permissions for this session (eliminates per-tool "Allow this tool?" prompts during Create* + activation flow).
+Invoke `/prism:trust-session` with `parent_skill=prism:create-object` to pre-grant all MCP tool + file-op permissions for this session (eliminates per-tool "Allow this tool?" prompts during Create* + activation flow).
 
-- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- If `.prism/session-trust.log` already has a line within the last 24h, skip silently.
 - Otherwise run it and surface the one-line confirmation.
 - All subsequent `Agent` dispatches within this skill MUST pass `mode: "dontAsk"`.
 
@@ -72,7 +72,7 @@ Full spec: see [`../trust-session/SKILL.md`](../trust-session/SKILL.md).
 <Field_Typing_Rule>
 **MANDATORY** for every Table / Structure / Table Type field-type decision (standard MCP flow **and** ECC helper-program fallback): read [`../../common/field-typing-rule.md`](../../common/field-typing-rule.md).
 
-Priority: **Standard DE (1)** → **existing CBO DE (2)** → **new CBO DE (3)** → **Data Type + Length (4, last resort)**. Raw primitives like `LIFNR CHAR 10` / `MATNR CHAR 40` / `BUKRS CHAR 4` are forbidden when an authoritative SAP data element exists. Before each field, run `SearchObject` against `DTEL` and check `.sc4sap/cbo/<MODULE>/<PACKAGE>/inventory.json`.
+Priority: **Standard DE (1)** → **existing CBO DE (2)** → **new CBO DE (3)** → **Data Type + Length (4, last resort)**. Raw primitives like `LIFNR CHAR 10` / `MATNR CHAR 40` / `BUKRS CHAR 4` are forbidden when an authoritative SAP data element exists. Before each field, run `SearchObject` against `DTEL` and check `.prism/cbo/<MODULE>/<PACKAGE>/inventory.json`.
 </Field_Typing_Rule>
 
 <Function_Module_Rule>

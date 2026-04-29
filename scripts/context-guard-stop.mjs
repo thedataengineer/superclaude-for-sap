@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Context Guard Hook (Stop)
+ * prism Context Guard Hook (Stop)
  * Suggests session refresh when context usage exceeds a warning threshold.
  * Adapted from OMC context-guard-stop.mjs.
  *
@@ -95,7 +95,7 @@ async function main() {
 
     // Check block count to prevent infinite loops
     const directory = data.cwd || data.directory || process.cwd();
-    const stateDir = join(directory, '.sc4sap', 'state');
+    const stateDir = join(directory, '.prism', 'state');
     const guardFile = join(stateDir, 'context-guard-blocks.json');
 
     let blockCount = 0;
@@ -121,7 +121,7 @@ async function main() {
       decision: 'block',
       reason: `[SC4SAP] Context usage at ${contextPercent}% (threshold: ${THRESHOLD}%). ` +
         `Consider running /compact to free context space, or start a fresh session. ` +
-        `Save important SAP object names and transport numbers to .sc4sap/notepad.md before compacting.`
+        `Save important SAP object names and transport numbers to .prism/notepad.md before compacting.`
     }));
   } catch (error) {
     console.log(JSON.stringify({ continue: true, suppressOutput: true }));

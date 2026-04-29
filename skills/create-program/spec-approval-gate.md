@@ -8,7 +8,7 @@ After `<Interview_Gating>` closes (ambiguity ≤ 5%) and Phase 2 (Planning) prod
 
 ## Required steps
 
-1. Invoke `sap-writer` (Phase 3) to produce `.sc4sap/program/{PROG}/spec.md` — a **human-readable Markdown functional + technical specification**.
+1. Invoke `sap-writer` (Phase 3) to produce `.prism/program/{PROG}/spec.md` — a **human-readable Markdown functional + technical specification**.
 2. **Display the spec.md contents in the chat** (or surface the file path prominently) so the user can read it end-to-end.
 3. **Block all further progress** — no `CreateProgram`, `CreateClass`, `CreateInclude`, or any other `Create*` / `Update*` MCP call may happen — until the user provides an **explicit affirmative acknowledgement** of the spec.
    - Acceptable approval keywords: `승인`, `approve`, `approved`, `ok`, `proceed`, `go ahead`, `confirmed`
@@ -20,7 +20,7 @@ After `<Interview_Gating>` closes (ambiguity ≤ 5%) and Phase 2 (Planning) prod
 
 Phase 4 Executor **MUST refuse to run** if any of the following is true:
 
-- `.sc4sap/program/{PROG}/spec.md` does not exist
+- `.prism/program/{PROG}/spec.md` does not exist
 - `spec.md` lacks a `## Approval` footer section with at least one approval keyword
 - `spec.md` was last modified AFTER the approval was logged (meaning a change arrived post-approval — needs re-approval)
 
@@ -93,7 +93,7 @@ per `multi-executor-split.md`:
 
 ## User-facing message (verbatim template the skill emits)
 
-> 📋 **Spec ready for review** — `.sc4sap/program/{PROG}/spec.md`
+> 📋 **Spec ready for review** — `.prism/program/{PROG}/spec.md`
 >
 > Please read the spec end-to-end. When you are satisfied, reply with **one** of these approval keywords to unlock Phase 4 (Executor):
 >

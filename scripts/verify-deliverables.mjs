@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Deliverable Verification Hook (SubagentStop)
+ * prism Deliverable Verification Hook (SubagentStop)
  * Checks that completing agents produced their expected deliverables.
  * Adapted from OMC verify-deliverables.mjs.
  *
@@ -21,7 +21,7 @@ function sanitizePath(filePath) {
 
 // Load deliverable requirements
 function loadDeliverableConfig(directory) {
-  const projectConfig = join(directory, '.sc4sap', 'deliverables.json');
+  const projectConfig = join(directory, '.prism', 'deliverables.json');
   if (existsSync(projectConfig)) {
     try {
       return JSON.parse(readFileSync(projectConfig, 'utf-8'));

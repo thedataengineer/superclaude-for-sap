@@ -1,7 +1,7 @@
 # Multi-Profile Design (Dev / QA / Prod multi-connection)
 
 **Status**: Design finalized 2026-04-21 — not yet implemented.
-**Scope**: sc4sap plugin + abap-mcp-adt-powerup MCP server + mcp-abap-adt-clients library.
+**Scope**: prism plugin + abap-mcp-adt-powerup MCP server + mcp-abap-adt-clients library.
 
 ---
 
@@ -13,7 +13,7 @@ Multinational SAP customers run a 3-tier (Dev/QA/Prod) landscape per legal entit
 - Switch contexts during a session without restarting Claude Code.
 - Be protected from accidentally running destructive operations against QA or Prod.
 
-The current plugin stores one system in `.sc4sap/sap.env` + `.sc4sap/config.json`.
+The current plugin stores one system in `.prism/sap.env` + `.prism/config.json`.
 
 ## Core principle
 
@@ -26,7 +26,7 @@ The current plugin stores one system in `.sc4sap/sap.env` + `.sc4sap/config.json
 ### User home (profile definitions — shared across repos)
 
 ```
-~/.sc4sap/
+~/.prism/
 └── profiles/
     ├── KR-DEV/{sap.env, config.json}
     ├── KR-QA/ {sap.env, config.json}
@@ -39,7 +39,7 @@ The current plugin stores one system in `.sc4sap/sap.env` + `.sc4sap/config.json
 ### Project root (artifacts — per-profile isolation)
 
 ```
-{project}/.sc4sap/
+{project}/.prism/
 ├── active-profile.txt                  # e.g., "KR-DEV"
 ├── sap.env.legacy                      # migration backup (rollback)
 └── work/
@@ -66,7 +66,7 @@ SAP_URL=http://dev.kr.corp:50000
 SAP_CLIENT=100
 SAP_AUTH_TYPE=basic
 SAP_USERNAME=DEVELOPER
-SAP_PASSWORD=keychain:sc4sap/KR-DEV/DEVELOPER    # OS keychain reference
+SAP_PASSWORD=keychain:prism/KR-DEV/DEVELOPER    # OS keychain reference
 SAP_LANGUAGE=EN
 SAP_SYSTEM_TYPE=onprem
 
@@ -111,7 +111,7 @@ Passwords **never** live in plaintext `.env`. They are stored in the OS keychain
 | macOS | Keychain |
 | Linux | libsecret |
 
-The `sap.env` line `SAP_PASSWORD=keychain:sc4sap/{alias}/{user}` is a reference that the MCP server resolves at connect time via `keytar`.
+The `sap.env` line `SAP_PASSWORD=keychain:prism/{alias}/{user}` is a reference that the MCP server resolves at connect time via `keytar`.
 
 ---
 
@@ -121,13 +121,13 @@ The `sap.env` line `SAP_PASSWORD=keychain:sc4sap/{alias}/{user}` is a reference 
 
 Ships with the plugin (`.claude/settings.json` installed by `sap-option` / `setup`). On every MCP tool invocation:
 
-1. Read `{project}/.sc4sap/active-profile.txt` → `alias`.
-2. Read `~/.sc4sap/profiles/{alias}/sap.env` → `SAP_TIER`.
+1. Read `{project}/.prism/active-profile.txt` → `alias`.
+2. Read `~/.prism/profiles/{alias}/sap.env` → `SAP_TIER`.
 3. Apply the block matrix (§4). If blocked, reject with a structured error message so the LLM understands **why** and can explain to the user.
 
 ### Layer 2: MCP server guard (uncircumventable)
 
-`abap-mcp-adt-powerup` attaches a `@readonly(tier)` decorator to every mutation tool. The decorator reads the tier cached at `ReloadProfile` time and returns `ERR_READONLY_TIER` if violated. This layer fires even when the hook is missing, misconfigured, manually edited out of `settings.json`, or the plugin has not been installed yet (MCP server connected directly without the sc4sap plugin).
+`abap-mcp-adt-powerup` attaches a `@readonly(tier)` decorator to every mutation tool. The decorator reads the tier cached at `ReloadProfile` time and returns `ERR_READONLY_TIER` if violated. This layer fires even when the hook is missing, misconfigured, manually edited out of `settings.json`, or the plugin has not been installed yet (MCP server connected directly without the prism plugin).
 
 ### Why both layers
 
@@ -156,7 +156,7 @@ Ships with the plugin (`.claude/settings.json` installed by `sap-option` / `setu
 
 ## 5. `sap-option` UX
 
-Invoked as `/sc4sap:sap-option` (interactive) or with subcommands:
+Invoked as `/prism:sap-option` (interactive) or with subcommands:
 
 | Subcommand | Purpose |
 |---|---|
@@ -178,22 +178,22 @@ When the new alias shares a prefix with an existing profile (e.g., adding `KR-QA
 
 ## 6. Migration (existing single-profile users)
 
-On first run after upgrading, `sap-option` / `setup` detects legacy `.sc4sap/sap.env` and performs a **mandatory** prompt:
+On first run after upgrading, `sap-option` / `setup` detects legacy `.prism/sap.env` and performs a **mandatory** prompt:
 
 ```
-⚙  sc4sap upgrade detected — switching to profile-based multi-connection.
+⚙  prism upgrade detected — switching to profile-based multi-connection.
 
-Legacy .sc4sap/sap.env found.
+Legacy .prism/sap.env found.
 
   • Alias for this connection? (e.g., KR-DEV, KR-PRD)
     > KR-DEV
   • Tier? [DEV | QA | PRD]
     > DEV
 
-✔ Created ~/.sc4sap/profiles/KR-DEV/sap.env
-✔ Created ~/.sc4sap/profiles/KR-DEV/config.json  (from legacy config.json)
-✔ Moved password to OS keychain (sc4sap/KR-DEV/{user})
-✔ Archived legacy → .sc4sap/sap.env.legacy
+✔ Created ~/.prism/profiles/KR-DEV/sap.env
+✔ Created ~/.prism/profiles/KR-DEV/config.json  (from legacy config.json)
+✔ Moved password to OS keychain (prism/KR-DEV/{user})
+✔ Archived legacy → .prism/sap.env.legacy
 ✔ Set active-profile → KR-DEV
 
 ℹ  Add other companies/tiers with `sap-option add`.
@@ -237,8 +237,8 @@ A pluggable `resolveArtifact(path)` helper in the skill layer encapsulates this 
 
 New MCP tool `ReloadProfile` (no arguments):
 
-1. Read `{cwd}/.sc4sap/active-profile.txt` → `alias`.
-2. Read `~/.sc4sap/profiles/{alias}/sap.env`.
+1. Read `{cwd}/.prism/active-profile.txt` → `alias`.
+2. Read `~/.prism/profiles/{alias}/sap.env`.
 3. Resolve `SAP_PASSWORD=keychain:...` via `keytar`.
 4. Close existing HTTP client, build a new one.
 5. Cache `SAP_TIER` for Layer 2 readonly guard.

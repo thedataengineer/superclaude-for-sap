@@ -1,5 +1,5 @@
 ---
-name: sc4sap:create-program
+name: prism:create-program
 description: Create ABAP programs (Report/CRUD/ALV/Batch) with Main+Include structure, OOP or Procedural, and full agent-driven coding/QA pipeline
 level: 4
 model: sonnet
@@ -7,11 +7,11 @@ model: sonnet
 
 # SC4SAP Create Program
 
-Core ABAP program creation skill. Generates a Main Program wrapped with conditional Includes following the sc4sap template convention. Supports both OOP (two-class split: Data + Screen/ALV) and Procedural (PERFORM) paradigms. Full pipeline: SAP version preflight → Socratic interview → planner → writer spec → user confirm → executor/qa/reviewer.
+Core ABAP program creation skill. Generates a Main Program wrapped with conditional Includes following the prism template convention. Supports both OOP (two-class split: Data + Screen/ALV) and Procedural (PERFORM) paradigms. Full pipeline: SAP version preflight → Socratic interview → planner → writer spec → user confirm → executor/qa/reviewer.
 
 
 <Purpose>
-sc4sap:create-program is the flagship skill for creating new ABAP programs. It handles a wide range of purposes (Report, CRUD, ALV list, Batch, Interface). Before coding starts, it runs an internal Socratic interview to resolve ambiguity, then produces a confirmed spec, then orchestrates coding and QA agents to deliver activated, tested ABAP objects following sc4sap conventions.
+prism:create-program is the flagship skill for creating new ABAP programs. It handles a wide range of purposes (Report, CRUD, ALV list, Batch, Interface). Before coding starts, it runs an internal Socratic interview to resolve ambiguity, then produces a confirmed spec, then orchestrates coding and QA agents to deliver activated, tested ABAP objects following prism conventions.
 </Purpose>
 
 <Response_Prefix>Every response triggered by this skill MUST begin with `[Model: <main-model> · Dispatched: <sub-summary>]` per [`../../common/model-routing-rule.md`](../../common/model-routing-rule.md) § Response Prefix Convention.</Response_Prefix>
@@ -28,14 +28,14 @@ sc4sap:create-program is the flagship skill for creating new ABAP programs. It h
 </Use_When>
 
 <Do_Not_Use_When>
-- Creating a single class/interface/table — use `/sc4sap:create-object`
+- Creating a single class/interface/table — use `/prism:create-object`
 - Modifying an existing program — use direct `UpdateProgram` / `UpdateInclude` MCP calls
-- Creating a RAP business object / OData service — use `/sc4sap:create-object` (with service binding + behavior definition) or `/sc4sap:team` for multi-object orchestration
-- User wants only scaffolding without coding — use `/sc4sap:create-object` with type=program
+- Creating a RAP business object / OData service — use `/prism:create-object` (with service binding + behavior definition) or `/prism:team` for multi-object orchestration
+- User wants only scaffolding without coding — use `/prism:create-object` with type=program
 </Do_Not_Use_When>
 
 <Shared_Conventions>
-The following rules are **shared across sc4sap skills** and live in `sc4sap/common/`. Load and apply them during the relevant phases of this skill:
+The following rules are **shared across prism skills** and live in `prism/common/`. Load and apply them during the relevant phases of this skill:
 
 | Convention | Reference File | Applied In |
 |------------|----------------|------------|
@@ -50,10 +50,10 @@ The following rules are **shared across sc4sap skills** and live in `sc4sap/comm
 | Clean ABAP — shared baseline | `../../common/clean-code.md` | Executor, Reviewer (always) |
 | Clean ABAP — **OOP paradigm** | `../../common/clean-code-oop.md` | Executor, Reviewer — **only when Phase 1B `paradigm = OOP`** |
 | Clean ABAP — **Procedural paradigm** | `../../common/clean-code-procedural.md` | Executor, Reviewer — **only when Phase 1B `paradigm = Procedural`** |
-| **Mandatory main-program template (OOP)** | `../../common/oop-sample/zrsc4sap_oop_ex.prog.abap` (+ companion includes / screens in same folder) | Executor Wave 3 (starting skeleton) + Reviewer B3 bucket (structural match) — OOP paradigm |
+| **Mandatory main-program template (OOP)** | `../../common/oop-sample/zrprism_oop_ex.prog.abap` (+ companion includes / screens in same folder) | Executor Wave 3 (starting skeleton) + Reviewer B3 bucket (structural match) — OOP paradigm |
 | **Mandatory main-program template (Procedural)** | `../../common/procedural-sample/main-program.abap` | Executor Wave 3 + Reviewer B3 bucket — Procedural paradigm |
 
-Paths are relative to this skill's directory (`sc4sap/skills/create-program/`).
+Paths are relative to this skill's directory (`prism/skills/create-program/`).
 
 **ECC DDIC fallback gate.** When the planner's object list includes a new Table, Data Element, or Domain AND `SAP_VERSION = ECC`, Phase 4 (Executor) must not call `CreateTable` / `CreateDataElement` / `CreateDomain`. Instead, follow [`../../common/ecc-ddic-fallback.md`](../../common/ecc-ddic-fallback.md): generate a helper report in `$TMP` using the matching template under `skills/create-object/ecc/`, activate the helper, then emit the mandatory user message (SE38 run → uncheck dry-run → SE11 activate + assign transport). Do not treat the DDIC object as created until the user confirms activation. Remaining objects (classes, includes, screens, …) proceed on the normal flow; the plan should sequence the DDIC helpers first so the user can create them before code that depends on them is activated.
 </Shared_Conventions>
@@ -62,8 +62,8 @@ Paths are relative to this skill's directory (`sc4sap/skills/create-program/`).
 **MUST run BEFORE the Socratic interview starts.** The entire development approach (tables, BAPIs, CDS availability, ABAP syntax, RAP eligibility) depends on the SAP platform and release.
 
 Steps:
-1. Read `.sc4sap/config.json` for `sapVersion`, `abapRelease`, and `activeModules`
-   - Also read `.sc4sap/sap.env` → `SAP_ACTIVE_MODULES` as fallback
+1. Read `.prism/config.json` for `sapVersion`, `abapRelease`, and `activeModules`
+   - Also read `.prism/sap.env` → `SAP_ACTIVE_MODULES` as fallback
    - Load `common/active-modules.md` and precompute the cross-module concern list for the program's primary module. Every downstream phase (planner, writer, executor) receives this list and must factor in integration fields (e.g., MM primary + PS active → add `PS_POSID`).
 2. If missing or stale, ask the user to confirm:
    - **ECC** (ECC 6.0) — classical DDIC, LFA1/KNA1/BKPF/BSEG/MKPF/MSEG world, SAPGUI only
@@ -79,7 +79,7 @@ Branching consequences:
 - **S/4HANA Cloud Private**: classical Dynpro technically possible but discouraged; warn user and confirm intent before proceeding.
 
 Outputs:
-- `.sc4sap/program/{PROG}/platform.md` — resolved platform, release, and constraints
+- `.prism/program/{PROG}/platform.md` — resolved platform, release, and constraints
 - Interview dimensions pre-filtered by platform (e.g., ALV-Full hidden on Cloud Public)
 </Preflight_SAP_Version_Check>
 
@@ -87,12 +87,12 @@ Outputs:
 **Runs immediately after package + module are resolved during the interview** (Phase 1 dimension #6) and feeds every downstream phase. Two sequential inventory passes: **CBO Inventory** (reusable Z*/Y* objects in the target package — delegated to `sap-stocker` on cache miss) then **Customization Inventory** (existing BAdI impls / CMOD projects / form-based exits / appends per module).
 
 Full procedure (when-to-stock, three-option prompt, dispatch template, persistence paths, reuse-gating rules) lives in **[`inventory-lookups.md`](inventory-lookups.md)**. Read and follow literally. Output files consumed by planner / writer / executor:
-- `.sc4sap/program/{PROG}/cbo-context.md`
-- `.sc4sap/program/{PROG}/customization-context.md`
+- `.prism/program/{PROG}/cbo-context.md`
+- `.prism/program/{PROG}/customization-context.md`
 </Inventory_Lookups>
 
 <Interview_Gating>
-**MANDATORY — never skip, never shortcut, never merge.** Phase 1 runs as **two sequential sub-phases** (1A then 1B) on every `sc4sap:create-program` invocation.
+**MANDATORY — never skip, never shortcut, never merge.** Phase 1 runs as **two sequential sub-phases** (1A then 1B) on every `prism:create-program` invocation.
 
 Full procedure — two-stage rule, lead agents, dimension lists, skip rules, gates, output files, and enforcement contracts — lives in **[`interview-gating.md`](interview-gating.md)**. Read that file and follow it literally before asking the first question.
 
@@ -110,15 +110,15 @@ Full procedure — required steps, enforcement contract, rationale, spec templat
 </Spec_Approval_Gate>
 
 <Session_Trust_Bootstrap>
-**MANDATORY — runs at the very start of Phase 1A, BEFORE the module consultant asks the first question.** Invoke `/sc4sap:trust-session` with `parent_skill=sc4sap:create-program` to pre-grant MCP tool + file-op permissions for the entire session. This ensures interview-time MCP calls (consultant SPRO lookups, `SearchObject`, `GetWhereUsed`) and downstream Phase 4–8 activity both run without permission prompts.
+**MANDATORY — runs at the very start of Phase 1A, BEFORE the module consultant asks the first question.** Invoke `/prism:trust-session` with `parent_skill=prism:create-program` to pre-grant MCP tool + file-op permissions for the entire session. This ensures interview-time MCP calls (consultant SPRO lookups, `SearchObject`, `GetWhereUsed`) and downstream Phase 4–8 activity both run without permission prompts.
 
-- If `.sc4sap/session-trust.log` already has a line within the last 24h, skip silently.
+- If `.prism/session-trust.log` already has a line within the last 24h, skip silently.
 - All subsequent `Agent` dispatches in this skill MUST pass `mode: "dontAsk"`.
 - **Exception**: `GetTableContents` and `GetSqlQuery` are NEVER auto-approved — they require explicit per-call user consent. See [`../trust-session/SKILL.md`](../trust-session/SKILL.md) Layer 1.
 </Session_Trust_Bootstrap>
 
 <Execution_Mode_Gate>
-**MANDATORY — runs between `<Spec_Approval_Gate>` and Phase 4.** After spec approval, the skill prompts the user to pick an execution cadence: `auto` / `manual` / `hybrid`. Persists the choice to `.sc4sap/program/{PROG}/state.json` under `execution_mode`.
+**MANDATORY — runs between `<Spec_Approval_Gate>` and Phase 4.** After spec approval, the skill prompts the user to pick an execution cadence: `auto` / `manual` / `hybrid`. Persists the choice to `.prism/program/{PROG}/state.json` under `execution_mode`.
 
 `trust-session` is NOT re-invoked here — it already ran at the start of Phase 1A.
 
@@ -158,19 +158,19 @@ Do not inline or paraphrase phase logic here — update `agent-pipeline.md` inst
 </MCP_Tools_Used>
 
 <State_Files>
-- `.sc4sap/program/{PROG}/platform.md` — Phase 0 preflight output
-- `.sc4sap/program/{PROG}/module-interview.md` — Phase 1A business interview (consultant-led: purpose / reason / company-specific rules / reference assets / standard-SAP alternatives)
-- `.sc4sap/program/{PROG}/interview.md` — Phase 1B technical interview (analyst+architect-led: 7 dimensions Q&A log)
-- `.sc4sap/program/{PROG}/cbo-context.md` — CBO reuse candidates (written by `<Inventory_Lookups>` / [`inventory-lookups.md`](inventory-lookups.md))
-- `.sc4sap/program/{PROG}/customization-context.md` — Z*/Y* BAdI impl / CMOD / form-exit / append reuse candidates (written by `<Inventory_Lookups>` / [`inventory-lookups.md`](inventory-lookups.md))
-- `.sc4sap/program/{PROG}/plan.md` — planner output
-- `.sc4sap/program/{PROG}/spec.md` — writer output (requires user confirm)
-- `.sc4sap/program/{PROG}/state.json` — execution_mode + per-phase status/timing (schema in `execution-mode.md`, drives resume support)
-- `.sc4sap/program/{PROG}/review-bucket-{B1|B2|B3|B4}.md` — Phase 6 per-bucket reviews (merged into review.md, see `phase6-buckets.md`)
-- `.sc4sap/program/{PROG}/review.md` — Phase 6 consolidated review
-- `.sc4sap/program/{PROG}/report.md` — final completion report
-- `.claude/settings.local.json` — permissions allowlist (written by `/sc4sap:trust-session` during Phase 3.5)
-- `.sc4sap/session-trust.log` — audit trail of `trust-session` invocations
+- `.prism/program/{PROG}/platform.md` — Phase 0 preflight output
+- `.prism/program/{PROG}/module-interview.md` — Phase 1A business interview (consultant-led: purpose / reason / company-specific rules / reference assets / standard-SAP alternatives)
+- `.prism/program/{PROG}/interview.md` — Phase 1B technical interview (analyst+architect-led: 7 dimensions Q&A log)
+- `.prism/program/{PROG}/cbo-context.md` — CBO reuse candidates (written by `<Inventory_Lookups>` / [`inventory-lookups.md`](inventory-lookups.md))
+- `.prism/program/{PROG}/customization-context.md` — Z*/Y* BAdI impl / CMOD / form-exit / append reuse candidates (written by `<Inventory_Lookups>` / [`inventory-lookups.md`](inventory-lookups.md))
+- `.prism/program/{PROG}/plan.md` — planner output
+- `.prism/program/{PROG}/spec.md` — writer output (requires user confirm)
+- `.prism/program/{PROG}/state.json` — execution_mode + per-phase status/timing (schema in `execution-mode.md`, drives resume support)
+- `.prism/program/{PROG}/review-bucket-{B1|B2|B3|B4}.md` — Phase 6 per-bucket reviews (merged into review.md, see `phase6-buckets.md`)
+- `.prism/program/{PROG}/review.md` — Phase 6 consolidated review
+- `.prism/program/{PROG}/report.md` — final completion report
+- `.claude/settings.local.json` — permissions allowlist (written by `/prism:trust-session` during Phase 3.5)
+- `.prism/session-trust.log` — audit trail of `trust-session` invocations
 </State_Files>
 
 Task: {{ARGUMENTS}}

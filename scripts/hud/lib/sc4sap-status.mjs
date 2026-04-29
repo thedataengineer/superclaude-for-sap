@@ -1,4 +1,4 @@
-// Lightweight sc4sap-specific status: SAP version, ABAP release, MCP build, sap.env presence.
+// Lightweight prism-specific status: SAP version, ABAP release, MCP build, sap.env presence.
 import { existsSync, readFileSync, statSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
@@ -55,7 +55,7 @@ export function readConfig(workspaceDir) {
   if (hit) {
     try { return JSON.parse(readFileSync(hit.path, 'utf8')); } catch { /* ignore */ }
   }
-  const candidates = ROOTS.map((r) => join(r, '.sc4sap', 'config.json'));
+  const candidates = ROOTS.map((r) => join(r, '.prism', 'config.json'));
   const pluginHit = firstExisting(candidates);
   if (!pluginHit) return null;
   try { return JSON.parse(readFileSync(pluginHit, 'utf8')); } catch { return null; }
@@ -65,7 +65,7 @@ export function readConfig(workspaceDir) {
 // sap.env exists, or when a plugin-root install snapshot has one.
 export function sapEnvPresent(workspaceDir) {
   if (resolveSapEnvPath(workspaceDir)) return true;
-  const candidates = ROOTS.map((r) => join(r, '.sc4sap', 'sap.env'));
+  const candidates = ROOTS.map((r) => join(r, '.prism', 'sap.env'));
   return !!firstExisting(candidates);
 }
 
@@ -75,7 +75,7 @@ export function mcpInstalled() {
 }
 
 // SPRO cache lives under the per-profile artifact base (`work/<alias>/`) in
-// multi-profile mode, or directly under `.sc4sap/` in legacy mode. The shared
+// multi-profile mode, or directly under `.prism/` in legacy mode. The shared
 // resolver returns the correct base without us needing to know which.
 export function sproCacheAge(workspaceDir) {
   const p = join(resolveArtifactBase(workspaceDir), 'spro-config.json');
@@ -119,7 +119,7 @@ export function activeTransport(workspaceDir) {
       if (at && at.trkorr) return { trkorr: at.trkorr, description: at.description || null };
     } catch { /* ignore */ }
   }
-  const candidates = ROOTS.map((r) => join(r, '.sc4sap', 'config.json'));
+  const candidates = ROOTS.map((r) => join(r, '.prism', 'config.json'));
   const pluginHit = firstExisting(candidates);
   if (!pluginHit) return null;
   try {
@@ -129,25 +129,25 @@ export function activeTransport(workspaceDir) {
   } catch { return null; }
 }
 
-// Resolve the active sc4sap profile for HUD line 2. Walks up from
+// Resolve the active prism profile for HUD line 2. Walks up from
 // `workspaceDir` (via the shared resolver) looking for the nearest
-// `.sc4sap/active-profile.txt`; locates the user-level env file at
-// `$SC4SAP_HOME_DIR/profiles/<alias>/sap.env` (or `~/.sc4sap/profiles/...`),
+// `.prism/active-profile.txt`; locates the user-level env file at
+// `$SC4SAP_HOME_DIR/profiles/<alias>/sap.env` (or `~/.prism/profiles/...`),
 // and extracts SAP_TIER. Falls back to the legacy single-profile `sap.env`
 // if no pointer exists.
 //
 // Returns { alias, tier, readonly, legacy } or null if no profile data at all.
 export function activeProfile(workspaceDir) {
   const alias = readActiveAlias(workspaceDir);
-  const sc4sapHome = process.env.SC4SAP_HOME_DIR || join(homedir(), '.sc4sap');
+  const prismHome = process.env.SC4SAP_HOME_DIR || join(homedir(), '.prism');
 
   let envPath;
   let legacy;
   if (alias) {
-    envPath = join(sc4sapHome, 'profiles', alias, 'sap.env');
+    envPath = join(prismHome, 'profiles', alias, 'sap.env');
     legacy = false;
   } else {
-    envPath = join(resolveWorkspaceRoot(workspaceDir), '.sc4sap', 'sap.env');
+    envPath = join(resolveWorkspaceRoot(workspaceDir), '.prism', 'sap.env');
     legacy = true;
   }
 
@@ -156,7 +156,7 @@ export function activeProfile(workspaceDir) {
     // legacy path might live in plugin roots for cache installs
     if (legacy) {
       for (const r of ROOTS) {
-        const fallback = readDotenv(join(r, '.sc4sap', 'sap.env'));
+        const fallback = readDotenv(join(r, '.prism', 'sap.env'));
         if (fallback) {
           const tier = normalizeTier(fallback.SAP_TIER);
           return { alias: null, tier, readonly: tier !== 'DEV', legacy: true };
@@ -178,7 +178,7 @@ function normalizeTier(value) {
 
 // Resolve system info (SID / client / user) for HUD line 2. Priority:
 //   1. Active profile's config.json → systemInfo.{sid,client,user}
-//      (set by /sc4sap:setup after a successful GetSession)
+//      (set by /prism:setup after a successful GetSession)
 //   2. Active profile's sap.env → SAP_SID / SAP_CLIENT / SAP_USERNAME
 //   3. Legacy project config.json → systemInfo
 //   4. Legacy project sap.env → SAP_SID / SAP_CLIENT / SAP_USERNAME
@@ -209,7 +209,7 @@ export function systemInfo(workspaceDir) {
   }
   // 5. Plugin root fallback (for cache/marketplaces snapshot installs)
   for (const r of ROOTS) {
-    const cfgPath = join(r, '.sc4sap', 'config.json');
+    const cfgPath = join(r, '.prism', 'config.json');
     if (existsSync(cfgPath)) {
       try {
         const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
@@ -219,7 +219,7 @@ export function systemInfo(workspaceDir) {
         }
       } catch { /* ignore */ }
     }
-    const env = readDotenv(join(r, '.sc4sap', 'sap.env'));
+    const env = readDotenv(join(r, '.prism', 'sap.env'));
     if (env && (env.SAP_SID || env.SAP_CLIENT || env.SAP_USERNAME)) {
       return {
         sid: env.SAP_SID || null,

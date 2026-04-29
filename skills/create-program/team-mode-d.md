@@ -22,7 +22,7 @@ The user answer is authoritative — the heuristic is guidance, not auto-gating.
 
 ### Persistence
 
-Persist the choice to `.sc4sap/program/{PROG}/state.json`:
+Persist the choice to `.prism/program/{PROG}/state.json`:
 
 ```
 "phase1b": {
@@ -85,7 +85,7 @@ Unlike Type A (Phase 1A/2) which feeds synthesis to sap-writer, Type D's output 
 1. `module-interview.md` gets a new `## Cross-Phase Reconciliation` section with settled dimensions + any lead-arbitrated choices.
 2. `interview.md` (Phase 1B output) is **composed by the team directly** — the bridge team writes it, not a separate sap-writer dispatch. This saves a round-trip.
 
-Spawn pattern: after R3 (or R1 if all aligned), the analyst posts the final `interview.md` content to `50-interview-md.md` in the task dir. Lead copies it to `.sc4sap/program/<PROG>/interview.md`.
+Spawn pattern: after R3 (or R1 if all aligned), the analyst posts the final `interview.md` content to `50-interview-md.md` in the task dir. Lead copies it to `.prism/program/<PROG>/interview.md`.
 
 ## Response prefix
 

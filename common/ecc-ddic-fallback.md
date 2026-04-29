@@ -1,6 +1,6 @@
 # ECC DDIC Fallback
 
-Shared rule for any sc4sap skill that may create DDIC objects (Table, Data Element, Domain). Referenced from:
+Shared rule for any prism skill that may create DDIC objects (Table, Data Element, Domain). Referenced from:
 - `skills/create-object/SKILL.md` → `<ECC_DDIC_Fallback>`
 - `skills/create-program/SKILL.md` → `<Shared_Conventions>`
 - Any other skill that creates or may create DDIC objects as part of its pipeline.
@@ -8,7 +8,7 @@ Shared rule for any sc4sap skill that may create DDIC objects (Table, Data Eleme
 **Context.** On ECC systems the ADT REST API does not expose DDIC object endpoints (no source-based DDIC representation). Direct `CreateTable` / `CreateDataElement` / `CreateDomain` calls fail. For those three types and `SAP_VERSION = ECC` only, the skill switches to a **program-generation fallback**: it writes an executable ABAP report into `$TMP` that — when the user runs it in SE38 — creates the DDIC object via the SAP-internal `DDIF_*_PUT` function modules (inactive version only; the user activates and assigns to transport manually in SE11).
 
 **When this branch triggers.**
-- `SAP_VERSION` (from `.sc4sap/config.json` or `sap.env`) equals `ECC`, AND
+- `SAP_VERSION` (from `.prism/config.json` or `sap.env`) equals `ECC`, AND
 - The skill needs to create an object of type Table, Data Element, or Domain.
 
 All other object types (Class, Program, Function Module, Structure, CDS View, …) continue through the standard MCP create flow unchanged. S/4HANA always uses the standard flow.

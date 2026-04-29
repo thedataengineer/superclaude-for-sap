@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * sc4sap Subagent Tracker Hook (SubagentStart/SubagentStop)
+ * prism Subagent Tracker Hook (SubagentStart/SubagentStop)
  * Tracks agent lifecycle for monitoring and debugging.
  * Adapted from OMC subagent-tracker.mjs.
  *
@@ -33,7 +33,7 @@ function writeJsonFile(path, data) {
 
 function processSubagentStart(data) {
   const directory = data.cwd || data.directory || process.cwd();
-  const trackingFile = join(directory, '.sc4sap', 'state', 'subagent-tracking.json');
+  const trackingFile = join(directory, '.prism', 'state', 'subagent-tracking.json');
 
   const tracking = readJsonFile(trackingFile) || {
     agents: [],
@@ -59,14 +59,14 @@ function processSubagentStart(data) {
     continue: true,
     hookSpecificOutput: {
       hookEventName: 'SubagentStart',
-      additionalContext: `sc4sap SubagentStart hook additional context: Agent ${agentType} started (${agentId})`
+      additionalContext: `prism SubagentStart hook additional context: Agent ${agentType} started (${agentId})`
     }
   };
 }
 
 function processSubagentStop(data) {
   const directory = data.cwd || data.directory || process.cwd();
-  const trackingFile = join(directory, '.sc4sap', 'state', 'subagent-tracking.json');
+  const trackingFile = join(directory, '.prism', 'state', 'subagent-tracking.json');
 
   const tracking = readJsonFile(trackingFile) || {
     agents: [],
