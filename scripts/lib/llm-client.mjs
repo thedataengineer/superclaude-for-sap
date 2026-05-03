@@ -60,7 +60,11 @@ export async function complete({ system, messages, model, max_tokens = 1000, tem
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
+    const message = data.choices?.[0]?.message;
+    
+    // Some reasoning models (like those in Ollama) put output in a 'reasoning' field
+    // or use it before populating 'content'. We fallback to it if content is empty.
+    return message?.content || message?.reasoning || '';
   }
 
   throw new Error(`Unsupported LLM provider: ${provider}`);
